@@ -58,5 +58,5 @@ class Universe:
             plt.show()
         return fig, ax
 
-Gen = Universe(spacing = 200, dimension = 2, galaxy_count=1000, luminosity_gen_type = "Random", coord_gen_type = "Random")
+Gen = Universe(spacing = 200, dimension = 2, galaxy_count=1000, luminosity_gen_type = "Fixed", coord_gen_type = "Random")
 Gen.plot_universe()
