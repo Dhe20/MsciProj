@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import random
 import numpy as np
 
-power = lambda k: 2*k**-3
+power = lambda k: 20*k**-3
 
 lnpb = pbox.LogNormalPowerBox(
     N=512,                     # Number of grid-points in the box
@@ -12,7 +12,7 @@ lnpb = pbox.LogNormalPowerBox(
     boxlength = 1.0,           # Size of the box (sets the units of k in pk)
     seed = 513                # Set a seed to ensure the box looks the same every time (optional)
 )
-
+# y = lnpb.delta_x()
 plt.imshow(lnpb.delta_x(), extent = (-.5,.5, -.5, .5))
 plt.colorbar()
 plt.show()

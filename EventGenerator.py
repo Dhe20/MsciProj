@@ -7,11 +7,11 @@ import scipy
 
 class EventGenerator(Universe):
     def __init__(self, galaxy_count = 1, dimension = 3, luminosity_gen_type = "Fixed",
-                 coord_gen_type = "Random", spacing = 1,
+                 coord_gen_type = "Random", spacing = 1, cluster_coeff = None,
                  event_count = 1, event_distribution = "Random",
                  noise_distribution = "gauss"):
         super().__init__(galaxy_count, dimension, luminosity_gen_type,
-                 coord_gen_type, spacing)
+                 coord_gen_type, spacing, cluster_coeff)
         self.event_distribution = event_distribution
         self.event_count = event_count
         self.resolution = 100
@@ -95,8 +95,8 @@ class EventGenerator(Universe):
 
 
 
-Gen = EventGenerator(event_count=5, spacing = 1000, dimension = 2, galaxy_count=1000,
-                     luminosity_gen_type = "Random", coord_gen_type = "Random")
+Gen = EventGenerator(event_count=2, spacing = 1000, dimension = 2, galaxy_count=10000,
+                     luminosity_gen_type = "Random", coord_gen_type = "Clustered", cluster_coeff = 200)
 
 Gen.plot_universe_and_events()
 
