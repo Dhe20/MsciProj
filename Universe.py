@@ -101,11 +101,9 @@ class Universe:
         if self.beta>-2 and self.beta!=-1:
             E_L = self.L_star*(1 + self.beta)*((A**(2+self.beta) - 1)/(A**(2+self.beta) - A))
         elif self.beta == -1:
-            cor = 2.302585
-            E_L = (1/(cor*np.log(A)))*(self.L_star**2/(self.L_star + self.lower_lim))
-        #print(E_L)
+            E_L = (1/(np.log(A)))*(self.L_star**2/(self.L_star + self.lower_lim))
         N_0 = self.L_0 / E_L
-        # Needs a full calculation of N_0
+        # Should try the algo cited in paper
         self.n = round(N_0)
         BB1 = Full_Schechter(name="BB1", a=0.0)
         samples = BB1.rvs(b=2+self.beta,u=self.L_star,l=self.lower_lim, size = self.n)
