@@ -1,16 +1,20 @@
+#%%
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import random
 from Galaxy import Galaxy
 import powerbox as pbox
+from BB1_sampling import *
+from scipy.special import gamma, gammaincc
+
 
 plt.style.use('dark_background')
 class Universe:
     def __init__(self, dimension = 3, luminosity_gen_type = "Fixed", coord_gen_type = "Clustered",
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
                  alpha = .3, characteristic_luminosity = 1, min_lum = 0,
-                 max_lum = 1):
+                 max_lum = .5, lower_lim=1, beta=-1.5):
 
         self.n = 0
 
@@ -23,14 +27,17 @@ class Universe:
         self.L_star = characteristic_luminosity
         self.min_L = min_lum
         self.max_L = max_lum
+        self.lower_lim = lower_lim
+        self.beta = beta
 
         self.cluster_coeff = cluster_coeff
         self.max_D = self.size*0.7
 
         self.luminosity_generator = dict({"Uniform": self.uniform_galaxies,
                                           "Fixed": self.fixed_luminosity,
-                                          "Cut-Schecter": self.cut_schechter,
-                                          "Shoddy-Schecter":self.schecter_luminosity,
+                                          "Cut-Schechter": self.cut_schechter,
+                                          "Shoddy-Schechter":self.schecter_luminosity,
+                                          "Full-Schechter":self.full_schechter
                                           })
 
         self.luminosities = self.luminosity_generator[luminosity_gen_type]()
@@ -57,14 +64,15 @@ class Universe:
         # self.create_galaxies(luminosity_gen_type = luminosity_gen_type, coord_gen_type = coord_gen_type)
 
 
-
+    def upper_inc_gamma(self, a, x):
+        return gamma(a)*gammaincc(a,x)
 
     def fixed_luminosity(self):
         self.n = round(self.L_0/self.L_star)
         return [self.L_star]*self.n
 
     def schecter_luminosity(self):
-        N_0 = self.L_0 / (self.L_star * (1 + self.alpha))
+        N_0 = self.L_0 / (self.L_star * (self.alpha))
         self.n = round(N_0)
         rng = np.random.default_rng()
         self.gal_lum = rng.gamma(self.alpha, scale=self.L_star, size=self.n)
@@ -74,7 +82,10 @@ class Universe:
         return self.gal_lum
 
     def cut_schechter(self):
-        N_0 = self.L_0 / (self.L_star * (1 + self.alpha))
+        r = self.min_L/self.L_star
+        E_L = self.L_star*self.alpha + self.L_star*(r**self.alpha)*(np.exp(-r))/self.upper_inc_gamma(self.alpha, r)
+        N_0 = self.L_0 / E_L
+
         self.n = round(N_0)
         rng = np.random.default_rng()
         gal_lum = []
@@ -83,6 +94,22 @@ class Universe:
             if l > self.min_L:
                 gal_lum.append(l)
         self.gal_lum = np.array(gal_lum)
+        return self.gal_lum
+
+    def full_schechter(self):
+        A = 1 + self.L_star/self.lower_lim
+        if self.beta>-2 and self.beta!=-1:
+            E_L = self.L_star*(1 + self.beta)*((A**(2+self.beta) - 1)/(A**(2+self.beta) - A))
+        elif self.beta == -1:
+            cor = 2.302585
+            E_L = (1/(cor*np.log(A)))*(self.L_star**2/(self.L_star + self.lower_lim))
+        #print(E_L)
+        N_0 = self.L_0 / E_L
+        # Needs a full calculation of N_0
+        self.n = round(N_0)
+        BB1 = Full_Schechter(name="BB1", a=0.0)
+        samples = BB1.rvs(b=2+self.beta,u=self.L_star,l=self.lower_lim, size = self.n)
+        self.gal_lum = samples
         return self.gal_lum
 
     def uniform_galaxies(self):
@@ -144,8 +171,8 @@ class Universe:
         return fig, ax
 #
 Gen = Universe(size = 50, dimension = 2,
-               luminosity_gen_type = "Cut-Schecter", coord_gen_type = "Random",
-               cluster_coeff=50, characteristic_luminosity=.01, total_luminosity=100)
+               luminosity_gen_type = "Full-Schechter", coord_gen_type = "Random",
+               cluster_coeff=50, characteristic_luminosity=0.1, lower_lim=0.05, min_lum=0.05, total_luminosity=500)
 Gen.plot_universe()
 
 # dict({"Uniform": self.uniform_galaxies,
@@ -153,3 +180,4 @@ Gen.plot_universe()
 #                   "Cut-Schecter": self.cut_schechter,
 #                   "Shoddy-Schecter":self.schecter_luminosity,
 #                   })
+# %%
