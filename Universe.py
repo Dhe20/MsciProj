@@ -10,9 +10,12 @@ class Universe:
     def __init__(self, dimension = 3, luminosity_gen_type = "Fixed", coord_gen_type = "Clustered",
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
                  alpha = .3, characteristic_luminosity = 1, min_lum = 0,
-                 max_lum = 1):
+                 max_lum = 1, H_0 = 70, redshift_noise_sigma=0.25):
 
-        self.n = 0
+
+        self.H_0 = H_0
+
+        self.redshift_noise_sigma = redshift_noise_sigma
 
         self.L_0 = total_luminosity
         self.dimension = dimension
@@ -26,6 +29,7 @@ class Universe:
 
         self.cluster_coeff = cluster_coeff
         self.max_D = self.size*0.7
+        # self.n = self.L_0 / self.L_star
 
         self.luminosity_generator = dict({"Uniform": self.uniform_galaxies,
                                           "Fixed": self.fixed_luminosity,
@@ -35,27 +39,20 @@ class Universe:
 
         self.luminosities = self.luminosity_generator[luminosity_gen_type]()
 
-        # self.galaxies = np.empty((self.n), dtype = object)
+        self.galaxies = np.empty((self.n), dtype = object)
 
         self.coord_generator = dict({"Random": self.random_coords,
                                      "Clustered": self.clustered_coords})
 
-        self.coords = self.coord_generator[coord_gen_type]()
+        self.true_coords = self.coord_generator[coord_gen_type]()
 
-        # self.galaxies[i] = Galaxy(coords=self.coords[i], dimension=self.dimension, luminosity=luminosity)
+        for i in range(self.n):
+            self.galaxies[i] = Galaxy(true_coords=self.true_coords[i],
+                                      dimension=self.dimension,
+                                      luminosity=self.luminosities[i])
 
-
-        # self.x = np.linspace(-self.size, self.size, 50*self.size)
-        # self.y = np.linspace(-self.size, self.size, 50*self.size)
-        # self.X, self.Y = np.meshgrid(self.x, self.y)
-
-
-
-
-
-
-        # self.create_galaxies(luminosity_gen_type = luminosity_gen_type, coord_gen_type = coord_gen_type)
-
+        rng = np.random.default_rng()
+        self.detected_coords, self.distance_range = self.distance_error(rng)
 
 
 
@@ -101,7 +98,6 @@ class Universe:
 
         power = lambda k: self.cluster_coeff * k ** -3
 
-
         lnpb = pbox.LogNormalPowerBox(
             N=512,  # Number of grid-points in the box
             dim=self.dimension,  # 2D box
@@ -121,35 +117,45 @@ class Universe:
 
         return selected_galaxies
 
-    def plot_universe(self, show = True):
-        x, y = zip(*self.coords)
-        fig, ax = plt.subplots()
+    def distance_error(self, rng):
+        detected_coords = np.zeros((self.n, self.dimension))
+        distance_range = np.zeros((self.n, 2, self.dimension))
+        for i in range(self.n):
+            r = np.sqrt(np.sum(np.square(self.galaxies[i].true_coords)))
+            rhat = self.galaxies[i].true_coords / r
+            sigma = self.redshift_noise_sigma*(r/(np.sqrt(self.dimension)*self.size))
+            noise = rng.normal(loc=0.0, scale=sigma, size=1)
+            detected_coords[i][:] = self.galaxies[i].true_coords + rhat*noise
+            distance_range[i][:] = np.array([self.galaxies[i].true_coords - rhat*sigma*3,
+                                             self.galaxies[i].true_coords + rhat*sigma*3])
+            self.galaxies[i].detected_coords = detected_coords[i]
+        return detected_coords, distance_range
 
+    def plot_universe(self, show = True):
+        x, y = zip(*self.detected_coords)
+        fig, ax = plt.subplots()
         ax.set_ylim(-self.size, self.size)
         ax.set_xlim(-self.size, self.size)
         fig.set_figheight(8)
         fig.set_figwidth(8)
         cutoff = plt.Circle((0, 0), self.max_D, color='w', ls="--", fill="")
         ax.add_patch(cutoff)
+        for _ in range(self.n):
+            ax.plot(self.distance_range[_,:,0], self.distance_range[_,:,1], "-", color="b",)
         for (x, y, s) in zip(x, y, self.luminosities):
-            ax.add_artist(plt.Circle(xy=(x, y), radius=s+0.001*self.L_star, color="y"))
+            ax.add_artist(plt.Circle(xy=(x, y), radius=s+0.001*self.L_star, color="white", zorder = 3))
         ax.scatter(0,0, s=self.size/1.25, c = "w", marker = "x")
-        # ax.xaxis.set_tick_params(labelbottom=False)
-        # ax.yaxis.set_tick_params(labelleft=False)
-        # ax.set_xticks([])
-        # ax.set_yticks([])
+        ax.xaxis.set_tick_params(labelbottom=False)
+        ax.yaxis.set_tick_params(labelleft=False)
+        ax.set_xticks([])
+        ax.set_yticks([])
         plt.tight_layout()
         if show:
             plt.show()
         return fig, ax
 #
 Gen = Universe(size = 50, dimension = 2,
-               luminosity_gen_type = "Cut-Schecter", coord_gen_type = "Random",
-               cluster_coeff=50, characteristic_luminosity=.01, total_luminosity=100)
+               luminosity_gen_type = "Cut-Schecter", coord_gen_type = "Clustered",
+               cluster_coeff=0, characteristic_luminosity=.1, total_luminosity=1000)
 Gen.plot_universe()
 
-# dict({"Uniform": self.uniform_galaxies,
-#                   "Fixed": self.fixed_luminosity,
-#                   "Cut-Schecter": self.cut_schechter,
-#                   "Shoddy-Schecter":self.schecter_luminosity,
-#                   })

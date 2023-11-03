@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import random
 import numpy as np
 
-power = lambda k: 20*k**-3
+power = lambda k: 2*k**-3
 
 lnpb = pbox.LogNormalPowerBox(
     N=512,                     # Number of grid-points in the box

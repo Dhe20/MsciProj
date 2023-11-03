@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
 import scipy as sp
+from SurveyAndEventData import SurveyAndEventData
 
 
 class EventGenerator(Universe):
@@ -14,13 +15,13 @@ class EventGenerator(Universe):
                  max_lum = 1, event_count = 1, event_distribution = "Random",
                  noise_distribution = "Gauss", contour_type = "BVM",
                  noise_std = 3, resolution = 400, BVM_c = 3,
-                BVM_k = 25, BVM_kappa = 70):
+                BVM_k = 25, BVM_kappa = 70, redshift_noise_sigma = .25):
 
         super().__init__(dimension = dimension, luminosity_gen_type = luminosity_gen_type,
                          coord_gen_type = coord_gen_type,
                          cluster_coeff = cluster_coeff, total_luminosity = total_luminosity,
                          size = size, alpha = alpha, characteristic_luminosity = characteristic_luminosity,
-                         min_lum = min_lum, max_lum = max_lum
+                         min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma
                          )
 
 
@@ -33,7 +34,7 @@ class EventGenerator(Universe):
 
         self.noise_distribution = noise_distribution
         self.noise_sigma = noise_std
-        # self.BH_galaxies = np.empty((self.event_count), dtype = object)
+        self.BH_galaxies = np.empty((self.event_count), dtype = object)
         self.BH_coords = np.zeros((self.event_count, self.dimension))
         self.BH_luminosities = np.zeros((self.event_count))
         self.BH_detected_coords = np.empty((self.event_count, self.dimension))
@@ -57,9 +58,11 @@ class EventGenerator(Universe):
 
 
 
-        self.event_generator = dict({"Random": self.random_galaxy, "Proportional":self.proportional_galaxy})
+        self.event_generator = dict({"Random": self.random_galaxy,
+                                     "Proportional":self.proportional_galaxy})
         self.coord_noise_generator = dict({"Gauss": self.gauss_noise})
-        self.contour_generator = dict({"Gauss": self.gaussian_2d, "BVM": self.BVMShell})
+        self.contour_generator = dict({"Gauss": self.gaussian_2d,
+                                       "BVM": self.BVMShell})
         self.generate_events(event_distribution = self.event_distribution,
                              noise_distribution = self.noise_distribution)
 
@@ -68,11 +71,11 @@ class EventGenerator(Universe):
         while event_count < self.event_count:
             selected = self.event_generator[event_distribution]()
             noise = self.coord_noise_generator[noise_distribution]()
-            if np.sqrt(np.sum(np.square(self.coords[selected] + noise))) > self.max_D:
+            if np.sqrt(np.sum(np.square(self.true_coords[selected] + noise))) > self.max_D:
                 continue
-            # self.BH_galaxies[event_count] = self.galaxies[selected]
-            self.BH_coords[event_count] = self.coords[selected]
-            self.BH_detected_coords[event_count] = self.coords[selected] + noise
+            self.BH_galaxies[event_count] = self.galaxies[selected]
+            self.BH_coords[event_count] = self.true_coords[selected]
+            self.BH_detected_coords[event_count] = self.true_coords[selected] + noise
             self.BH_luminosities[event_count] = self.luminosities[selected]
             if self.dimension == 2:
                 grid = self.contour_generator[self.contour_type](*self.BH_contour_meshgrid,
@@ -86,7 +89,7 @@ class EventGenerator(Universe):
 
     def proportional_galaxy(self):
         n_list = list(np.arange(0,self.n))
-        source = random.choices(n_list, weights=self.gal_lum)[0]
+        source = random.choices(n_list, weights=self.luminosities)[0]
         return source
 
 
@@ -100,7 +103,7 @@ class EventGenerator(Universe):
         x, y = zip(*self.BH_coords)
         xhat, yhat = zip(*self.BH_detected_coords)
         for (xhat, yhat, s) in zip(xhat, yhat, self.BH_luminosities):
-            ax.add_artist(plt.Circle(xy=(xhat, yhat), radius=s, color="r"))
+            ax.add_artist(plt.Circle(xy=(xhat, yhat), radius=s, color="r", zorder = 4))
         for i, Z in enumerate(self.BH_detected_meshgrid):
             X, Y = self.BH_contour_meshgrid
             z = Z
@@ -110,9 +113,9 @@ class EventGenerator(Universe):
             integral = ((z >= t[:, None, None]) * z).sum(axis=(1, 2))
             f = interpolate.interp1d(integral, t)
             t_contours = f(np.array([0.9973, 0.9545, 0.6827]))
-            ax.contour(X,Y, z, t_contours, colors="r")
+            ax.contour(X,Y, z, t_contours, colors="r", zorder = 2)
         for (x, y, s) in zip(x, y, self.BH_luminosities):
-            ax.add_artist(plt.Circle(xy=(x, y), radius=s, color="g"))
+            ax.add_artist(plt.Circle(xy=(x, y), radius=s, color="g", zorder = 4))
         if show:
             plt.show()
 
@@ -133,7 +136,6 @@ class EventGenerator(Universe):
 
     def burr(self, x, c, k, l):
         return (c*k/l)*((x/l)**(c-1))*((1+(x/l)**c)**(-k-1))
-
 
     def BVMShell(self, x, y, mu, sigma):
         u_x = mu[0]
@@ -160,15 +162,18 @@ class EventGenerator(Universe):
                 self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
         return Z
 
+    def SurveyAndEventData(self):
+        return SurveyAndEventData(self.galaxies, self.detected_coords, self.luminosities, self.BH_detected_coords)
 
 
-Gen = EventGenerator(dimension = 2, size = 50, event_count=3,
-                     luminosity_gen_type = "Shoddy-Schecter", coord_gen_type = "Clustered",
-                     cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=1000,
-                     event_distribution="Proportional")
 
+# Gen = EventGenerator(dimension = 2, size = 50, event_count=2,
+#                      luminosity_gen_type = "Cut-Schecter", coord_gen_type = "Clustered",
+#                      cluster_coeff=50, characteristic_luminosity=.1, total_luminosity=400,
+#                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = .5)
+#
 
-Gen.plot_universe_and_events()
+# Gen.plot_universe_and_events()
 
 
 
