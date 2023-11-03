@@ -12,7 +12,6 @@ class Universe:
                  alpha = .3, characteristic_luminosity = 1, min_lum = 0,
                  max_lum = 1, H_0 = 70, redshift_noise_sigma=0.25):
 
-
         self.H_0 = H_0
 
         self.redshift_noise_sigma = redshift_noise_sigma
