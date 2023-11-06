@@ -43,5 +43,3 @@ l = 2
 #pdf = BB1.pdf(x = x, b=b,u=u,l=l,c=c)
 #cdf = BB1.cdf(x = x, b=b,u=u,l=l,c=c)
 samples = BB1.rvs(b=b,u=u,l=l, size = 1000)
-
-#%%

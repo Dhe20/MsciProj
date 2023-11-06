@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import random
 from Galaxy import Galaxy
 import powerbox as pbox
-from BB1_sampling import *
+import BB1_sampling as BB1Pack
 from scipy.special import gamma, gammaincc
 
 
@@ -39,7 +39,7 @@ class Universe:
         self.luminosity_generator = dict({"Uniform": self.uniform_galaxies,
                                           "Fixed": self.fixed_luminosity,
                                           "Cut-Schechter": self.cut_schechter,
-                                          "Shoddy-Schechter":self.schecter_luminosity,
+                                          "Shoddy-Schechter":self.schechter_luminosity,
                                           "Full-Schechter":self.full_schechter
                                           })
 
@@ -67,7 +67,7 @@ class Universe:
         self.n = round(self.L_0/self.L_star)
         return [self.L_star]*self.n
 
-    def schecter_luminosity(self):
+    def schechter_luminosity(self):
         N_0 = self.L_0 / (self.L_star * (self.alpha))
         self.n = round(N_0)
         rng = np.random.default_rng()
@@ -101,7 +101,7 @@ class Universe:
         N_0 = self.L_0 / E_L
         # Should try the algo cited in paper
         self.n = round(N_0)
-        BB1 = Full_Schechter(name="BB1", a=0.0)
+        BB1 = BB1Pack.Full_Schechter(name="BB1", a=0.0)
         samples = BB1.rvs(b=2+self.beta,u=self.L_star,l=self.lower_lim, size = self.n)
         self.gal_lum = samples
         return self.gal_lum
@@ -179,8 +179,8 @@ class Universe:
         return fig, ax
 #
 Gen = Universe(size = 50, dimension = 2,
-               luminosity_gen_type = "Full-Schecter", coord_gen_type = "Clustered",
-               cluster_coeff=0, characteristic_luminosity=.1, total_luminosity=1000
+               luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
+               cluster_coeff=0, characteristic_luminosity=.1, total_luminosity=500
                ,lower_lim=0.05, min_lum=0.05)
 Gen.plot_universe()
 
