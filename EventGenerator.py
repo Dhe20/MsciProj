@@ -1,3 +1,5 @@
+#%%
+
 from Universe import Universe
 import random
 import numpy as np
@@ -6,6 +8,7 @@ from scipy import interpolate
 import scipy as sp
 from SurveyAndEventData import SurveyAndEventData
 
+#%%
 
 class EventGenerator(Universe):
     def __init__(self, dimension = 2, luminosity_gen_type = "Fixed",
@@ -14,8 +17,8 @@ class EventGenerator(Universe):
                  alpha = .3, characteristic_luminosity = 1, min_lum = 0,
                  max_lum = 1, event_count = 1, event_distribution = "Random",
                  noise_distribution = "Gauss", contour_type = "BVM",
-                 noise_std = 3, resolution = 400, BVM_c = 3,
-                BVM_k = 25, BVM_kappa = 70, redshift_noise_sigma = .25):
+                 noise_std = 3, resolution = 400, BVM_c = 40,
+                BVM_k = 1.5, BVM_kappa = 70):
 
         super().__init__(dimension = dimension, luminosity_gen_type = luminosity_gen_type,
                          coord_gen_type = coord_gen_type,
@@ -137,6 +140,15 @@ class EventGenerator(Universe):
     def burr(self, x, c, k, l):
         return (c*k/l)*((x/l)**(c-1))*((1+(x/l)**c)**(-k-1))
 
+    def von_misses_fisher_3d(self, phi, theta, u_phi, u_theta, kappa):
+        # normalisation specific to 3-sphere
+        # x, u are vectors
+        # ||u|| = 1
+        # kappa >= 0
+        C = kappa/(2*np.pi*(np.exp(kappa) - np.exp(-kappa)))
+        print(C)
+        return C * np.exp(kappa*(np.cos(phi-u_phi)*np.sin(theta-u_theta) + np.sin(phi-u_phi)*np.sin(theta-u_theta) + np.cos(theta-u_theta)))
+
     def BVMShell(self, x, y, mu, sigma):
         u_x = mu[0]
         u_y = mu[1]
@@ -162,18 +174,64 @@ class EventGenerator(Universe):
                 self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
         return Z
 
-    def SurveyAndEventData(self):
-        return SurveyAndEventData(self.galaxies, self.detected_coords, self.luminosities, self.BH_detected_coords)
+    def BVMShell_3d(self, x, y, z, mu, sigma):
+        u_x = mu[0]
+        u_y = mu[1]
+        u_z = mu[2]
+        #s_x = self.noise_sigma
+        #s_y = self.noise_sigma
+        #s_z = self.noise_sigma
+        X = self.BH_contour_meshgrid[0]
+        Y = self.BH_contour_meshgrid[1]
+        Z = self.BH_contour_meshgrid[2]
+        r = np.sqrt((X) ** 2 + (Y) ** 2 + (Z) ** 2)
+        u_r = np.sqrt((u_x) ** 2 + (u_y) ** 2 + (u_z) ** 2)
+        
+        phi = np.arctan2(Y, X)
+        u_phi = np.arctan2(u_y, u_x)
+        XY = np.sqrt((X) ** 2 + (Y) ** 2)
+        theta = np.arctan2(XY, Z)
+        u_theta = np.arctan2(np.sqrt(u_x**2 + u_y**2), u_z)
+
+        k = self.BVM_k
+        c = self.BVM_c
+        kappa = self.BVM_kappa
+        #u_ang = mu/np.linalg.norm(mu)
+
+        #angular = self.von_misses_fisher_3d(x, u_ang, kappa)
+        angular = self.von_misses_fisher_3d(phi, theta, u_phi, u_theta, kappa)
+        radial = self.burr(r, c, k, u_r)
+        f = (np.sin(theta)*r**2) #* angular * radial
+        '''
+        vals = [self.d2_gauss(u_x + 3 * s_x, u_y + 3 * s_y, u_x, u_y, s_x, s_y),
+                self.d2_gauss(u_x + 2 * s_x, u_y + 2 * s_y, u_x, u_y, s_x, s_y),
+                self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
+        '''
+        return f
 
 
+#%%
 
-Gen = EventGenerator(dimension = 2, size = 50, event_count=2,
-                     luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
-                     cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=400,
-                     event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = .05)
+Gen = EventGenerator(dimension = 2, resolution = 400, size = 50, event_count=3,
+                     luminosity_gen_type = "Shoddy-Schechter", coord_gen_type = "Clustered",
+                     cluster_coeff=5, characteristic_luminosity=.15, total_luminosity=250,
+                     event_distribution="Proportional", BVM_c = 15, BVM_k = 2, BVM_kappa = 200)
 
+#%%
 
 Gen.plot_universe_and_events()
 
 
+#%%
 
+X,Y,Z = Gen.BH_contour_meshgrid
+
+U = Gen.BVMShell_3d(1,1,1,np.array([20,25,30]),1)
+
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+img = ax.scatter3D(X,Y,Z,c=U)
+fig.colorbar(img)
+plt.show()
+
+# %%
