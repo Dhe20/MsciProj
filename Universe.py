@@ -167,12 +167,14 @@ class Universe:
         if show:
             plt.show()
         return fig, ax
-#
+
+#%%
+'''
 Gen = Universe(size = 50, dimension = 2,
                luminosity_gen_type = "Full-Schechter", coord_gen_type = "Random",
                cluster_coeff=50, characteristic_luminosity=0.1, lower_lim=0.05, min_lum=0.05, total_luminosity=500)
 Gen.plot_universe()
-
+'''
 # dict({"Uniform": self.uniform_galaxies,
 #                   "Fixed": self.fixed_luminosity,
 #                   "Cut-Schecter": self.cut_schechter,
