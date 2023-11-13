@@ -53,11 +53,11 @@ class Inference(SurveyAndEventData):
 
 
 
-Gen = EventGenerator(dimension = 2, size = 50, event_count=1,
+Gen = EventGenerator(dimension = 2, size = 50, event_count=5,
                      luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
                      cluster_coeff=5, characteristic_luminosity=1, total_luminosity=10,
                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0,
-                     resolution=100)
+                     resolution=500)
 Gen.plot_universe_and_events()
 Data = Gen.GetSurveyAndEventData()
 Y = Inference(Data)
