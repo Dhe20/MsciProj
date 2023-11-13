@@ -1,3 +1,4 @@
+#%%
 from Universe import Universe
 import random
 import numpy as np
@@ -104,15 +105,16 @@ class EventGenerator(Universe):
 
     def BVM_sample(self, mu):
         if self.dimension == 3:
-            r_grid = np.linspace(0, np.sqrt(2)*self.size, 1000*self.resolution)
+            r_grid = np.linspace(0, np.sqrt(2)*self.size, 10*self.resolution)
             b_r = np.linalg.norm(mu)
 
             burr_w = (r_grid**2)*self.burr(r_grid, self.BVM_c, self.BVM_k, b_r)
             burr_w = burr_w/np.sum(burr_w)
+            self.dbug1 = burr_w
             r_samp = np.random.choice(r_grid, p=burr_w)
-
-            phi, theta = np.meshgrid(np.linspace(0, 2*np.pi, 1000*self.resolution),
-                            np.linspace(0, np.pi, 1000*self.resolution))
+            
+            phi, theta = np.meshgrid(np.linspace(0, 2*np.pi, 10*self.resolution),
+                            np.linspace(0, np.pi, 10*self.resolution))
             phi_mu = np.arctan2(mu[1], mu[0])
             theta_mu = np.arctan2(np.sqrt(mu[0]**2 + mu[1]**2), mu[2])
 
@@ -120,7 +122,7 @@ class EventGenerator(Universe):
             vm_weight = vm_weight/np.sum(vm_weight)
             flat = vm_weight.flatten()
             sample_index = np.random.choice(len(flat), p=flat)
-            adjusted_index = np.unravel_index(sample_index, vm_weight.shape())
+            adjusted_index = np.unravel_index(sample_index, vm_weight.shape)
             phi_samp = phi[adjusted_index]
             theta_samp = theta[adjusted_index]
 
@@ -197,7 +199,7 @@ class EventGenerator(Universe):
         # ||u|| = 1
         # kappa >= 0
         C = kappa/(2*np.pi*(np.exp(kappa) - np.exp(-kappa)))
-        print(C)
+        #print(C)
         return C * np.exp(kappa*(np.sin(theta)*np.sin(u_theta)*np.cos(phi-u_phi) + np.cos(theta)*np.cos(u_theta)))
 
     def BVMShell(self, x, y, mu, sigma):
@@ -263,18 +265,20 @@ class EventGenerator(Universe):
         return SurveyAndEventData(dimension = self.dimension, detected_coords = self.detected_coords,
                                   detected_luminosities = self.detected_luminosities,
                                   fluxes = self.fluxes, BH_detected_coords = self.BH_detected_coords, BVM_k = self.BVM_k,
-                                  BVM_c = self.BVM_c, BVM_kappa = self.BVM_kappa, BurrFunc = self.burr, VonMissesFunc= self.von_misses,
-                                  detected_redshifts=self.detected_redshifts)
+                                  BVM_c = self.BVM_c, BVM_kappa = self.BVM_kappa, BurrFunc = self.burr, VonMissesFunc= self.von_misses, 
+                                  VonMissesFisherFunc = self.von_misses_fisher_3d, detected_redshifts=self.detected_redshifts)
 
 
+'''
 
-# Gen = EventGenerator(dimension = 2, size = 50, event_count=2,
-#                      luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
-#                      cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=400,
-#                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = .0)
-#
-#
-# Gen.plot_universe_and_events()
+Gen = EventGenerator(dimension = 3, size = 50, event_count=6,
+                      luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
+                      cluster_coeff=5, characteristic_luminosity=1, total_luminosity=40,
+                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0)
+
+#%%
+
+Gen.plot_universe_and_events()
 
 
-
+'''

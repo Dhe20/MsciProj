@@ -1,7 +1,7 @@
 class SurveyAndEventData:
     def __init__(self, dimension, detected_coords, detected_luminosities,
                  detected_redshifts, fluxes, BH_detected_coords, BVM_k,
-                 BVM_c, BVM_kappa, BurrFunc, VonMissesFunc):
+                 BVM_c, BVM_kappa, BurrFunc, VonMissesFunc, VonMissesFisherFunc):
         self.dimension = dimension
         self.detected_coords = detected_coords
         self.detected_redshifts = detected_redshifts
@@ -13,3 +13,4 @@ class SurveyAndEventData:
         self.BVM_kappa = BVM_kappa
         self.burr = BurrFunc
         self.von_misses = VonMissesFunc
+        self.von_misses_fisher = VonMissesFisherFunc
