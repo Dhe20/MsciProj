@@ -13,10 +13,11 @@ class Universe:
     def __init__(self, dimension = 3, luminosity_gen_type = "Fixed", coord_gen_type = "Clustered",
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
                  alpha = .3, characteristic_luminosity = 1, min_lum = 0,
-                 max_lum = .5, H_0 = 70, redshift_noise_sigma=0.25,
+                 max_lum = .5, H_0 = 70, redshift_noise_sigma=0.,
                  lower_lim=1, beta=-1.5):
 
         self.H_0 = H_0
+        self.c = 1
 
         self.redshift_noise_sigma = redshift_noise_sigma
 
@@ -43,7 +44,7 @@ class Universe:
                                           "Full-Schechter":self.full_schechter
                                           })
 
-        self.luminosities = self.luminosity_generator[luminosity_gen_type]()
+        self.true_luminosities = self.luminosity_generator[luminosity_gen_type]()
 
         self.galaxies = np.empty((self.n), dtype = object)
 
@@ -52,13 +53,42 @@ class Universe:
 
         self.true_coords = self.coord_generator[coord_gen_type]()
 
-        for i in range(self.n):
-            self.galaxies[i] = Galaxy(true_coords=self.true_coords[i],
-                                      dimension=self.dimension,
-                                      luminosity=self.luminosities[i])
-
         rng = np.random.default_rng()
         self.detected_coords, self.distance_range = self.distance_error(rng)
+
+        self.detected_redshifts = np.zeros(len(self.detected_coords))
+        for i in range(len(self.detected_redshifts)):
+            self.detected_redshifts[i] = self.H_0*np.sqrt(np.sum(np.square(self.detected_coords[i])))/self.c
+
+
+
+        self.fluxes = self.find_flux()
+
+        self.detected_luminosities = self.find_detected_luminsoities()
+
+        for i in range(self.n):
+            self.galaxies[i] = Galaxy(true_coords=self.true_coords[i],
+                                      detected_coords = self.detected_coords[i],
+                                      dimension=self.dimension,
+                                      detected_luminosity=self.detected_luminosities[i],
+                                      flux=self.fluxes[i],
+                                      true_luminosity=self.true_luminosities[i],
+                                      )
+
+
+    def find_flux(self):
+        fluxes = np.zeros(self.n)
+        for i, luminosity in enumerate(self.true_luminosities):
+            r2 = np.sum(np.square(self.true_coords[i]))
+            fluxes[i] = luminosity/(4*np.pi*r2)
+        return fluxes
+
+    def find_detected_luminsoities(self):
+        detected_luminosities = np.zeros(self.n)
+        for i, coords in enumerate(self.detected_coords):
+            r2 = np.sum(np.square(coords))
+            detected_luminosities[i] = self.fluxes[i]*(4 * np.pi * r2)
+        return detected_luminosities
 
     def upper_inc_gamma(self, a, x):
         return gamma(a)*gammaincc(a,x)
@@ -145,14 +175,14 @@ class Universe:
         detected_coords = np.zeros((self.n, self.dimension))
         distance_range = np.zeros((self.n, 2, self.dimension))
         for i in range(self.n):
-            r = np.sqrt(np.sum(np.square(self.galaxies[i].true_coords)))
-            rhat = self.galaxies[i].true_coords / r
+            r = np.sqrt(np.sum(np.square(self.true_coords[i])))
+            rhat = self.true_coords[i] / r
             sigma = self.redshift_noise_sigma*(r/(np.sqrt(self.dimension)*self.size))
             noise = rng.normal(loc=0.0, scale=sigma, size=1)
-            detected_coords[i][:] = self.galaxies[i].true_coords + rhat*noise
-            distance_range[i][:] = np.array([self.galaxies[i].true_coords - rhat*sigma*3,
-                                             self.galaxies[i].true_coords + rhat*sigma*3])
-            self.galaxies[i].detected_coords = detected_coords[i]
+            detected_coords[i][:] = self.true_coords[i] + rhat*noise
+            distance_range[i][:] = np.array([self.true_coords[i] - rhat*sigma*3,
+                                             self.true_coords[i] + rhat*sigma*3])
+
         return detected_coords, distance_range
 
     def plot_universe(self, show = True):
@@ -166,7 +196,7 @@ class Universe:
         ax.add_patch(cutoff)
         for _ in range(self.n):
             ax.plot(self.distance_range[_,:,0], self.distance_range[_,:,1], "-", color="b",)
-        for (x, y, s) in zip(x, y, self.luminosities):
+        for (x, y, s) in zip(x, y, self.detected_luminosities):
             ax.add_artist(plt.Circle(xy=(x, y), radius=s+0.001*self.L_star, color="white", zorder = 3))
         ax.scatter(0,0, s=self.size/1.25, c = "w", marker = "x")
         ax.xaxis.set_tick_params(labelbottom=False)
@@ -178,9 +208,9 @@ class Universe:
             plt.show()
         return fig, ax
 #
-Gen = Universe(size = 50, dimension = 2,
-               luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
-               cluster_coeff=0, characteristic_luminosity=.1, total_luminosity=500
-               ,lower_lim=0.05, min_lum=0.05)
-Gen.plot_universe()
-
+# Gen = Universe(size = 50, dimension = 2,
+#                luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
+#                cluster_coeff=0, characteristic_luminosity=.1, total_luminosity=500
+#                ,lower_lim=0.05, min_lum=0.05)
+# Gen.plot_universe()
+#
