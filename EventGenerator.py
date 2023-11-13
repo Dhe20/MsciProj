@@ -15,17 +15,16 @@ class EventGenerator(Universe):
                  coord_gen_type = "Clustered",
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
                  alpha = .3, characteristic_luminosity = 1, min_lum = 0,
-                 max_lum = 1, event_count = 1, event_distribution = "Random",
-                 noise_distribution = "Gauss", contour_type = "BVM",
+                 max_lum = 1, redshift_noise_sigma=0.25, event_count = 1, event_distribution = "Random",
+                 noise_distribution = "BVM", contour_type = "BVM",
                  noise_std = 3, resolution = 400, BVM_c = 40,
-                BVM_k = 1.5, BVM_kappa = 70):
+                 BVM_k = 1.5, BVM_kappa = 70):
 
         super().__init__(dimension = dimension, luminosity_gen_type = luminosity_gen_type,
                          coord_gen_type = coord_gen_type,
                          cluster_coeff = cluster_coeff, total_luminosity = total_luminosity,
                          size = size, alpha = alpha, characteristic_luminosity = characteristic_luminosity,
-                         min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma
-                         )
+                         min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma)
 
 
         self.event_distribution = event_distribution
@@ -63,7 +62,8 @@ class EventGenerator(Universe):
 
         self.event_generator = dict({"Random": self.random_galaxy,
                                      "Proportional":self.proportional_galaxy})
-        self.coord_noise_generator = dict({"Gauss": self.gauss_noise})
+        self.coord_noise_generator = dict({"Gauss": self.gauss_noise,
+                                            "BVM": self.BVM_sample})
         self.contour_generator = dict({"Gauss": self.gaussian_2d,
                                        "BVM": self.BVMShell})
         self.generate_events(event_distribution = self.event_distribution,
@@ -73,7 +73,9 @@ class EventGenerator(Universe):
         event_count = 0
         while event_count < self.event_count:
             selected = self.event_generator[event_distribution]()
-            noise = self.coord_noise_generator[noise_distribution]()
+            mu = self.true_coords[selected]
+            noise = self.coord_noise_generator[noise_distribution](mu)
+            #noise = self.coord_noise_generator[noise_distribution]()
             if np.sqrt(np.sum(np.square(self.true_coords[selected] + noise))) > self.max_D:
                 continue
             self.BH_galaxies[event_count] = self.galaxies[selected]
@@ -95,11 +97,60 @@ class EventGenerator(Universe):
         source = random.choices(n_list, weights=self.luminosities)[0]
         return source
 
-
-    def gauss_noise(self):
+    def gauss_noise(self, mu):
         rng = np.random.default_rng()
         noise = rng.normal(loc=0.0, scale=self.noise_sigma, size=self.dimension)
         return noise
+    
+    def BVM_sample(self, mu):
+        if self.dimension == 3:
+            r_grid = np.linspace(0, np.sqrt(2)*self.size, 1000*self.resolution)
+            b_r = np.linalg.norm(mu)
+            
+            burr_w = (r_grid**2)*self.burr(r_grid, self.BVM_c, self.BVM_k, b_r)
+            burr_w = burr_w/np.sum(burr_w)
+            r_samp = np.random.choice(r_grid, p=burr_w)
+
+            phi, theta = np.meshgrid(np.linspace(0, 2*np.pi, 1000*self.resolution),
+                            np.linspace(0, np.pi, 1000*self.resolution))
+            phi_mu = np.arctan2(mu[1], mu[0])
+            theta_mu = np.arctan2(np.sqrt(mu[0]**2 + mu[1]**2), mu[2])
+
+            vm_weight = 4*np.pi*self.von_misses_fisher_3d(phi, theta, phi_mu, theta_mu, self.BVM_kappa)
+            vm_weight = vm_weight/np.sum(vm_weight)
+            flat = vm_weight.flatten()
+            sample_index = np.random.choice(len(flat), p=flat)
+            adjusted_index = np.unravel_index(sample_index, vm_weight.shape())
+            phi_samp = phi[adjusted_index]
+            theta_samp = theta[adjusted_index]
+
+            x = r_samp*np.sin(theta_samp)*np.cos(phi_samp)
+            y = r_samp*np.sin(theta_samp)*np.sin(phi_samp)
+            z = r_samp*np.cos(theta_samp)
+            sample = np.array([x,y,z])
+
+            return sample - mu
+
+        elif self.dimension == 2:
+            r_grid = np.linspace(0, np.sqrt(2)*self.size, 1000*self.resolution)
+            b_r = np.linalg.norm(mu)
+            
+            burr_w = r_grid*self.burr(r_grid, self.BVM_c, self.BVM_k, b_r)
+            burr_w = burr_w/np.sum(burr_w)
+            r_samp = np.random.choice(r_grid, p=burr_w)
+
+            phi_grid = np.linspace(0, 2*np.pi, 1000*self.resolution)
+            phi_mu = np.arctan2(mu[1], mu[0])
+            
+            vm_weight = self.von_misses(phi_grid, phi_mu, self.BVM_kappa)
+            vm_weight = vm_weight/np.sum(vm_weight)
+            phi_samp = np.random.choice(phi_grid, p=vm_weight)
+
+            x = r_samp*np.cos(phi_samp)
+            y = r_samp*np.sin(phi_samp)
+            sample = np.array([x,y])
+
+            return sample - mu
 
     def plot_universe_and_events(self, show = True):
         fig, ax = self.plot_universe(show = False)
@@ -147,7 +198,7 @@ class EventGenerator(Universe):
         # kappa >= 0
         C = kappa/(2*np.pi*(np.exp(kappa) - np.exp(-kappa)))
         print(C)
-        return C * np.exp(kappa*(np.cos(phi-u_phi)*np.sin(theta-u_theta) + np.sin(phi-u_phi)*np.sin(theta-u_theta) + np.cos(theta-u_theta)))
+        return C * np.exp(kappa*(np.sin(theta)*np.sin(u_theta)*np.cos(phi-u_phi) + np.cos(theta)*np.cos(u_theta)))
 
     def BVMShell(self, x, y, mu, sigma):
         u_x = mu[0]
@@ -174,7 +225,8 @@ class EventGenerator(Universe):
                 self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
         return Z
 
-    def BVMShell_3d(self, x, y, z, mu, sigma):
+
+    def BVMShell_3d(self, x, y, mu, sigma):
         u_x = mu[0]
         u_y = mu[1]
         u_z = mu[2]
@@ -201,18 +253,17 @@ class EventGenerator(Universe):
         #angular = self.von_misses_fisher_3d(x, u_ang, kappa)
         angular = self.von_misses_fisher_3d(phi, theta, u_phi, u_theta, kappa)
         radial = self.burr(r, c, k, u_r)
-        f = (np.sin(theta)*r**2) #* angular * radial
-        '''
-        vals = [self.d2_gauss(u_x + 3 * s_x, u_y + 3 * s_y, u_x, u_y, s_x, s_y),
-                self.d2_gauss(u_x + 2 * s_x, u_y + 2 * s_y, u_x, u_y, s_x, s_y),
-                self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
-        '''
+        f = (np.sin(theta)*r**2) * angular * radial
+        
+        #vals = [self.d2_gauss(u_x + 3 * s_x, u_y + 3 * s_y, u_x, u_y, s_x, s_y),
+        #        self.d2_gauss(u_x + 2 * s_x, u_y + 2 * s_y, u_x, u_y, s_x, s_y),
+        #        self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
         return f
 
 
 #%%
-
-Gen = EventGenerator(dimension = 2, resolution = 400, size = 50, event_count=3,
+'''
+Gen = EventGenerator(dimension = 2, resolution = 400, size = 50, event_count=1,
                      luminosity_gen_type = "Shoddy-Schechter", coord_gen_type = "Clustered",
                      cluster_coeff=5, characteristic_luminosity=.15, total_luminosity=250,
                      event_distribution="Proportional", BVM_c = 15, BVM_k = 2, BVM_kappa = 200)
@@ -226,12 +277,52 @@ Gen.plot_universe_and_events()
 
 X,Y,Z = Gen.BH_contour_meshgrid
 
-U = Gen.BVMShell_3d(1,1,1,np.array([20,25,30]),1)
+U = Gen.BVMShell_3d(np.array([20,25,30]),1)
 
 fig = plt.figure()
 ax = plt.axes(projection='3d')
 img = ax.scatter3D(X,Y,Z,c=U)
 fig.colorbar(img)
+ax.view_init(-140, 60) 
+  
 plt.show()
 
+
 # %%
+
+from plot4d import plotter
+#%%
+
+def BVMShell_3d(x,y,z, mu):
+    u_x = mu[0]
+    u_y = mu[1]
+    u_z = mu[2]
+    X = x
+    Y = y
+    Z = z
+    r = np.sqrt((X) ** 2 + (Y) ** 2 + (Z) ** 2)
+    u_r = np.sqrt((u_x) ** 2 + (u_y) ** 2 + (u_z) ** 2)
+    
+    phi = np.arctan2(Y, X)
+    u_phi = np.arctan2(u_y, u_x)
+    XY = np.sqrt((X) ** 2 + (Y) ** 2)
+    theta = np.arctan2(XY, Z)
+    u_theta = np.arctan2(np.sqrt(u_x**2 + u_y**2), u_z)
+
+    k = 4
+    c = 15
+    kappa = 350
+
+    angular = Gen.von_misses_fisher_3d(phi, theta, u_phi, u_theta, kappa)
+    radial = Gen.burr(r, c, k, u_r)
+    p = (np.sin(theta)*r**2) * angular * radial
+    
+    return p
+
+f = lambda x, y, z: BVMShell_3d(x,y,z, np.array([0.5,0.5,0]))
+
+plotter.plot4d_CS(f,-0.2)
+
+# %%
+
+'''
