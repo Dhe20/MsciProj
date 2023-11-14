@@ -57,9 +57,12 @@ class Universe:
         self.detected_coords, self.distance_range = self.distance_error(rng)
 
         self.detected_redshifts = np.zeros(len(self.detected_coords))
+        # Not entirely sure if z_sigma is measurable
+        self.detected_redshifts_uncertainties = np.zeros(len(self.detected_coords))
         for i in range(len(self.detected_redshifts)):
             self.detected_redshifts[i] = self.H_0*np.sqrt(np.sum(np.square(self.detected_coords[i])))/self.c
-
+            # Also it should depend o the true z not z_hat
+            self.detected_redshifts_uncertainties[i] = 300000*redshift_noise_sigma*(1+self.detected_redshifts[i]/300000)**3
 
 
         self.fluxes = self.find_flux()
@@ -79,15 +82,23 @@ class Universe:
     def find_flux(self):
         fluxes = np.zeros(self.n)
         for i, luminosity in enumerate(self.true_luminosities):
-            r2 = np.sum(np.square(self.true_coords[i]))
-            fluxes[i] = luminosity/(4*np.pi*r2)
+            r1 = np.sqrt(np.sum(np.square(self.true_coords[i])))
+            if self.dimension== 2:
+                d_element = 2*np.pi*r1
+            elif self.dimension == 3:
+                d_element = 4*np.pi*(r1**2)
+            fluxes[i] = luminosity/d_element
         return fluxes
 
     def find_detected_luminsoities(self):
         detected_luminosities = np.zeros(self.n)
         for i, coords in enumerate(self.detected_coords):
-            r2 = np.sum(np.square(coords))
-            detected_luminosities[i] = self.fluxes[i]*(4 * np.pi * r2)
+            r1 = np.sqrt(np.sum(np.square(self.true_coords[i])))
+            if self.dimension== 2:
+                d_element = 2*np.pi*r1
+            elif self.dimension == 3:
+                d_element = 4*np.pi*(r1**2)
+            detected_luminosities[i] = self.fluxes[i]*d_element
         return detected_luminosities
 
     def upper_inc_gamma(self, a, x):

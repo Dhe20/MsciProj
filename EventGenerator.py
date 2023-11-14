@@ -266,7 +266,7 @@ class EventGenerator(Universe):
                                   detected_luminosities = self.detected_luminosities,
                                   fluxes = self.fluxes, BH_detected_coords = self.BH_detected_coords, BVM_k = self.BVM_k,
                                   BVM_c = self.BVM_c, BVM_kappa = self.BVM_kappa, BurrFunc = self.burr, VonMissesFunc= self.von_misses, 
-                                  VonMissesFisherFunc = self.von_misses_fisher_3d, detected_redshifts=self.detected_redshifts)
+                                  VonMissesFisherFunc = self.von_misses_fisher_3d, detected_redshifts=self.detected_redshifts, detected_redshifts_uncertainties = self.detected_redshifts_uncertainties)
 
 
 '''
