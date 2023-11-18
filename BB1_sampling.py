@@ -4,7 +4,7 @@ import scipy.stats as ss
 from math import gamma, modf
 
 #%%
-x = np.linspace(0.0, 10.0, 1000000)
+#x = np.linspace(0.0, 10.0, 1000000)
 
 def neg_gamma(z):
     # Full analytic continuation of gamma function
@@ -33,6 +33,8 @@ class Full_Schechter(ss.rv_continuous):
     def _pdf(self, x, b,u,l):
         return p(x,b,u,l)#(1.0/const) * p(x)
 
+
+#%%
 '''
 
 BB1 = Full_Schechter(name="BB1", a=0.0)
@@ -45,4 +47,17 @@ l = 2
 #pdf = BB1.pdf(x = x, b=b,u=u,l=l,c=c)
 #cdf = BB1.cdf(x = x, b=b,u=u,l=l,c=c)
 samples = BB1.rvs(b=b,u=u,l=l, size = 1000)
+'''
+
+
+'''#%%
+import matplotlib.pyplot as plt
+
+x = np.linspace(0.00000001, 10.0, 100000000)
+
+w = p(x,b,u,l)
+w = w/np.sum(w)
+a = np.random.choice(x, 1000, p=w)
+plt.hist(samples, 100)
+
 '''

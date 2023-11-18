@@ -78,11 +78,10 @@ class Inference(SurveyAndEventData):
                     XY = np.sqrt((X) ** 2 + (Y) ** 2)
                     theta = np.arctan2(XY, Z)
                     D = (self.SurveyAndEventData.detected_redshifts[g]) / H_0
-                    H_0_pdf_slice_single_event += (D**2) * self.SurveyAndEventData.fluxes[g] *(u_r**2) * self.SurveyAndEventData.burr(u_r,
+                    H_0_pdf_slice_single_event += (D**2) * self.SurveyAndEventData.fluxes[g] *(u_r**2) * np.sin(u_theta) * self.SurveyAndEventData.burr(u_r,
                                                                                     self.SurveyAndEventData.BVM_c,
                                                                                     self.SurveyAndEventData.BVM_k,
-                                                                                    D) * self.SurveyAndEventData.von_misses_fisher(
-                                                                                    phi, u_phi, theta, u_theta, self.SurveyAndEventData.BVM_kappa)
+                                                                                    D) * self.SurveyAndEventData.von_misses_fisher(u_phi, phi, u_theta, theta, self.SurveyAndEventData.BVM_kappa)
                 H_0_pdf_single_event[H_0_index] += H_0_pdf_slice_single_event   
             if event_num == 0:
                 self.H_0_pdf += H_0_pdf_single_event/np.sum(H_0_pdf_single_event)
@@ -146,8 +145,8 @@ class Inference(SurveyAndEventData):
                     sigma_z = self.SurveyAndEventData.detected_redshifts_uncertainties[g]
                     z_har = self.SurveyAndEventData.detected_redshifts[g]
                     I = partial_int(z_har, sigma_z, H_0, u_r)
-                    H_0_pdf_slice_single_event += (D**2) * self.SurveyAndEventData.fluxes[g] *(u_r**2) * I[0] * self.SurveyAndEventData.von_misses_fisher(
-                                                                                    phi, u_phi, theta, u_theta, self.SurveyAndEventData.BVM_kappa)
+                    H_0_pdf_slice_single_event += (D**2) * self.SurveyAndEventData.fluxes[g] *(u_r**2) * np.sin(u_theta) * I[0] * self.SurveyAndEventData.von_misses_fisher(
+                                                                                    u_phi, phi, u_theta, theta, self.SurveyAndEventData.BVM_kappa)
                 H_0_pdf_single_event[H_0_index] += H_0_pdf_slice_single_event   
             if event_num == 0:
                 self.H_0_pdf += H_0_pdf_single_event/np.sum(H_0_pdf_single_event)
@@ -162,23 +161,24 @@ class Inference(SurveyAndEventData):
         plt.axvline(x=70, c='r', ls='--')
         plt.show()
 
+    def H_0_posterior(self):
+        self.H_0_Prob()
+        p = self.H_0_pdf/np.sum(self.H_0_pdf)
+        x = self.H_0_range
+        return [x, p]
+
 #%%
+'''
+Gen = EventGenerator(dimension = 2, size = 50, event_count=50,
+                        luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
+                        cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=100,
+                        event_distribution="Proportional", noise_distribution = "BVM", contour_type = "BVM", redshift_noise_sigma = 0.001,
+                        resolution=500)
 
-Gen = EventGenerator(dimension = 2, size = 50, event_count=5,
-                     luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
-                     cluster_coeff=5, characteristic_luminosity=1, total_luminosity=100,
-                     event_distribution="Proportional", noise_distribution = "BVM", contour_type = "BVM", redshift_noise_sigma = 0.001,
-                     resolution=500)
-Gen.plot_universe_and_events()
+#Gen.plot_universe_and_events()
 Data = Gen.GetSurveyAndEventData()
-Y = Inference(Data, survey_type='imperfect')
-Y.plot_H_0()
-
-
-
-
-
-
+Y = Inference(Data, survey_type='perfect')
+''' 
 
 
 
