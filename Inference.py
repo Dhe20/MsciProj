@@ -94,7 +94,7 @@ class Inference(SurveyAndEventData):
                                                                                     self.SurveyAndEventData.BVM_c,
                                                                                     self.SurveyAndEventData.BVM_k,
                                                                                     D) * self.SurveyAndEventData.von_misses_fisher(
-                                                                                    phi, u_phi, theta, u_theta, self.SurveyAndEventData.BVM_kappa)
+                                                                                    u_phi, phi, theta, u_theta, self.SurveyAndEventData.BVM_kappa)
                 H_0_pdf_single_event[H_0_index] += H_0_pdf_slice_single_event
 
             self.H_0_pdf_single_event[event_num] = H_0_pdf_single_event/(np.sum(H_0_pdf_single_event)*(self.H_0_increment))
