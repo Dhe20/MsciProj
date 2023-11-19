@@ -16,7 +16,8 @@ class EventGenerator(Universe):
                  max_lum = 1, event_count = 1, event_distribution = "Random",
                  noise_distribution = "BVM", contour_type = "BVM",
                  noise_std = 3, resolution = 400, BVM_c = 15,
-                BVM_k = 2, BVM_kappa = 200, redshift_noise_sigma = 0):
+                 BVM_k = 2, BVM_kappa = 200, redshift_noise_sigma = 0,
+                 plot_contours = True):
 
         super().__init__(dimension = dimension, luminosity_gen_type = luminosity_gen_type,
                          coord_gen_type = coord_gen_type,
@@ -25,6 +26,7 @@ class EventGenerator(Universe):
                          min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma
                          )
 
+        self.plot_contours = plot_contours
 
         self.event_distribution = event_distribution
         self.event_count = event_count
@@ -84,10 +86,11 @@ class EventGenerator(Universe):
             self.BH_true_luminosities[event_count] = self.true_luminosities[selected]
             self.BH_detected_luminosities[event_count] = self.detected_luminosities[selected]
             if self.dimension == 2:
-                grid = self.contour_generator[self.contour_type](*self.BH_contour_meshgrid,
-                                                        self.BH_detected_coords[event_count],
-                                                        self.noise_sigma)
-                self.BH_detected_meshgrid[event_count] = grid/grid.sum()
+                if self.plot_contours:
+                    grid = self.contour_generator[self.contour_type](*self.BH_contour_meshgrid,
+                                                            self.BH_detected_coords[event_count],
+                                                            self.noise_sigma)
+                    self.BH_detected_meshgrid[event_count] = grid/grid.sum()
             event_count+=1
 
     def random_galaxy(self):
@@ -160,16 +163,17 @@ class EventGenerator(Universe):
         xhat, yhat = zip(*self.BH_detected_coords)
         for (xhat, yhat, s) in zip(xhat, yhat, self.BH_true_luminosities):
             ax.add_artist(plt.Circle(xy=(xhat, yhat), radius=s, color="r", zorder = 4))
-        for i, Z in enumerate(self.BH_detected_meshgrid):
-            X, Y = self.BH_contour_meshgrid
-            z = Z
-            n = 1000
-            z = z / z.sum()
-            t = np.linspace(0, z.max(), n)
-            integral = ((z >= t[:, None, None]) * z).sum(axis=(1, 2))
-            f = interpolate.interp1d(integral, t)
-            t_contours = f(np.array([0.9973, 0.9545, 0.6827]))
-            ax.contour(X,Y, z, t_contours, colors="r", zorder = 2)
+        if self.plot_contours is True:
+            for i, Z in enumerate(self.BH_detected_meshgrid):
+                X, Y = self.BH_contour_meshgrid
+                z = Z
+                n = 1000
+                z = z / z.sum()
+                t = np.linspace(0, z.max(), n)
+                integral = ((z >= t[:, None, None]) * z).sum(axis=(1, 2))
+                f = interpolate.interp1d(integral, t)
+                t_contours = f(np.array([0.9973, 0.9545, 0.6827]))
+                ax.contour(X,Y, z, t_contours, colors="r", zorder = 2)
         for (x, y, s) in zip(x, y, self.BH_true_luminosities):
             ax.add_artist(plt.Circle(xy=(x, y), radius=s, color="g", zorder = 4))
         if show:
@@ -269,16 +273,15 @@ class EventGenerator(Universe):
                                   VonMissesFisherFunc = self.von_misses_fisher_3d, detected_redshifts=self.detected_redshifts, detected_redshifts_uncertainties = self.detected_redshifts_uncertainties)
 
 
-'''
 
-Gen = EventGenerator(dimension = 3, size = 50, event_count=6,
-                      luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
-                      cluster_coeff=5, characteristic_luminosity=1, total_luminosity=40,
-                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0)
+#
+# Gen = EventGenerator(dimension = 3, size = 50, event_count=3,
+#                       luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
+#                       cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=40,
+#                       event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0.01)
+#
+#
+# Gen.plot_universe_and_events()
 
-#%%
-
-Gen.plot_universe_and_events()
 
 
-'''
