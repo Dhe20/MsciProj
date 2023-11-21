@@ -43,7 +43,8 @@ class EventGenerator(Universe):
         self.BH_true_luminosities = np.zeros((self.event_count))
         self.BH_detected_coords = np.empty((self.event_count, self.dimension))
 
-        self.contour_type = contour_type
+        self.contour_type = contour_type +"_"+str(self.dimension)+"d"
+
 
         self.BVM_k = BVM_k
         self.BVM_c = BVM_c
@@ -55,19 +56,22 @@ class EventGenerator(Universe):
             self.BH_contour_meshgrid = np.meshgrid(np.linspace(-self.size, self.size, self.resolution),
                                                    np.linspace(-self.size, self.size, self.resolution))
         if self.dimension == 3:
-            self.BH_contour_meshgrid = np.meshgrid(np.linspace(-self.size, self.size, self.resolution),
-                                                   np.linspace(-self.size, self.size, self.resolution),
-                                                   np.linspace(-self.size, self.size, self.resolution))
+            self.BH_contour_meshgrid = np.mgrid[-self.size:self.size:complex(0,self.resolution),
+                                       -self.size:self.size:complex(0,self.resolution),
+                                       -self.size:self.size:complex(0,self.resolution)]
+
         self.BH_detected_meshgrid = np.empty((self.event_count, *np.shape(self.BH_contour_meshgrid[0])))
 
 
 
         self.event_generator = dict({"Random": self.random_galaxy,
                                      "Proportional":self.proportional_galaxy})
-        self.coord_noise_generator = dict({"Gauss": self.gauss_noise,
+        self.coord_noise_generator = dict({"gauss": self.gauss_noise,
                                             "BVM": self.BVM_sample})
-        self.contour_generator = dict({"Gauss": self.gaussian_2d,
-                                       "BVM": self.BVMShell})
+        self.contour_generator = dict({"gauss": self.gauss_2d,
+                                       "BVM_2d": self.BVMShell,
+                                       "BVM_3d" : self.BVMShell_3d
+                                       })
         self.generate_events(event_distribution = self.event_distribution,
                              noise_distribution = self.noise_distribution)
 
@@ -85,12 +89,9 @@ class EventGenerator(Universe):
             self.BH_detected_coords[event_count] = self.true_coords[selected] + noise
             self.BH_true_luminosities[event_count] = self.true_luminosities[selected]
             self.BH_detected_luminosities[event_count] = self.detected_luminosities[selected]
-            if self.dimension == 2:
-                if self.plot_contours:
-                    grid = self.contour_generator[self.contour_type](*self.BH_contour_meshgrid,
-                                                            self.BH_detected_coords[event_count],
-                                                            self.noise_sigma)
-                    self.BH_detected_meshgrid[event_count] = grid/grid.sum()
+            if self.plot_contours:
+                grid = self.contour_generator[self.contour_type](self.BH_detected_coords[event_count])
+                self.BH_detected_meshgrid[event_count] = grid/grid.sum()
             event_count+=1
 
     def random_galaxy(self):
@@ -160,8 +161,7 @@ class EventGenerator(Universe):
     def plot_universe_and_events(self, show = True):
         fig, ax = self.plot_universe(show = False)
         x, y = zip(*self.BH_true_coords)
-        xhat, yhat = zip(*self.BH_detected_coords)
-        for (xhat, yhat, s) in zip(xhat, yhat, self.BH_true_luminosities):
+        for (xhat, yhat, s) in zip(*zip(*self.BH_detected_coords), self.BH_detected_luminosities):
             ax.add_artist(plt.Circle(xy=(xhat, yhat), radius=s, color="r", zorder = 4))
         if self.plot_contours is True:
             for i, Z in enumerate(self.BH_detected_meshgrid):
@@ -179,10 +179,12 @@ class EventGenerator(Universe):
         if show:
             plt.show()
 
-    def gaussian_2d(self, x, y, mu, sigma):
+    def gauss_2d(self, mu):
         sig_x = self.noise_sigma**2
         sig_y = self.noise_sigma**2
         sig_xy = 0
+        x = self.BH_contour_meshgrid[0]
+        y = self.BH_contour_meshgrid[1]
         rv = sp.stats.multivariate_normal(mu, [[sig_x, sig_xy], [sig_xy, sig_y]])
         Z = rv.pdf(np.dstack((x, y)))
         return Z
@@ -206,7 +208,7 @@ class EventGenerator(Universe):
         #print(C)
         return C * np.exp(kappa*(np.sin(theta)*np.sin(u_theta)*np.cos(phi-u_phi) + np.cos(theta)*np.cos(u_theta)))
 
-    def BVMShell(self, x, y, mu, sigma):
+    def BVMShell(self,mu):
         u_x = mu[0]
         u_y = mu[1]
         s_x = self.noise_sigma
@@ -231,7 +233,7 @@ class EventGenerator(Universe):
                 self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
         return Z
 
-    def BVMShell_3d(self, x, y, mu, sigma):
+    def BVMShell_3d(self,mu):
         u_x = mu[0]
         u_y = mu[1]
         u_z = mu[2]
@@ -274,8 +276,8 @@ class EventGenerator(Universe):
 
 
 
-#
-# Gen = EventGenerator(dimension = 3, size = 50, event_count=3,
+
+# Gen = EventGenerator(dimension = 2, size = 50, event_count=1,
 #                       luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
 #                       cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=40,
 #                       event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0.01)

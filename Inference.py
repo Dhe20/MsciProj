@@ -11,7 +11,7 @@ from tqdm import tqdm
 class Inference(SurveyAndEventData):
     def __init__(self, SurveyAndEventData,
                  survey_type='perfect', resolution_H_0=100,
-                 H_0_Min = 60, H_0_Max = 80):
+                 H_0_Min = 50, H_0_Max = 100):
         self.SurveyAndEventData = SurveyAndEventData
         self.distribution_calculated = False
         self.H_0_Min = H_0_Min
@@ -23,21 +23,18 @@ class Inference(SurveyAndEventData):
         self.H_0_increment = self.H_0_range[1] - self.H_0_range[0]
         self.H_0_pdf_single_event = np.zeros(shape = (len(self.SurveyAndEventData.BH_detected_coords), self.resolution_H_0))
 
+        self.inference_method = dict({"perfect2d":self.H_0_inference_2d_perfect_survey,
+                                 "imperfect2d": self.H_0_inference_2d_imperfect_survey,
+                                 "perfect3d": self.H_0_inference_3d_perfect_survey,
+                                 "imperfect3d": self.H_0_inference_3d_imperfect_survey,
+
+        })
+
 
 
     def H_0_Prob(self):
         self.distribution_calculated = True
-        if self.SurveyAndEventData.dimension == 2:
-            if self.survey_type == 'perfect':
-                self.H_0_pdf = self.H_0_inference_2d_perfect_survey()
-            if self.survey_type == 'imperfect':
-                self.H_0_pdf = self.H_0_inference_2d_imperfect_survey()
-        if self.SurveyAndEventData.dimension == 3:
-            if self.survey_type == 'perfect':
-                self.H_0_pdf = self.H_0_inference_3d_perfect_survey()
-            if self.survey_type == 'imperfect':
-                self.H_0_pdf = self.H_0_inference_3d_imperfect_survey()
-
+        self.H_0_pdf = self.inference_method[self.survey_type+str(self.SurveyAndEventData.dimension)+"d"]()
         return self.H_0_pdf
 
     def H_0_inference_2d_perfect_survey(self):
@@ -94,7 +91,7 @@ class Inference(SurveyAndEventData):
                                                                                     self.SurveyAndEventData.BVM_c,
                                                                                     self.SurveyAndEventData.BVM_k,
                                                                                     D) * self.SurveyAndEventData.von_misses_fisher(
-                                                                                    u_phi, phi, theta, u_theta, self.SurveyAndEventData.BVM_kappa)
+                                                                                    u_phi, phi, u_theta, theta, self.SurveyAndEventData.BVM_kappa)
                 H_0_pdf_single_event[H_0_index] += H_0_pdf_slice_single_event
 
             self.H_0_pdf_single_event[event_num] = H_0_pdf_single_event/(np.sum(H_0_pdf_single_event)*(self.H_0_increment))
@@ -133,12 +130,14 @@ class Inference(SurveyAndEventData):
                     H_0_pdf_slice_single_event += D * self.SurveyAndEventData.fluxes[g]* I[0] * u_r * self.SurveyAndEventData.von_misses(u_phi,
                                                                                     phi, self.SurveyAndEventData.BVM_kappa)
                 H_0_pdf_single_event[H_0_index] += H_0_pdf_slice_single_event
+
             self.H_0_pdf_single_event[event_num] = H_0_pdf_single_event / (
                         np.sum(H_0_pdf_single_event) * (self.H_0_increment))
+
             if event_num == 0:
-                self.H_0_pdf += H_0_pdf_single_event/(np.sum(H_0_pdf_single_event)*self.H_0_increment)
+                self.H_0_pdf += H_0_pdf_single_event / (np.sum(H_0_pdf_single_event) * self.H_0_increment)
             else:
-                self.H_0_pdf *= H_0_pdf_single_event/(np.sum(H_0_pdf_single_event)*self.H_0_increment)
+                self.H_0_pdf *= H_0_pdf_single_event / (np.sum(H_0_pdf_single_event) * self.H_0_increment)
                 self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 

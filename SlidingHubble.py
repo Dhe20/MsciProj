@@ -10,16 +10,16 @@ import matplotlib.patches as mpatches
 
 
 
-Gen = EventGenerator(dimension = 2, size = 50, event_count=10,
+Gen = EventGenerator(dimension = 2, size = 100, event_count=1,
                      luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
-                     cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=100,
+                     cluster_coeff=5, characteristic_luminosity=1, total_luminosity=100,
                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0,
-                     resolution=200, plot_contours=True)
+                     resolution=400, plot_contours=True)
 
 Data = Gen.GetSurveyAndEventData()
 resolution = 100
-H_0_Min = 50
-H_0_Max = 150
+H_0_Min = 1
+H_0_Max = 100
 Y = Inference(Data, H_0_Min = H_0_Min, H_0_Max = H_0_Max, resolution_H_0 = resolution)
 
 class InferenceGUI:
