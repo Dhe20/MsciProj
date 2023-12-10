@@ -1,5 +1,6 @@
 #%%
 import numpy as np
+import scipy as sp
 from scipy.integrate import quad
 from EventGenerator import EventGenerator
 from SurveyAndEventData import SurveyAndEventData
@@ -30,6 +31,8 @@ class Inference(SurveyAndEventData):
 
         })
 
+        self.countour = dict({"gauss": self.gauss_p_hat_g_true,
+                              "BVM": self.BVM_p_hat_g_true})
 
 
     def H_0_Prob(self):
@@ -37,25 +40,50 @@ class Inference(SurveyAndEventData):
         self.H_0_pdf = self.inference_method[self.survey_type+str(self.SurveyAndEventData.dimension)+"d"]()
         return self.H_0_pdf
 
+
+    def BVM_p_hat_g_true(self, dim, D, u_r, u_phi, u_theta=0, phi=0, theta=0):
+        if dim == 2:
+            p = u_r * self.SurveyAndEventData.burr(u_r,
+                self.SurveyAndEventData.BVM_c,
+                self.SurveyAndEventData.BVM_k,
+                D) * self.SurveyAndEventData.von_misses(u_phi,
+                phi, self.SurveyAndEventData.BVM_kappa)
+        elif dim == 3:
+            p = (u_r**2) * np.sin(u_theta) * self.SurveyAndEventData.burr(u_r,
+                self.SurveyAndEventData.BVM_c,
+                self.SurveyAndEventData.BVM_k,
+                D) * self.SurveyAndEventData.von_misses_fisher(
+                u_phi, phi, u_theta, theta, self.SurveyAndEventData.BVM_kappa)
+        return p
+
+    def gauss_p_hat_g_true(self, dim, D, u_r, u_phi, u_theta=0, phi=0, theta=0):
+        if dim == 2:
+            sig = self.SurveyAndEventData.noise_sigma
+            x = D**2 + u_r**2 - 2*u_r*D*(np.cos(u_phi-phi))
+            p = u_r * (1/(2*np.pi*sig**2))*np.exp(-x/(2*sig**2))
+
+        elif dim == 3:
+            sig = self.SurveyAndEventData.noise_sigma
+            x = D**2 + u_r**2 - 2*u_r*D*(np.sin(theta) * np.sin(u_theta) * np.cos(u_phi-phi) + np.cos(theta) * np.cos(u_theta))
+            p = (u_r**2) * np.sin(u_theta) * (1/((2*np.pi*sig**2)**(3/2)))*np.exp(-x/(2*sig**2))
+        return p
+
     def H_0_inference_2d_perfect_survey(self):
         for event_num in tqdm(range(len(self.SurveyAndEventData.BH_detected_coords))):
             H_0_pdf_single_event = np.zeros(self.resolution_H_0)
+            u_r = np.sqrt(np.sum(np.square(self.SurveyAndEventData.BH_detected_coords[event_num])))
+            u_x = self.SurveyAndEventData.BH_detected_coords[event_num][0]
+            u_y = self.SurveyAndEventData.BH_detected_coords[event_num][1]
+            u_phi = np.arctan2(u_y, u_x)
             for H_0_index, H_0 in enumerate(self.H_0_range):
                 H_0_pdf_slice_single_event = 0
-                u_r = np.sqrt(np.sum(np.square(self.SurveyAndEventData.BH_detected_coords[event_num])))
-                u_x = self.SurveyAndEventData.BH_detected_coords[event_num][0]
-                u_y = self.SurveyAndEventData.BH_detected_coords[event_num][1]
-                u_phi = np.arctan2(u_y, u_x)
                 for g in (range(len(self.SurveyAndEventData.detected_luminsoties))):
                     X = self.SurveyAndEventData.detected_coords[g][0]
                     Y = self.SurveyAndEventData.detected_coords[g][1]
                     phi = np.arctan2(Y, X)
                     D = (self.SurveyAndEventData.detected_redshifts[g]) / H_0
-                    H_0_pdf_slice_single_event += D * self.SurveyAndEventData.fluxes[g] * u_r * self.SurveyAndEventData.burr(u_r,
-                                                                                    self.SurveyAndEventData.BVM_c,
-                                                                                    self.SurveyAndEventData.BVM_k,
-                                                                                    D) * self.SurveyAndEventData.von_misses(u_phi,
-                                                                                    phi, self.SurveyAndEventData.BVM_kappa)
+                    H_0_pdf_slice_single_event += D * self.SurveyAndEventData.fluxes[g] * self.countour[self.SurveyAndEventData.noise_distribution](self.SurveyAndEventData.dimension, D, u_r, u_phi, phi=phi)
+
                 H_0_pdf_single_event[H_0_index] += H_0_pdf_slice_single_event
             self.H_0_pdf_single_event[event_num] = H_0_pdf_single_event / (
                         np.sum(H_0_pdf_single_event) * (self.H_0_increment))
@@ -71,14 +99,14 @@ class Inference(SurveyAndEventData):
     def H_0_inference_3d_perfect_survey(self):
         for event_num in tqdm(range(len(self.SurveyAndEventData.BH_detected_coords))):
             H_0_pdf_single_event = np.zeros(self.resolution_H_0)
+            u_r = np.sqrt(np.sum(np.square(self.SurveyAndEventData.BH_detected_coords[event_num])))
+            u_x = self.SurveyAndEventData.BH_detected_coords[event_num][0]
+            u_y = self.SurveyAndEventData.BH_detected_coords[event_num][1]
+            u_z = self.SurveyAndEventData.BH_detected_coords[event_num][2]
+            u_phi = np.arctan2(u_y, u_x)
+            u_theta = np.arctan2(np.sqrt(u_x ** 2 + u_y ** 2), u_z)
             for H_0_index, H_0 in enumerate(self.H_0_range):
                 H_0_pdf_slice_single_event = 0
-                u_r = np.sqrt(np.sum(np.square(self.SurveyAndEventData.BH_detected_coords[event_num])))
-                u_x = self.SurveyAndEventData.BH_detected_coords[event_num][0]
-                u_y = self.SurveyAndEventData.BH_detected_coords[event_num][1]
-                u_z = self.SurveyAndEventData.BH_detected_coords[event_num][2]
-                u_phi = np.arctan2(u_y, u_x)
-                u_theta = np.arctan2(np.sqrt(u_x ** 2 + u_y ** 2), u_z)
                 for g in (range(len(self.SurveyAndEventData.detected_luminsoties))):
                     X = self.SurveyAndEventData.detected_coords[g][0]
                     Y = self.SurveyAndEventData.detected_coords[g][1]
@@ -87,11 +115,7 @@ class Inference(SurveyAndEventData):
                     XY = np.sqrt((X) ** 2 + (Y) ** 2)
                     theta = np.arctan2(XY, Z)
                     D = (self.SurveyAndEventData.detected_redshifts[g]) / H_0
-                    H_0_pdf_slice_single_event += (D**2) * self.SurveyAndEventData.fluxes[g] *(u_r**2) * np.sin(u_theta) * self.SurveyAndEventData.burr(u_r,
-                                                                                    self.SurveyAndEventData.BVM_c,
-                                                                                    self.SurveyAndEventData.BVM_k,
-                                                                                    D) * self.SurveyAndEventData.von_misses_fisher(
-                                                                                    u_phi, phi, u_theta, theta, self.SurveyAndEventData.BVM_kappa)
+                    H_0_pdf_slice_single_event += (D**2) * self.SurveyAndEventData.fluxes[g] * self.countour[self.SurveyAndEventData.noise_distribution](self.SurveyAndEventData.dimension, D, u_r, u_phi, u_theta=u_theta, phi=phi, theta=theta)
                 H_0_pdf_single_event[H_0_index] += H_0_pdf_slice_single_event
 
             self.H_0_pdf_single_event[event_num] = H_0_pdf_single_event/(np.sum(H_0_pdf_single_event)*(self.H_0_increment))
@@ -201,3 +225,5 @@ Gen = EventGenerator(dimension = 2, size = 50, event_count=50,
 Data = Gen.GetSurveyAndEventData()
 Y = Inference(Data, survey_type='perfect')
 ''' 
+
+# %%

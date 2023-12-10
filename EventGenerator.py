@@ -68,7 +68,8 @@ class EventGenerator(Universe):
                                      "Proportional":self.proportional_galaxy})
         self.coord_noise_generator = dict({"gauss": self.gauss_noise,
                                             "BVM": self.BVM_sample})
-        self.contour_generator = dict({"gauss": self.gauss_2d,
+        self.contour_generator = dict({"gauss_2d": self.gauss_2d,
+                                       "gauss_3d": self.gauss_3d,
                                        "BVM_2d": self.BVMShell,
                                        "BVM_3d" : self.BVMShell_3d
                                        })
@@ -188,6 +189,20 @@ class EventGenerator(Universe):
         rv = sp.stats.multivariate_normal(mu, [[sig_x, sig_xy], [sig_xy, sig_y]])
         Z = rv.pdf(np.dstack((x, y)))
         return Z
+    
+    def gauss_3d(self, mu):
+        sig_x = self.noise_sigma**2
+        sig_y = self.noise_sigma**2
+        sig_z = self.noise_sigma**2
+        sig_xy = 0
+        sig_xz = 0
+        sig_yz = 0
+        x = self.BH_contour_meshgrid[0]
+        y = self.BH_contour_meshgrid[1]
+        z = self.BH_contour_meshgrid[2]
+        rv = sp.stats.multivariate_normal(mu, [[sig_x, sig_xy, sig_xz], [sig_xy, sig_y, sig_yz], [sig_xz, sig_yz, sig_z]])
+        Z = rv.pdf(np.dstack((x, y, z)))
+        return Z
 
     def d2_gauss(self, X, Y, u_x, u_y, s_x, s_y):
         Z = np.exp(-(((X-u_x)/s_x)**2 + ((Y-u_y)/s_y)**2)/2)/(2*np.pi*s_x*s_y)
@@ -270,9 +285,9 @@ class EventGenerator(Universe):
     def GetSurveyAndEventData(self):
         return SurveyAndEventData(dimension = self.dimension, detected_coords = self.detected_coords,
                                   detected_luminosities = self.detected_luminosities,
-                                  fluxes = self.fluxes, BH_detected_coords = self.BH_detected_coords, BVM_k = self.BVM_k,
-                                  BVM_c = self.BVM_c, BVM_kappa = self.BVM_kappa, BurrFunc = self.burr, VonMissesFunc= self.von_misses, 
-                                  VonMissesFisherFunc = self.von_misses_fisher_3d, detected_redshifts=self.detected_redshifts, detected_redshifts_uncertainties = self.detected_redshifts_uncertainties)
+                                  fluxes = self.fluxes, BH_detected_coords = self.BH_detected_coords, contour_type=self.contour_type, noise_distribution = self.noise_distribution, noise_sigma = self.noise_sigma, 
+                                  BVM_k = self.BVM_k, BVM_c = self.BVM_c, BVM_kappa = self.BVM_kappa, BurrFunc = self.burr, VonMissesFunc= self.von_misses, VonMissesFisherFunc = self.von_misses_fisher_3d, 
+                                  detected_redshifts=self.detected_redshifts, detected_redshifts_uncertainties = self.detected_redshifts_uncertainties)
 
 
 
@@ -287,3 +302,5 @@ class EventGenerator(Universe):
 
 
 
+
+# %%
