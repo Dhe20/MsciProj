@@ -2,8 +2,7 @@
 import numpy as np
 import scipy as sp
 from scipy.integrate import quad
-from EventGenerator import EventGenerator
-from SurveyAndEventData import SurveyAndEventData
+from Components.SurveyAndEventData import SurveyAndEventData
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 

@@ -1,10 +1,9 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import random
-from Galaxy import Galaxy
+from Components.Galaxy import Galaxy
 import powerbox as pbox
-import BB1_sampling as BB1Pack
+from Tools import BB1_sampling as BB1Pack
 from scipy.special import gamma, gammaincc
 
 
@@ -14,10 +13,17 @@ class Universe:
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
                  alpha = .3, characteristic_luminosity = 1, min_lum = 0,
                  max_lum = .5, H_0 = 70, redshift_noise_sigma=0.,
-                 lower_lim=1, beta=-1.5):
+                 lower_lim=1, beta=-1.5, seed = None):
 
         self.H_0 = H_0
         self.c = 1
+
+        if seed:
+            self.seed = seed
+        else:
+            self.seed = random.randint(1, 1000)
+        self.np_rand_state = np.random.default_rng(self.seed)
+        self.rand_rand_state = random.Random(self.seed)
 
         self.redshift_noise_sigma = redshift_noise_sigma
 
@@ -34,7 +40,7 @@ class Universe:
         self.beta = beta
 
         self.cluster_coeff = cluster_coeff
-        self.max_D = self.size*0.7
+        self.max_D = self.size*0.4
         # self.n = self.L_0 / self.L_star
 
         self.luminosity_generator = dict({"Uniform": self.uniform_galaxies,
@@ -53,15 +59,14 @@ class Universe:
 
         self.true_coords = self.coord_generator[coord_gen_type]()
 
-        rng = np.random.default_rng()
-        self.detected_coords, self.distance_range = self.distance_error(rng)
+        self.detected_coords, self.distance_range = self.distance_error()
 
         self.detected_redshifts = np.zeros(len(self.detected_coords))
         # Not entirely sure if z_sigma is measurable
         self.detected_redshifts_uncertainties = np.zeros(len(self.detected_coords))
         for i in range(len(self.detected_redshifts)):
             self.detected_redshifts[i] = self.H_0*np.sqrt(np.sum(np.square(self.detected_coords[i])))/self.c
-            # Also it should depend o the true z not z_hat
+            # Also it should depend on the true z not z_hat
             self.detected_redshifts_uncertainties[i] = 300000*redshift_noise_sigma*(1+self.detected_redshifts[i]/300000)**3
 
 
@@ -111,8 +116,7 @@ class Universe:
     def schechter_luminosity(self):
         N_0 = self.L_0 / (self.L_star * (self.alpha))
         self.n = round(N_0)
-        rng = np.random.default_rng()
-        self.gal_lum = rng.gamma(self.alpha, scale=self.L_star, size=self.n)
+        self.gal_lum = self.np_rand_state.gamma(self.alpha, scale=self.L_star, size=self.n)
         # if any(self.gal_lum == 0.0):
         #     s = set(self.gal_lum)
         #     self.gal_lum += sorted(s)[1]
@@ -124,10 +128,9 @@ class Universe:
         N_0 = self.L_0 / E_L
 
         self.n = round(N_0)
-        rng = np.random.default_rng()
         gal_lum = []
         while len(gal_lum) < self.n:
-            l = rng.gamma(self.alpha, scale=self.L_star, size=1)[0]
+            l = self.np_rand_state.gamma(self.alpha, scale=self.L_star, size=1)[0]
             if l > self.min_L:
                 gal_lum.append(l)
         self.gal_lum = np.array(gal_lum)
@@ -150,13 +153,13 @@ class Universe:
     def uniform_galaxies(self):
         N_0 = self.L_0 / (0.5 * (self.min_L + self.max_L))
         self.n = round(N_0)
-        self.gal_lum = np.random.uniform(0, 1, size=self.n)
+        self.gal_lum = self.np_rand_state.uniform(0, 1, size=self.n)
         return self.gal_lum
 
     def random_coords(self):
         random_coords = np.zeros((self.n, self.dimension))
         for i in range(self.n):
-            random_coords[i] = np.array([(random.random()-0.5)*2*self.size for _ in range(self.dimension)])
+            random_coords[i] = np.array([(self.rand_rand_state.random()-0.5)*2*self.size for _ in range(self.dimension)])
         return random_coords
 
     def clustered_coords(self):
@@ -168,28 +171,28 @@ class Universe:
             dim=self.dimension,  # 2D box
             pk=power,  # The power-spectrum
             boxlength=1.,  # Size of the box (sets the units of k in pk)
-            # seed=self.seed  # Set a seed to ensure the box looks the same every time (optional)
+            seed=self.seed  # Set a seed to ensure the box looks the same every time (optional)
         )
 
         num_of_galaxies = self.n
-        clustered_sample = lnpb.create_discrete_sample(nbar=int(2 * num_of_galaxies),
+        clustered_sample = lnpb.create_discrete_sample(nbar=int(1.3 * num_of_galaxies),
                                                       randomise_in_cell=True,  # nbar specifies the number density
                                                       # min_at_zero=False  # by default the samples are centred at 0. This shifts them to be positive.
                                                       )
         index_of_galaxies = list(np.arange(0, len(clustered_sample), 1))
-        selected_index = random.sample(index_of_galaxies, k=num_of_galaxies)
+        selected_index = self.rand_rand_state.sample(index_of_galaxies, k=num_of_galaxies)
         selected_galaxies = clustered_sample[selected_index, :]*self.size*2
 
         return selected_galaxies
 
-    def distance_error(self, rng):
+    def distance_error(self):
         detected_coords = np.zeros((self.n, self.dimension))
         distance_range = np.zeros((self.n, 2, self.dimension))
         for i in range(self.n):
             r = np.sqrt(np.sum(np.square(self.true_coords[i])))
             rhat = self.true_coords[i] / r
             sigma = self.redshift_noise_sigma*(r/(np.sqrt(self.dimension)*self.size))
-            noise = rng.normal(loc=0.0, scale=sigma, size=1)
+            noise = self.np_rand_state.normal(loc=0.0, scale=sigma, size=1)
             detected_coords[i][:] = self.true_coords[i] + rhat*noise
             distance_range[i][:] = np.array([self.true_coords[i] - rhat*sigma*3,
                                              self.true_coords[i] + rhat*sigma*3])
