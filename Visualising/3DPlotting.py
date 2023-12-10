@@ -1,10 +1,6 @@
-from EventGenerator import EventGenerator
+from Components.EventGenerator import EventGenerator
 from mayavi import mlab
 import numpy as np
-from tvtk.tools import visual
-from scipy.interpolate import griddata
-import numpy as np
-import cmath
 from scipy import interpolate
 
 
@@ -22,10 +18,6 @@ N=10
 x = Gen.detected_coords[:,0]
 y = Gen.detected_coords[:,1]
 z = Gen.detected_coords[:,2]
-
-
-
-
 
 
 

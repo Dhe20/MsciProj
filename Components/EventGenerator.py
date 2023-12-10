@@ -1,35 +1,43 @@
 #%%
 from matplotlib import pyplot as plt
-from Universe import Universe
+from Components.Universe import Universe
 import random
 import scipy as sp
-from SurveyAndEventData import SurveyAndEventData
-from mayavi import mlab
+from Components.SurveyAndEventData import SurveyAndEventData
 import numpy as np
 from scipy import interpolate
+from Visualising.Visualiser_3d import Visualiser_3d
 
 class EventGenerator(Universe):
     def __init__(self, dimension = 2, luminosity_gen_type = "Fixed",
                  coord_gen_type = "Clustered",
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
                  alpha = .3, characteristic_luminosity = 1, min_lum = 0,
-                 max_lum = 1, event_count = 1, event_distribution = "Random",
+                 max_lum = 1, event_rate = 1, sample_time = .01 ,event_distribution = "Random",
                  noise_distribution = "BVM", contour_type = "BVM",
                  noise_std = 3, resolution = 400, BVM_c = 15,
                  BVM_k = 2, BVM_kappa = 200, redshift_noise_sigma = 0,
-                 plot_contours = True):
+                 plot_contours = True, seed = None, event_count_type = "Poisson"):
 
         super().__init__(dimension = dimension, luminosity_gen_type = luminosity_gen_type,
                          coord_gen_type = coord_gen_type,
                          cluster_coeff = cluster_coeff, total_luminosity = total_luminosity,
                          size = size, alpha = alpha, characteristic_luminosity = characteristic_luminosity,
-                         min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma
+                         min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma, seed = seed
                          )
 
         self.plot_contours = plot_contours
 
         self.event_distribution = event_distribution
-        self.event_count = event_count
+
+        self.event_rate = event_rate
+        self.sample_time = sample_time
+        self.event_count_type = event_count_type
+        self.event_count_generator =  dict({
+            "Poisson" : self.poisson_event_count,
+        })
+        self.event_count = self.event_count_generator[self.event_count_type]()
+
         self.resolution = resolution
         self.confidence_levels = [0.9973,  0.9545, 0.6827]
 
@@ -75,15 +83,22 @@ class EventGenerator(Universe):
         self.generate_events(event_distribution = self.event_distribution,
                              noise_distribution = self.noise_distribution)
 
+    def poisson_event_count(self):
+        return self.np_rand_state.poisson(lam = self.event_rate*self.L_0*self.sample_time)
+
     def generate_events(self, event_distribution, noise_distribution):
         event_count = 0
+        detected_event_count = 0
+        detected_event_indices = []
         while event_count < self.event_count:
             selected = self.event_generator[event_distribution]()
             mu = self.true_coords[selected]
             noise = self.coord_noise_generator[noise_distribution](mu)
             #noise = self.coord_noise_generator[noise_distribution]()
             if np.sqrt(np.sum(np.square(self.true_coords[selected] + noise))) > self.max_D:
+                event_count += 1
                 continue
+
             self.BH_galaxies[event_count] = self.galaxies[selected]
             self.BH_true_coords[event_count] = self.true_coords[selected]
             self.BH_detected_coords[event_count] = self.true_coords[selected] + noise
@@ -92,30 +107,41 @@ class EventGenerator(Universe):
             if self.plot_contours:
                 grid = self.contour_generator[self.contour_type](self.BH_detected_coords[event_count])
                 self.BH_detected_meshgrid[event_count] = grid/grid.sum()
+
+            detected_event_indices.append(event_count)
             event_count+=1
+            detected_event_count +=1
+
+
+        self.detected_event_count = detected_event_count
+
+        self.BH_galaxies = self.BH_galaxies[detected_event_indices]
+        self.BH_true_coords = self.BH_true_coords[detected_event_indices]
+        self.BH_detected_luminosities = self.BH_detected_luminosities[detected_event_indices]
+        self.BH_true_luminosities = self.BH_true_luminosities[detected_event_indices]
+        self.BH_detected_coords = self.BH_detected_coords[detected_event_indices]
+        self.BH_detected_meshgrid = self.BH_detected_meshgrid[detected_event_indices]
 
     def random_galaxy(self):
-        return random.randint(0, self.n-1)
+        return self.rand_rand_state.randint(0, self.n-1)
 
     def proportional_galaxy(self):
         n_list = list(np.arange(0,self.n))
-        source = random.choices(n_list, weights=self.true_luminosities)[0]
+        source = self.rand_rand_state.choices(n_list, weights=self.true_luminosities)[0]
         return source
 
     def gauss_noise(self, mu):
-        rng = np.random.default_rng()
-        noise = rng.normal(loc=0.0, scale=self.noise_sigma, size=self.dimension)
+        noise = self.np_rand_state.normal(loc=0.0, scale=self.noise_sigma, size=self.dimension)
         return noise
 
     def BVM_sample(self, mu):
         if self.dimension == 3:
             r_grid = np.linspace(0, np.sqrt(2)*self.size, 10*self.resolution)
             b_r = np.linalg.norm(mu)
-
             burr_w = (r_grid**2)*self.burr(r_grid, self.BVM_c, self.BVM_k, b_r)
             burr_w = burr_w/np.sum(burr_w)
             self.dbug1 = burr_w
-            r_samp = np.random.choice(r_grid, p=burr_w)
+            r_samp = self.np_rand_state.choice(r_grid, p=burr_w)
             
             phi, theta = np.meshgrid(np.linspace(0, 2*np.pi, 10*self.resolution),
                             np.linspace(0, np.pi, 10*self.resolution))
@@ -125,7 +151,7 @@ class EventGenerator(Universe):
             vm_weight = 4*np.pi*self.von_misses_fisher_3d(phi, theta, phi_mu, theta_mu, self.BVM_kappa)
             vm_weight = vm_weight/np.sum(vm_weight)
             flat = vm_weight.flatten()
-            sample_index = np.random.choice(len(flat), p=flat)
+            sample_index = self.np_rand_state.choice(len(flat), p=flat)
             adjusted_index = np.unravel_index(sample_index, vm_weight.shape)
             phi_samp = phi[adjusted_index]
             theta_samp = theta[adjusted_index]
@@ -143,14 +169,14 @@ class EventGenerator(Universe):
 
             burr_w = r_grid*self.burr(r_grid, self.BVM_c, self.BVM_k, b_r)
             burr_w = burr_w/np.sum(burr_w)
-            r_samp = np.random.choice(r_grid, p=burr_w)
+            r_samp = self.np_rand_state.choice(r_grid, p=burr_w)
 
             phi_grid = np.linspace(0, 2*np.pi, 1000*self.resolution)
             phi_mu = np.arctan2(mu[1], mu[0])
 
             vm_weight = self.von_misses(phi_grid, phi_mu, self.BVM_kappa)
             vm_weight = vm_weight/np.sum(vm_weight)
-            phi_samp = np.random.choice(phi_grid, p=vm_weight)
+            phi_samp = self.np_rand_state.choice(phi_grid, p=vm_weight)
 
             x = r_samp*np.cos(phi_samp)
             y = r_samp*np.sin(phi_samp)
@@ -180,36 +206,7 @@ class EventGenerator(Universe):
             if show:
                 plt.show()
         else:
-            from mayavi import mlab
-            x = self.detected_coords[:, 0]
-            y = self.detected_coords[:, 1]
-            z = self.detected_coords[:, 2]
-            fig = mlab.figure(figure=None, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(600, 600))
-            # mlab.points3d(0, 0, 0, color=(1.0, 1.0, 1.0), mode='axes', scale_factor=self.size / 20)
-            mlab.points3d(x, y, z, self.detected_luminosities ** (1 / 3), color=(1.0, 1.0, 1.0), mode='sphere',
-                          opacity=1, scale_factor=1)
-            # mlab.points3d(0, 0, 0, 1, color=(0.0, 0.0, 1.0), mode='sphere', scale_factor = 1)
-            mlab.points3d(0, 0, 0, color=(1.0, 1.0, 1.0), mode='axes', scale_factor=self.size / 20)
-            for (xhat, yhat, zhat, s) in zip(*zip(*self.BH_true_coords), self.BH_true_luminosities ** (1 / 3)):
-                mlab.points3d(xhat, yhat, zhat, s * 1.01, color=(0.0, 1.0, 0.0), mode='sphere', opacity=1,
-                              scale_factor=1)
-            for (xhat, yhat, zhat, s) in zip(*zip(*self.BH_detected_coords), self.BH_detected_luminosities ** (1 / 3)):
-                mlab.points3d(xhat, yhat, zhat, s, color=(1.0, 0.0, 0.0), mode='sphere', opacity=1, scale_factor=1)
-            mlab.points3d(0, 0, 0, self.max_D * 2, color=(1.0, 1.0, 1.0), mode='sphere', opacity=0.05, scale_factor=1)
-
-            for i, PDF in enumerate(self.BH_detected_meshgrid):
-                X, Y, Z = self.BH_contour_meshgrid
-                n = 1000
-                PDF = PDF / PDF.sum()
-                t = np.linspace(0, PDF.max(), n)
-                integral = (((PDF >= t[:, None, None, None]) * PDF).sum(axis=(1, 2, 3)))
-                f = interpolate.interp1d(integral, t)
-                t_contours = f(np.array([0.9973, 0.9545, 0.6827]))
-
-                mlab.contour3d(X, Y, Z, PDF, contours=[*t_contours], opacity=0.15, colormap="RdBu")
-
-            mlab.outline(extent=[-self.size, self.size, -self.size, self.size, -self.size, self.size])
-            mlab.show()
+            Visualiser_3d(Gen = self).plot_universe_and_events()
 
 
     def gauss_2d(self, mu):
@@ -310,12 +307,12 @@ class EventGenerator(Universe):
 
 
 
-Gen = EventGenerator(dimension = 3, size = 50, event_count=5, resolution = 100,
+Gen = EventGenerator(dimension = 3, size = 50, resolution = 100,
                       luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Random",
-                      cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=100,
-                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0.01)
+                      cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=100, sample_time=0.01, event_rate=5,
+                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0.01, plot_contours=True)
 
-
+print(Gen.detected_event_count)
 Gen.plot_universe_and_events()
 
 

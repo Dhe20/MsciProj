@@ -1,5 +1,5 @@
-from EventGenerator import EventGenerator
-from Inference import Inference
+from Components.EventGenerator import EventGenerator
+from Components.Inference import Inference
 import numpy as np
 from matplotlib import gridspec, collections
 import matplotlib.pyplot as plt
@@ -8,19 +8,6 @@ from matplotlib.widgets import Button, Slider
 import seaborn as sns
 import matplotlib.patches as mpatches
 
-
-
-Gen = EventGenerator(dimension = 2, size = 100, event_count=1,
-                     luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
-                     cluster_coeff=5, characteristic_luminosity=1, total_luminosity=100,
-                     event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0,
-                     resolution=400, plot_contours=True)
-
-Data = Gen.GetSurveyAndEventData()
-resolution = 100
-H_0_Min = 1
-H_0_Max = 100
-Y = Inference(Data, H_0_Min = H_0_Min, H_0_Max = H_0_Max, resolution_H_0 = resolution)
 
 class InferenceGUI:
     def __init__(self, Inference_Object, Data_Object, Generator_Object):
@@ -102,11 +89,11 @@ class InferenceGUI:
         y = coords[:,1]
         patches = []
         for (x, y, s) in zip(x, y, self.Gen.detected_luminosities):
-            patches.append(plt.Circle(xy=(x, y), radius=s + 0.001 * self.Gen.L_star, color="white", zorder=3))
-        self.collection = collections.PatchCollection(patches, alpha=1)
+            patches.append(plt.Circle(xy=(x, y), radius=s + 0.001 * self.Gen.L_star, color="w", zorder=3))
+        self.collection = collections.PatchCollection(patches, alpha=1, match_original=True)
         self.ax1.add_collection(self.collection)
-        self.ax1.set_ylim(-self.Gen.size,self.Gen.size)
-        self.ax1.set_xlim(-self.Gen.size,self.Gen.size)
+        self.ax1.set_ylim(-self.Gen.size/2,self.Gen.size/2)
+        self.ax1.set_xlim(-self.Gen.size/2,self.Gen.size/2)
 
         self.ax2.plot(self.I.H_0_range, self.H_0_Pdf, c='w', label = 'Combined H_0 Posterior')
 
@@ -136,7 +123,7 @@ class InferenceGUI:
             valmin=min(self.I.H_0_range),
             valmax=max(self.I.H_0_range)-1,
             valinit=70,
-            valstep=np.linspace(H_0_Min, H_0_Max, resolution),
+            valstep=np.linspace(self.I.H_0_Min, self.I.H_0_Max, self.I.resolution_H_0),
             initcolor='none'
         )
 
@@ -186,15 +173,27 @@ class InferenceGUI:
         y = coords[:, 1]
         patches = []
         for (x, y, s) in zip(x, y, self.Gen.detected_luminosities):
-            patches.append(plt.Circle(xy=(x, y), radius=s + 0.001 * self.Gen.L_star, color="white", zorder=3))
+            patches.append(plt.Circle(xy=(x, y), radius=s, color="w", zorder=3))
 
-        self.collection = collections.PatchCollection(patches, alpha=1)
+        self.collection = collections.PatchCollection(patches, alpha=1, match_original=True)
         self.ax1.add_collection(self.collection)
         self.fig.canvas.draw_idle()
 
     def reset(self, event):
         self.H_0_slider.reset()
 
+
+Gen = EventGenerator(dimension = 2, size = 100, event_count=5,
+                     luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
+                     cluster_coeff=5, characteristic_luminosity=1, total_luminosity=100,
+                     event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0,
+                     resolution=400, plot_contours=True, seed = 42)
+
+Data = Gen.GetSurveyAndEventData()
+resolution = 100
+H_0_Min = 1
+H_0_Max = 140
+Y = Inference(Data, H_0_Min = H_0_Min, H_0_Max = H_0_Max, resolution_H_0 = resolution)
 
 GUI = InferenceGUI(Y, Data, Gen)
 GUI.View()

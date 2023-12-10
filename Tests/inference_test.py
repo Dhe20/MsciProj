@@ -1,7 +1,7 @@
 #%%
 import numpy as np
-from EventGenerator import EventGenerator
-from Inference import Inference
+from Components.EventGenerator import EventGenerator
+from Components.Inference import Inference
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
