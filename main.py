@@ -20,6 +20,5 @@ Data = Gen.GetSurveyAndEventData()
 #
 # GUI = InferenceGUI(Y, Data, Gen)
 # GUI.View()
-
 my_model = Sliding_Universe_3d(Gen)
 my_model.configure_traits()
