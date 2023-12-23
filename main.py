@@ -34,8 +34,8 @@ Y.H_0_Prob()
 
 # my_model = Sliding_Universe_3d(Gen)
 # my_model.configure_traits()
-
+#
 for elem in Y.H_0_range:
-    plt.plot(elem, Y.g_H_0[str(elem)][6], "x")
+    plt.plot(elem, Y.g_H_0[str(elem)][0], "x")
 
 plt.show()

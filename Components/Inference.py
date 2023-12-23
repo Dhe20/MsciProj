@@ -109,8 +109,8 @@ class Inference(SurveyAndEventData):
             u_z = self.SurveyAndEventData.BH_detected_coords[event_num][2]
             u_phi = np.arctan2(u_y, u_x)
             u_theta = np.arctan2(np.sqrt(u_x ** 2 + u_y ** 2), u_z)
-            g_H_0_slice=[]
             for H_0_index, H_0 in enumerate(self.H_0_range):
+                g_H_0_slice = []
                 H_0_pdf_slice_single_event = 0
                 for g in (range(len(self.SurveyAndEventData.detected_luminsoties))):
                     X = self.SurveyAndEventData.detected_coords[g][0]
@@ -121,13 +121,13 @@ class Inference(SurveyAndEventData):
                     theta = np.arctan2(XY, Z)
                     D = (self.SurveyAndEventData.detected_redshifts[g]) / H_0
                     galaxy_H_0_contribution = ((D**2) * self.SurveyAndEventData.fluxes[g]
-                                                * self.countour[self.SurveyAndEventData.noise_distribution](
-                                self.SurveyAndEventData.dimension, D, u_r, u_phi, u_theta=u_theta, phi=phi, theta=theta))
+                                                * self.countour[self.SurveyAndEventData.noise_distribution]
+                                (self.SurveyAndEventData.dimension, D, u_r, u_phi, u_theta=u_theta, phi=phi, theta=theta))
 
                     g_H_0_slice.append(galaxy_H_0_contribution)
                     H_0_pdf_slice_single_event += galaxy_H_0_contribution
                 H_0_pdf_single_event[H_0_index] += H_0_pdf_slice_single_event
-
+                self.g_H_0[str(H_0)] = g_H_0_slice
             self.H_0_pdf_single_event[event_num] = H_0_pdf_single_event #/ (
                        # np.sum(H_0_pdf_single_event) * (self.H_0_increment))
             if event_num == 0:
