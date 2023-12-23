@@ -1,5 +1,4 @@
 from mayavi import mlab
-
 from traits.api import HasTraits, Range, Instance,on_trait_change
 from traitsui.api import View, Item, Group
 from mayavi.core.ui.api import MayaviScene, SceneEditor, MlabSceneModel
@@ -25,7 +24,6 @@ class Sliding_Universe_3d(HasTraits):
         self.thetas = np.arccos(self.z/self.Rs)
 
 
-
         self.s = mlab.points3d(self.x, self.y, self.z, self.Gen.detected_luminosities ** (1 / 3), figure=self.scene.mayavi_scene,
                                scale_factor = 1, color = (1,1,1),  mode='sphere')
 
@@ -47,8 +45,6 @@ class Sliding_Universe_3d(HasTraits):
             extent=[-self.Gen.size, self.Gen.size, -self.Gen.size, self.Gen.size, -self.Gen.size, self.Gen.size],)
 
         self.scene.background = (0,0,0)
-
-
 
     @on_trait_change('slider')
     def slider_changed(self):
@@ -73,4 +69,3 @@ class Sliding_Universe_3d(HasTraits):
                      ),
                 Group("slider"),
                 )
-

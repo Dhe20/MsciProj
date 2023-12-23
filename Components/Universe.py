@@ -18,11 +18,12 @@ class Universe:
         self.H_0 = H_0
         self.c = 1
 
-        if seed:
+        if seed is not None:
             self.seed = seed
         else:
             self.seed = random.randint(1, 1000)
-        self.np_rand_state = np.random.default_rng(self.seed)
+
+        self.np_rand_state = np.random.default_rng(seed = self.seed)
         self.rand_rand_state = random.Random(self.seed)
 
         self.redshift_noise_sigma = redshift_noise_sigma
@@ -59,7 +60,11 @@ class Universe:
 
         self.true_coords = self.coord_generator[coord_gen_type]()
 
-        self.detected_coords, self.distance_range = self.distance_error()
+        if self.redshift_noise_sigma>0:
+            self.detected_coords, self.distance_range = self.distance_error()
+        else:
+            self.detected_coords = self.true_coords
+            self.distance_range = np.array([np.array([coords, coords]) for coords in self.true_coords])
 
         self.detected_redshifts = np.zeros(len(self.detected_coords))
         # Not entirely sure if z_sigma is measurable
@@ -225,6 +230,6 @@ class Universe:
 # Gen = Universe(size = 50, dimension = 2,
 #                luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
 #                cluster_coeff=0, characteristic_luminosity=.1, total_luminosity=500
-#                ,lower_lim=0.05, min_lum=0.05)
+#                ,lower_lim=0.05, min_lum=0.05, seed = 1)
 # Gen.plot_universe()
 #
