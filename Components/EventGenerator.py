@@ -15,7 +15,7 @@ class EventGenerator(Universe):
                  alpha = .3, characteristic_luminosity = 1, min_lum = 0,
                  max_lum = 1, event_rate = 1, sample_time = .01 ,event_distribution = "Random",
                  noise_distribution = "BVM", contour_type = "BVM",
-                 noise_std = 3, resolution = 400, BVM_c = 15,
+                 noise_std = 3, resolution = 400, BVM_c = 15, H_0 = 70,
                  BVM_k = 2, BVM_kappa = 200, redshift_noise_sigma = 0,
                  plot_contours = True, seed = None, event_count_type = "Poisson"):
 
@@ -23,7 +23,8 @@ class EventGenerator(Universe):
                          coord_gen_type = coord_gen_type,
                          cluster_coeff = cluster_coeff, total_luminosity = total_luminosity,
                          size = size, alpha = alpha, characteristic_luminosity = characteristic_luminosity,
-                         min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma, seed = seed
+                         min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma,
+                         seed = seed, H_0 = H_0
                          )
 
         self.plot_contours = plot_contours
@@ -84,9 +85,6 @@ class EventGenerator(Universe):
         self.generate_events(event_distribution = self.event_distribution,
                              noise_distribution = self.noise_distribution)
 
-    def poisson_event_count(self):
-        return self.np_rand_state.poisson(lam = self.event_rate*self.L_0*self.sample_time)
-
     def generate_events(self, event_distribution, noise_distribution):
         event_count = 0
         detected_event_count = 0
@@ -97,6 +95,7 @@ class EventGenerator(Universe):
             noise = self.coord_noise_generator[noise_distribution](mu)
             #noise = self.coord_noise_generator[noise_distribution]()
             if np.sqrt(np.sum(np.square(self.true_coords[selected] + noise))) > self.max_D:
+                # print(event_count)
                 event_count += 1
                 continue
 
@@ -108,20 +107,24 @@ class EventGenerator(Universe):
             if self.plot_contours:
                 grid = self.contour_generator[self.contour_type](self.BH_detected_coords[event_count])
                 self.BH_detected_meshgrid[event_count] = grid/grid.sum()
-
             detected_event_indices.append(event_count)
             event_count+=1
-            detected_event_count +=1
-
+            detected_event_count += + 1
 
         self.detected_event_count = detected_event_count
 
         self.BH_galaxies = self.BH_galaxies[detected_event_indices]
-        self.BH_true_coords = self.BH_true_coords[detected_event_indices]
+        self.BH_true_coords = self.BH_true_coords[detected_event_indices,:]
         self.BH_detected_luminosities = self.BH_detected_luminosities[detected_event_indices]
         self.BH_true_luminosities = self.BH_true_luminosities[detected_event_indices]
-        self.BH_detected_coords = self.BH_detected_coords[detected_event_indices]
-        self.BH_detected_meshgrid = self.BH_detected_meshgrid[detected_event_indices]
+        self.BH_detected_coords = self.BH_detected_coords[detected_event_indices,:]
+        if self.plot_contours:
+            self.BH_detected_meshgrid = self.BH_detected_meshgrid[detected_event_indices,:]
+
+    def poisson_event_count(self):
+        self.np_rand_state2 = np.random.default_rng(1)
+        event_count = self.np_rand_state.poisson(lam = self.event_rate*self.L_0*self.sample_time)
+        return event_count
 
     def random_galaxy(self):
         return self.rand_rand_state.randint(0, self.n-1)
@@ -219,7 +222,7 @@ class EventGenerator(Universe):
         rv = sp.stats.multivariate_normal(mu, [[sig_x, sig_xy], [sig_xy, sig_y]])
         Z = rv.pdf(np.dstack((x, y)))
         return Z
-    
+
     def gauss_3d(self, mu):
         sig_x = self.noise_sigma**2
         sig_y = self.noise_sigma**2
@@ -315,20 +318,23 @@ class EventGenerator(Universe):
     def GetSurveyAndEventData(self):
         return SurveyAndEventData(dimension = self.dimension, detected_coords = self.detected_coords,
                                   detected_luminosities = self.detected_luminosities,
-                                  fluxes = self.fluxes, BH_detected_coords = self.BH_detected_coords, contour_type=self.contour_type, noise_distribution = self.noise_distribution, noise_sigma = self.noise_sigma, 
-                                  BVM_k = self.BVM_k, BVM_c = self.BVM_c, BVM_kappa = self.BVM_kappa, BurrFunc = self.burr, VonMissesFunc= self.von_misses, VonMissesFisherFunc = self.von_misses_fisher_3d, 
-                                  detected_redshifts=self.detected_redshifts, detected_redshifts_uncertainties = self.detected_redshifts_uncertainties)
+                                  fluxes = self.fluxes, BH_detected_coords = self.BH_detected_coords, BVM_k = self.BVM_k,
+                                  BVM_c = self.BVM_c, BVM_kappa = self.BVM_kappa, BurrFunc = self.burr, VonMissesFunc= self.von_misses, 
+                                  VonMissesFisherFunc = self.von_misses_fisher_3d, detected_redshifts=self.detected_redshifts,
+                                  detected_redshifts_uncertainties = self.detected_redshifts_uncertainties, contour_type=self.contour_type,
+                                  max_D = self.max_D, detected_event_count=self.detected_event_count,
+                                  sample_time = self.sample_time)
 
 
 
-
-Gen = EventGenerator(dimension = 3, size = 50, resolution = 100,
-                      luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Random",
-                      cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=100, sample_time=0.01, event_rate=5,
-                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0.01, plot_contours=True)
-
-print(Gen.detected_event_count)
-Gen.plot_universe_and_events()
+#
+# Gen = EventGenerator(dimension = 3, size = 50, resolution = 100,
+#                       luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Random",
+#                       cluster_coeff=5, characteristic_luminosity=5, total_luminosity=100, sample_time=0.01, event_rate=10,
+#                       event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0.0, plot_contours=True, seed = 1)
+# print("plotting")
+# print(Gen.detected_event_count)
+# Gen.plot_universe_and_events()
 
 
 

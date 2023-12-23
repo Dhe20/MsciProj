@@ -4,7 +4,6 @@ class Visualiser_3d:
     def __init__(self, Gen
                          ):
 
-
         self.Gen = Gen
 
     def plot_universe_and_events(self):
@@ -38,6 +37,3 @@ class Visualiser_3d:
 
         mlab.outline(extent=[-self.Gen.size, self.Gen.size, -self.Gen.size, self.Gen.size, -self.Gen.size, self.Gen.size])
         mlab.show()
-
-    # def Dynamic_Plot(self):
-    #     Dyanmic_Plot(Gen)

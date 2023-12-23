@@ -3,12 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec, collections
 
-df = pd.read_csv("SampleUniverse_3_50_0.1_50_3813.csv", index_col = 0)
+#SampleUniverse_3_50_0.1_50_3508.csv
+df = pd.read_csv("SampleUniverse_3_50_0.1_100_4032.csv", index_col = 0)
 
 spec = gridspec.GridSpec(ncols=1, nrows=3,
                          height_ratios=[4, 1, 1], wspace=0.2,
                          hspace=0.2)
-
 
 
 fig = plt.figure(figsize = (12,8))

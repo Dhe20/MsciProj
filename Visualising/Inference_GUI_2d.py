@@ -183,17 +183,17 @@ class InferenceGUI:
         self.H_0_slider.reset()
 
 
-Gen = EventGenerator(dimension = 2, size = 100, event_count=5,
-                     luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
-                     cluster_coeff=5, characteristic_luminosity=1, total_luminosity=100,
-                     event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0,
-                     resolution=400, plot_contours=True, seed = 42)
+# Gen = EventGenerator(dimension = 2, size = 100, event_count=5,
+#                      luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
+#                      cluster_coeff=5, characteristic_luminosity=1, total_luminosity=100,
+#                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0,
+#                      resolution=400, plot_contours=True, seed = 42)
 
-Data = Gen.GetSurveyAndEventData()
-resolution = 100
-H_0_Min = 1
-H_0_Max = 140
-Y = Inference(Data, H_0_Min = H_0_Min, H_0_Max = H_0_Max, resolution_H_0 = resolution)
-
-GUI = InferenceGUI(Y, Data, Gen)
-GUI.View()
+# Data = Gen.GetSurveyAndEventData()
+# resolution = 100
+# H_0_Min = 1
+# H_0_Max = 140
+# Y = Inference(Data, H_0_Min = H_0_Min, H_0_Max = H_0_Max, resolution_H_0 = resolution)
+#
+# GUI = InferenceGUI(Y, Data, Gen)
+# GUI.View()
