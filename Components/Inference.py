@@ -10,7 +10,7 @@ from scipy.special import gammainc
 #%%
 
 class Inference(SurveyAndEventData):
-    def __init__(self, SurveyAndEventData, gamma = True,
+    def __init__(self, SurveyAndEventData, gamma = True, vectorised = True,
                  survey_type='perfect', resolution_H_0=100,
                  H_0_Min = 50, H_0_Max = 100):
         self.SurveyAndEventData = SurveyAndEventData
@@ -19,6 +19,7 @@ class Inference(SurveyAndEventData):
         self.H_0_Max = H_0_Max
         self.survey_type = survey_type
         self.gamma = gamma
+        self.vectorised = vectorised
         self.resolution_H_0 = resolution_H_0
         self.H_0_pdf = np.zeros(self.resolution_H_0)
         self.H_0_range = np.linspace(self.H_0_Min, self.H_0_Max, self.resolution_H_0)
@@ -29,11 +30,17 @@ class Inference(SurveyAndEventData):
                                 "imperfect2d": self.H_0_inference_2d_imperfect_survey,
                                 "perfect3d": self.H_0_inference_3d_perfect_survey,
                                 "imperfect3d": self.H_0_inference_3d_imperfect_survey,
+                                "perfectvectorised3d": self.H_0_inference_3d_perfect_survey_vectorised
         })
         self.gamma_method = dict({
             "2d": self.H_0_inference_2d_gamma,
             "3d": self.H_0_inference_3d_gamma
         })
+
+        if self.SurveyAndEventData.dimension==3 and self.survey_type == "perfect" and self.vectorised:
+            self.inference_method_name = self.survey_type + "vectorised" + str(self.SurveyAndEventData.dimension) + "d"
+        else:
+            self.inference_method_name = self.survey_type + str(self.SurveyAndEventData.dimension) + "d"
 
         self.g_H_0 = dict()
 
@@ -43,7 +50,7 @@ class Inference(SurveyAndEventData):
 
     def H_0_Prob(self):
         self.distribution_calculated = True
-        self.H_0_pdf = self.inference_method[self.survey_type+str(self.SurveyAndEventData.dimension)+"d"]()
+        self.H_0_pdf = self.inference_method[self.inference_method_name]()
         if self.gamma:
             gamma_marginalisation = self.gamma_method[str(self.SurveyAndEventData.dimension)+"d"]()
             self.H_0_pdf *= gamma_marginalisation
@@ -107,7 +114,7 @@ class Inference(SurveyAndEventData):
             else:
                 self.H_0_pdf *= H_0_pdf_single_event#/(
                         # np.sum(H_0_pdf_single_event) * (self.H_0_increment))
-                self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+        self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
     def H_0_inference_3d_perfect_survey(self):
@@ -146,7 +153,26 @@ class Inference(SurveyAndEventData):
             else:
                 self.H_0_pdf *= H_0_pdf_single_event#/(
                         # np.sum(H_0_pdf_single_event) * (self.H_0_increment))
-                self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+        self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+        return self.H_0_pdf
+
+    def H_0_inference_3d_perfect_survey_vectorised(self):
+        H_0_recip = np.reciprocal(self.H_0_range)[:, np.newaxis]
+
+        redshifts = np.tile(self.SurveyAndEventData.detected_redshifts, (self.resolution_H_0, 1))
+
+        Ds = redshifts * H_0_recip
+
+        burr_full = self.get_vectorised_burr(Ds)
+
+        vmf = self.get_vectorised_vmf()
+
+        luminosity_term = np.square(Ds) * self.SurveyAndEventData.fluxes
+
+        full_expression = burr_full * vmf * luminosity_term
+        self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
+        self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
+        self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
     def p_D_prior(self, D, z_hat, sigma_z, H_0, u_r):
@@ -185,7 +211,7 @@ class Inference(SurveyAndEventData):
             else:
                 self.H_0_pdf *= H_0_pdf_single_event  # /(
                 # np.sum(H_0_pdf_single_event) * (self.H_0_increment))
-                self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+        self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
     def H_0_inference_3d_imperfect_survey(self):
@@ -222,7 +248,7 @@ class Inference(SurveyAndEventData):
             else:
                 self.H_0_pdf *= H_0_pdf_single_event#/(
                         # np.sum(H_0_pdf_single_event) * (self.H_0_increment))
-                self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+        self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
 
@@ -271,13 +297,58 @@ class Inference(SurveyAndEventData):
         cdf = 1-(1 + (max_D/lam)**c)**-k
         return cdf
 
+    def get_vectorised_burr(self, Ds):
+        Ds_tile = np.tile(Ds, (self.SurveyAndEventData.detected_event_count, 1, 1))
+
+        recip_Ds_tile = np.reciprocal(Ds_tile)
+
+        u_r = np.sqrt(np.sum(np.square(self.SurveyAndEventData.BH_detected_coords), axis=1))[:, np.newaxis, np.newaxis]
+
+        omegas = recip_Ds_tile * u_r
+
+        burr_term1 = np.power(omegas, self.SurveyAndEventData.BVM_c - 1)
+        burr_term2 = np.power(1 + np.power(omegas, self.SurveyAndEventData.BVM_c), - self.SurveyAndEventData.BVM_k - 1)
+
+        burr_full = self.SurveyAndEventData.BVM_k * self.SurveyAndEventData.BVM_c * recip_Ds_tile * burr_term1 * burr_term2
+        return burr_full
+    def get_vectorised_vmf(self):
+        kappa = self.SurveyAndEventData.BVM_kappa
+        vmf_C = kappa / (2 * np.pi * (np.exp(kappa) - np.exp(-kappa)))
+
+        u_x = self.SurveyAndEventData.BH_detected_coords[:, 0]
+        u_y = self.SurveyAndEventData.BH_detected_coords[:, 1]
+        u_z = self.SurveyAndEventData.BH_detected_coords[:, 2]
+
+        u_phi = np.arctan2(u_y, u_x)[:, np.newaxis]
+        u_theta = np.arctan2(np.sqrt(u_x ** 2 + u_y ** 2), u_z)[:, np.newaxis]
+
+        X = self.SurveyAndEventData.detected_coords[:, 0]
+        Y = self.SurveyAndEventData.detected_coords[:, 1]
+        Z = self.SurveyAndEventData.detected_coords[:, 2]
+        XY = np.sqrt((X) ** 2 + (Y) ** 2)
+
+        phi = np.tile(np.arctan2(Y, X), (self.SurveyAndEventData.detected_event_count, 1))
+        theta = np.tile(np.arctan2(XY, Z), (self.SurveyAndEventData.detected_event_count, 1))
+
+        sin_u_theta = np.sin(u_theta)
+        cos_u_theta = np.cos(u_theta)
+
+        sin_theta = np.sin(theta)
+        cos_theta = np.cos(theta)
+
+        cos_phi_diff = np.cos(phi - u_phi)
+
+        vmf = vmf_C * np.exp(kappa * (sin_theta * sin_u_theta * cos_phi_diff
+                                      + cos_theta * cos_u_theta))[:, np.newaxis,:]
+        return vmf
+
     def calc_N1(self, H_0):
         N1 = 0
         for g_i, flux in enumerate(self.SurveyAndEventData.fluxes):
             D_gi = self.SurveyAndEventData.detected_redshifts[g_i]/H_0
             if self.SurveyAndEventData.dimension == 2:
                 luminosity = 2*np.pi*flux*D_gi
-            if self.SurveyAndEventData.dimension == 3:
+            else:
                 luminosity = 4*np.pi*flux*D_gi**2
             N1 += luminosity*self.burr_cdf(lam = D_gi)
         N1 *= self.SurveyAndEventData.sample_time
@@ -285,17 +356,25 @@ class Inference(SurveyAndEventData):
 
 
 
-# from Components.EventGenerator import EventGenerator
+from Components.EventGenerator import EventGenerator
 # # '''
 # Gen = EventGenerator(dimension = 3, size = 50, sample_time=0.01, event_rate=10,
 #                         luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Random",
-#                         cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=100,
+#                         cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=1,
 #                         event_distribution="Proportional", noise_distribution = "BVM", contour_type = "BVM", redshift_noise_sigma = 0.0,
 #                         resolution=500, plot_contours = False, seed = 1)
-#
+
 # Gen.plot_universe_and_events()
 # Data = Gen.GetSurveyAndEventData()
 # Y = Inference(Data, survey_type='gamma')
+#
+# CDF = []
+# X = np.arange(1,100)
+# for elem in X:
+#     CDF.append(Y.burr_cdf(elem))
+#
+# plt.plot(X, CDF)
+# plt.yscale("log")
 # Y2 = Inference(Data, survey_type='perfect')
 # plt.plot(Y.H_0_range, Y.H_0_Prob())
 # plt.plot(Y.H_0_range, Y2.H_0_Prob())
@@ -306,5 +385,8 @@ class Inference(SurveyAndEventData):
 #
 #
 # '''
+
+
+
 
 # %%

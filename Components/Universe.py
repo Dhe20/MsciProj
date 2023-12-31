@@ -9,7 +9,7 @@ from scipy.special import gamma, gammaincc
 
 plt.style.use('dark_background')
 class Universe:
-    def __init__(self, dimension = 3, luminosity_gen_type = "Fixed", coord_gen_type = "Clustered",
+    def __init__(self, dimension = 3, luminosity_gen_type = "Fixed", coord_gen_type = "Random",
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
                  alpha = .3, characteristic_luminosity = 1, min_lum = 0,
                  max_lum = .5, H_0 = 70, redshift_noise_sigma=0.,
@@ -151,7 +151,7 @@ class Universe:
         # Should try the algo cited in paper
         self.n = round(N_0)
         BB1 = BB1Pack.Full_Schechter(name="BB1", a=0.0)
-        samples = BB1.rvs(b=2+self.beta,u=self.L_star,l=self.lower_lim, size = self.n)
+        samples = BB1.rvs(b=2+self.beta,u=self.L_star, l=self.lower_lim, size = self.n)
         self.gal_lum = samples
         return self.gal_lum
 
