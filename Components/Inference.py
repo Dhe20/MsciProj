@@ -55,7 +55,7 @@ class Inference(SurveyAndEventData):
                 self.SurveyAndEventData.BVM_c,
                 self.SurveyAndEventData.BVM_k,
                 D) * self.SurveyAndEventData.von_misses_fisher(
-                u_phi, phi, u_theta, theta, self.SurveyAndEventData.BVM_kappa)
+                phi, theta, u_phi, u_theta, self.SurveyAndEventData.BVM_kappa)
         return p
 
     def gauss_p_hat_g_true(self, dim, D, u_r, u_phi, u_theta=0, phi=0, theta=0):

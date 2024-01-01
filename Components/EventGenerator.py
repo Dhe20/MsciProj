@@ -7,6 +7,7 @@ from Components.SurveyAndEventData import SurveyAndEventData
 import numpy as np
 from scipy import interpolate
 from Visualising.Visualiser_3d import Visualiser_3d
+from Tools import BB1_sampling as BB1Pack
 
 class EventGenerator(Universe):
     def __init__(self, dimension = 2, luminosity_gen_type = "Fixed",
@@ -14,7 +15,7 @@ class EventGenerator(Universe):
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
                  alpha = .3, characteristic_luminosity = 1, min_lum = 0,
                  max_lum = 1, event_rate = 1, sample_time = .01 ,event_distribution = "Random",
-                 noise_distribution = "BVM", contour_type = "BVM",
+                 noise_distribution = "BVMF_eff", contour_type = "BVM",
                  noise_std = 3, resolution = 400, BVM_c = 15, H_0 = 70,
                  BVM_k = 2, BVM_kappa = 200, redshift_noise_sigma = 0,
                  plot_contours = True, seed = None, event_count_type = "Poisson"):
@@ -76,7 +77,8 @@ class EventGenerator(Universe):
         self.event_generator = dict({"Random": self.random_galaxy,
                                      "Proportional":self.proportional_galaxy})
         self.coord_noise_generator = dict({"gauss": self.gauss_noise,
-                                            "BVM": self.BVM_sample})
+                                            "BVM": self.BVM_sample,
+                                            "BVMF_eff": self.BVMF_sample_eff})
         self.contour_generator = dict({"gauss_2d": self.gauss_2d,
                                        "gauss_3d": self.gauss_3d,
                                        "BVM_2d": self.BVMShell,
@@ -186,6 +188,21 @@ class EventGenerator(Universe):
             y = r_samp*np.sin(phi_samp)
             sample = np.array([x,y])
 
+            return sample - mu
+        
+    def BVMF_sample_eff(self, mu):
+        lamb = np.linalg.norm(mu)
+        r_samp = BB1Pack.burr_sampling(self.np_rand_state, self.BVM_c, self.BVM_k, lamb, 1)[0]
+        if self.dimension == 2:
+            phi_mu = np.arctan2(mu[1], mu[0])
+            phi_samp = BB1Pack.von_misses_sampling(self.rand_rand_state, phi_mu, self.BVM_kappa, 1)[0]
+            x = r_samp*np.cos(phi_samp)
+            y = r_samp*np.sin(phi_samp)
+            sample = np.array([x,y])
+            return sample - mu
+        elif self.dimension == 3:
+            norm_dir_samp = BB1Pack.von_misses_fisher_sampling(self.np_rand_state, mu, self.BVM_kappa, 1)[0]
+            sample = r_samp*norm_dir_samp
             return sample - mu
 
     def plot_universe_and_events(self, show = True):

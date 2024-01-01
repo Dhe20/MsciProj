@@ -131,7 +131,6 @@ class Universe:
         r = self.min_L/self.L_star
         E_L = self.L_star*self.alpha + self.L_star*(r**self.alpha)*(np.exp(-r))/self.upper_inc_gamma(self.alpha, r)
         N_0 = self.L_0 / E_L
-
         self.n = round(N_0)
         gal_lum = []
         while len(gal_lum) < self.n:
@@ -148,11 +147,13 @@ class Universe:
         elif self.beta == -1:
             E_L = (1/(np.log(A)))*(self.L_star**2/(self.L_star + self.lower_lim))
         N_0 = self.L_0 / E_L
-        # Should try the algo cited in paper
         self.n = round(N_0)
-        BB1 = BB1Pack.Full_Schechter(name="BB1", a=0.0)
-        samples = BB1.rvs(b=2+self.beta,u=self.L_star,l=self.lower_lim, size = self.n)
-        self.gal_lum = samples
+        ''' Previous
+        #BB1 = BB1Pack.Full_Schechter(name="BB1", a=0.0)
+        #samples = BB1.rvs(b=2+self.beta,u=self.L_star,l=self.lower_lim, size = self.n)
+        '''
+        samples = BB1Pack.Complete_BB1_rej(random_seed = self.rand_rand_state, beta = self.beta, u = self.L_star, l = self.lower_lim, n_samp = self.n)
+        self.gal_lum = np.array(samples)
         return self.gal_lum
 
     def uniform_galaxies(self):
