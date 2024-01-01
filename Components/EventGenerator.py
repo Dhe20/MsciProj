@@ -95,9 +95,7 @@ class EventGenerator(Universe):
             selected = self.event_generator[event_distribution]()
             mu = self.true_coords[selected]
             noise = self.coord_noise_generator[noise_distribution](mu)
-            #noise = self.coord_noise_generator[noise_distribution]()
             if np.sqrt(np.sum(np.square(self.true_coords[selected] + noise))) > self.max_D:
-                # print(event_count)
                 event_count += 1
                 continue
 
@@ -124,7 +122,7 @@ class EventGenerator(Universe):
             self.BH_detected_meshgrid = self.BH_detected_meshgrid[detected_event_indices,:]
 
     def poisson_event_count(self):
-        self.np_rand_state2 = np.random.default_rng(1)
+        # self.np_rand_state2 = np.random.default_rng(1)
         event_count = self.np_rand_state.poisson(lam = self.event_rate*self.L_0*self.sample_time)
         return event_count
 
@@ -270,7 +268,6 @@ class EventGenerator(Universe):
         # ||u|| = 1
         # kappa >= 0
         C = kappa/(2*np.pi*(np.exp(kappa) - np.exp(-kappa)))
-        #print(C)
         return C * np.exp(kappa*(np.sin(theta)*np.sin(u_theta)*np.cos(phi-u_phi) + np.cos(theta)*np.cos(u_theta)))
 
     def BVMShell(self,mu):
@@ -342,13 +339,13 @@ class EventGenerator(Universe):
                                   max_D = self.max_D, detected_event_count=self.detected_event_count,
                                   sample_time = self.sample_time, noise_distribution = self.noise_distribution, noise_sigma = self.noise_sigma)
 
-
-
+#
+#
 #
 # Gen = EventGenerator(dimension = 3, size = 50, resolution = 100,
 #                       luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Random",
-#                       cluster_coeff=5, characteristic_luminosity=5, total_luminosity=100, sample_time=0.01, event_rate=10,
-#                       event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0.0, plot_contours=True, seed = 1)
+#                       cluster_coeff=5, characteristic_luminosity=1, total_luminosity=10/3, sample_time=0.09, event_rate=10,
+#                       event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0.0, plot_contours=True, seed = 10)
 # print("plotting")
 # print(Gen.detected_event_count)
 # Gen.plot_universe_and_events()

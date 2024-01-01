@@ -9,7 +9,7 @@ from scipy.special import gamma, gammaincc
 
 plt.style.use('dark_background')
 class Universe:
-    def __init__(self, dimension = 3, luminosity_gen_type = "Fixed", coord_gen_type = "Clustered",
+    def __init__(self, dimension = 3, luminosity_gen_type = "Fixed", coord_gen_type = "Random",
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
                  alpha = .3, characteristic_luminosity = 1, min_lum = 0,
                  max_lum = .5, H_0 = 70, redshift_noise_sigma=0.,
