@@ -12,7 +12,7 @@ import re
 resolution_H_0 = 100
 H_0_Min = 55
 H_0_Max = 85
-universe_count = 200
+universe_count = 1
 H_0_samples = pd.DataFrame()
 
 events = 15
@@ -35,7 +35,7 @@ for Universe in range(universe_count):
                          luminosity_gen_type="Cut-Schechter", coord_gen_type="Random",
                          cluster_coeff=5, characteristic_luminosity=characteristic_Luminosity, total_luminosity=total_luminosity,
                          event_distribution="Proportional", contour_type="BVM", redshift_noise_sigma=0,
-                         resolution=100, plot_contours=False, alpha = 0.3, seed = Universe)
+                         resolution=100, plot_contours=False, alpha = 0.3, beta=-1.5, seed = Universe)
 
     Data = Gen.GetSurveyAndEventData()
     I = Inference(Data, H_0_Min=H_0_Min, H_0_Max=H_0_Max, resolution_H_0=resolution_H_0, survey_type = "perfect")

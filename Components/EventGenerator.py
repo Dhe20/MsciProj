@@ -13,7 +13,7 @@ class EventGenerator(Universe):
     def __init__(self, dimension = 2, luminosity_gen_type = "Fixed",
                  coord_gen_type = "Clustered",
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
-                 alpha = .3, characteristic_luminosity = 1, min_lum = 0,
+                 alpha = .3, beta=-1.5, characteristic_luminosity = 1, min_lum = 0,
                  max_lum = 1, event_rate = 1, sample_time = .01 ,event_distribution = "Random",
                  noise_distribution = "BVMF_eff", contour_type = "BVM",
                  noise_std = 3, resolution = 400, BVM_c = 15, H_0 = 70,
@@ -23,7 +23,7 @@ class EventGenerator(Universe):
         super().__init__(dimension = dimension, luminosity_gen_type = luminosity_gen_type,
                          coord_gen_type = coord_gen_type,
                          cluster_coeff = cluster_coeff, total_luminosity = total_luminosity,
-                         size = size, alpha = alpha, characteristic_luminosity = characteristic_luminosity,
+                         size = size, alpha = alpha, beta = beta, characteristic_luminosity = characteristic_luminosity,
                          min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma,
                          seed = seed, H_0 = H_0
                          )

@@ -267,14 +267,37 @@ def von_misses_fisher_sampling(np_random_seed, mu, kappa, n_samp):
     b3 = mu[2]
     # Using derivation based on Rodrigues' formula,
     # but result specific to the sampling starting mean vector of (0,0,1)
-    rotation_matrix = np.array([[1 - (b1**2)/(1+b3) , -b1*b2, b1],
-                                [-b1*b2 , 1 - (b2**2)/(1+b3) , b2],
-                                [-b1 , -b2 , 1 - (b1**2 + b2**2)/(1+b3)]])
-    final_sample = np.matmul(rotation_matrix, init_sample.T).T
+    
+    if abs(b1)<=0.0001 and abs(b2)<=0.0001 and b3<0:
+        if abs(b1)<=0.00000002 and abs(b2)<=0.00000002:
+            final_sample = -1*init_sample
+        else:
+            rotation_matrix = np.array([[1 - (b1**2)/(1+b3) , -b1*b2/(1+b3), b1],
+                                    [-b1*b2/(1+b3) , 1 - (b2**2)/(1+b3) , b2],
+                                    [-b1 , -b2 , b3]])
+            final_sample_1 = np.matmul(rotation_matrix, init_sample.T).T
+            final_sample = final_sample_1 / np.linalg.norm(final_sample_1, axis=-1)[:, np.newaxis]
+    
+    else:
+        rotation_matrix = np.array([[1 - (b1**2)/(1+b3) , -b1*b2/(1+b3), b1],
+                                    [-b1*b2/(1+b3) , 1 - (b2**2)/(1+b3) , b2],
+                                    [-b1 , -b2 , b3]])
+        final_sample = np.matmul(rotation_matrix, init_sample.T).T
     return final_sample
 
-
-
+'''
+def rotate(mu):
+    mu = mu/np.linalg.norm(mu)
+    b1 = mu[0]
+    b2 = mu[1]
+    b3 = mu[2]
+    rotation_matrix = np.array([[1 - (b1**2)/(1+b3) , -b1*b2/(1+b3), b1],
+                                    [-b1*b2/(1+b3) , 1 - (b2**2)/(1+b3) , b2],
+                                    [-b1 , -b2 , b3]])
+    final_sample = np.matmul(rotation_matrix, np.array([0,0,1]).T).T
+    print(mu)
+    return final_sample
+'''
 
 
 # %%
