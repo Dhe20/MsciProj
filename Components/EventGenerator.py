@@ -14,7 +14,7 @@ class EventGenerator(Universe):
                  coord_gen_type = "Clustered",
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
                  alpha = .3, beta=-1.5, characteristic_luminosity = 1, min_lum = 0,
-                 max_lum = 1, event_rate = 1, sample_time = .01 ,event_distribution = "Random",
+                 max_lum = 1, lower_lim=1, event_rate = 1, sample_time = .01 ,event_distribution = "Random",
                  noise_distribution = "BVMF_eff", contour_type = "BVM",
                  noise_std = 3, resolution = 400, BVM_c = 15, H_0 = 70,
                  BVM_k = 2, BVM_kappa = 200, redshift_noise_sigma = 0,
@@ -24,7 +24,7 @@ class EventGenerator(Universe):
                          coord_gen_type = coord_gen_type,
                          cluster_coeff = cluster_coeff, total_luminosity = total_luminosity,
                          size = size, alpha = alpha, beta = beta, characteristic_luminosity = characteristic_luminosity,
-                         min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma,
+                         min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma, lower_lim = lower_lim,
                          seed = seed, H_0 = H_0
                          )
 
@@ -60,17 +60,17 @@ class EventGenerator(Universe):
         self.BVM_c = BVM_c
         self.BVM_kappa = BVM_kappa
 
+    
+        if self.plot_contours:
+            if self.dimension == 2:
+                self.BH_contour_meshgrid = np.meshgrid(np.linspace(-self.size, self.size, self.resolution),
+                                                    np.linspace(-self.size, self.size, self.resolution))
+            if self.dimension == 3:
+                self.BH_contour_meshgrid = np.mgrid[-self.size:self.size:complex(0,self.resolution),
+                                        -self.size:self.size:complex(0,self.resolution),
+                                        -self.size:self.size:complex(0,self.resolution)]
 
-
-        if self.dimension == 2:
-            self.BH_contour_meshgrid = np.meshgrid(np.linspace(-self.size, self.size, self.resolution),
-                                                   np.linspace(-self.size, self.size, self.resolution))
-        if self.dimension == 3:
-            self.BH_contour_meshgrid = np.mgrid[-self.size:self.size:complex(0,self.resolution),
-                                       -self.size:self.size:complex(0,self.resolution),
-                                       -self.size:self.size:complex(0,self.resolution)]
-
-        self.BH_detected_meshgrid = np.empty((self.event_count, *np.shape(self.BH_contour_meshgrid[0])))
+            self.BH_detected_meshgrid = np.empty((self.event_count, *np.shape(self.BH_contour_meshgrid[0])))
 
 
 
