@@ -14,7 +14,7 @@ class EventGenerator(Universe):
                  coord_gen_type = "Clustered",
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
                  alpha = .3, beta=-1.5, characteristic_luminosity = 1, min_lum = 0,
-                 max_lum = 1, event_rate = 1, sample_time = .01 ,event_distribution = "Random",
+                 max_lum = 1, lower_lim=1, event_rate = 1, sample_time = .01 ,event_distribution = "Random",
                  noise_distribution = "BVMF_eff", contour_type = "BVM",
                  noise_std = 3, resolution = 400, BVM_c = 15, H_0 = 70,
                  BVM_k = 2, BVM_kappa = 200, redshift_noise_sigma = 0,
@@ -24,7 +24,7 @@ class EventGenerator(Universe):
                          coord_gen_type = coord_gen_type,
                          cluster_coeff = cluster_coeff, total_luminosity = total_luminosity,
                          size = size, alpha = alpha, beta = beta, characteristic_luminosity = characteristic_luminosity,
-                         min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma,
+                         min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma, lower_lim = lower_lim,
                          seed = seed, H_0 = H_0
                          )
 
@@ -60,15 +60,15 @@ class EventGenerator(Universe):
         self.BVM_c = BVM_c
         self.BVM_kappa = BVM_kappa
 
-
-        if plot_contours:
+    
+        if self.plot_contours:
             if self.dimension == 2:
                 self.BH_contour_meshgrid = np.meshgrid(np.linspace(-self.size, self.size, self.resolution),
-                                                       np.linspace(-self.size, self.size, self.resolution))
+                                                    np.linspace(-self.size, self.size, self.resolution))
             if self.dimension == 3:
                 self.BH_contour_meshgrid = np.mgrid[-self.size:self.size:complex(0,self.resolution),
-                                           -self.size:self.size:complex(0,self.resolution),
-                                           -self.size:self.size:complex(0,self.resolution)]
+                                        -self.size:self.size:complex(0,self.resolution),
+                                        -self.size:self.size:complex(0,self.resolution)]
 
             self.BH_detected_meshgrid = np.empty((self.event_count, *np.shape(self.BH_contour_meshgrid[0])))
 
@@ -142,7 +142,7 @@ class EventGenerator(Universe):
         if self.dimension == 3:
             r_grid = np.linspace(0, np.sqrt(3)*self.size, 10*self.resolution)
             b_r = np.linalg.norm(mu)
-            burr_w = self.burr(r_grid, self.BVM_c, self.BVM_k, b_r)*r_grid**2
+            burr_w = (r_grid**2)*self.burr(r_grid, self.BVM_c, self.BVM_k, b_r)
             burr_w = burr_w/np.sum(burr_w)
             self.dbug1 = burr_w
             r_samp = self.np_rand_state.choice(r_grid, p=burr_w)
@@ -156,7 +156,7 @@ class EventGenerator(Universe):
             vm_weight = vm_weight/np.sum(vm_weight)
             flat = vm_weight.flatten()
             sample_index = self.np_rand_state.choice(len(flat), p=flat)
-            aaaaaaa = self.np_rand_state.choice(len(flat), p=flat)
+            # aaaaaaa = self.np_rand_state.choice(len(flat), p=flat)
             adjusted_index = np.unravel_index(sample_index, vm_weight.shape)
             phi_samp = phi[adjusted_index]
             theta_samp = theta[adjusted_index]
