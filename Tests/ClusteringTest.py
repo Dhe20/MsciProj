@@ -2,20 +2,32 @@ import powerbox as pbox
 import matplotlib.pyplot as plt
 import random
 import numpy as np
+cluster_coeff=50
+power = lambda k: cluster_coeff*k**-3
+import time
 
-power = lambda k: 2*k**-3
+start_time = time.perf_counter()
+
+
+
+
 
 lnpb = pbox.LogNormalPowerBox(
     N=512,                     # Number of grid-points in the box
-    dim=2,                     # 2D box
+    dim=3,                     # 2D box
     pk = power, # The power-spectrum
     boxlength = 1.0,           # Size of the box (sets the units of k in pk)
-    seed = 513                # Set a seed to ensure the box looks the same every time (optional)
+    seed = 42                # Set a seed to ensure the box looks the same every time (optional)
 )
+
+end_time = time.perf_counter()
+elapsed_time = end_time - start_time
+
+print("Elapsed time: ", elapsed_time)
 # y = lnpb.delta_x()
-plt.imshow(lnpb.delta_x(), extent = (-.5,.5, -.5, .5))
-plt.colorbar()
-plt.show()
+# plt.imshow(lnpb.delta_x(), extent = (-.5,.5, -.5, .5))
+# plt.colorbar()
+# plt.show()
 
 
 ##
@@ -27,11 +39,23 @@ plt.yscale('log')
 
 plt.show()
 ##
-N = 1000000
+N = 1000
+
+start_time = time.perf_counter()
+
+
 ClusteredSample = lnpb.create_discrete_sample(nbar=int(2*N),
-                                              randomise_in_cell= True,# nbar specifies the number density
+                                              randomise_in_cell= True,
+                                              # nbar specifies the number density
                                     # min_at_zero=False  # by default the samples are centred at 0. This shifts them to be positive.
                                    )
+
+end_time = time.perf_counter()
+elapsed_time = end_time - start_time
+
+print("Elapsed time: ", elapsed_time)
+
+
 NLengthList = list(np.arange(0, len(ClusteredSample), 1))
 Chosen = random.sample(NLengthList, k = N)
 ClusteredSample1 = ClusteredSample[0:N]

@@ -61,16 +61,16 @@ class EventGenerator(Universe):
         self.BVM_kappa = BVM_kappa
 
 
+        if plot_contours:
+            if self.dimension == 2:
+                self.BH_contour_meshgrid = np.meshgrid(np.linspace(-self.size, self.size, self.resolution),
+                                                       np.linspace(-self.size, self.size, self.resolution))
+            if self.dimension == 3:
+                self.BH_contour_meshgrid = np.mgrid[-self.size:self.size:complex(0,self.resolution),
+                                           -self.size:self.size:complex(0,self.resolution),
+                                           -self.size:self.size:complex(0,self.resolution)]
 
-        if self.dimension == 2:
-            self.BH_contour_meshgrid = np.meshgrid(np.linspace(-self.size, self.size, self.resolution),
-                                                   np.linspace(-self.size, self.size, self.resolution))
-        if self.dimension == 3:
-            self.BH_contour_meshgrid = np.mgrid[-self.size:self.size:complex(0,self.resolution),
-                                       -self.size:self.size:complex(0,self.resolution),
-                                       -self.size:self.size:complex(0,self.resolution)]
-
-        self.BH_detected_meshgrid = np.empty((self.event_count, *np.shape(self.BH_contour_meshgrid[0])))
+            self.BH_detected_meshgrid = np.empty((self.event_count, *np.shape(self.BH_contour_meshgrid[0])))
 
 
 
@@ -123,8 +123,8 @@ class EventGenerator(Universe):
 
     def poisson_event_count(self):
         # self.np_rand_state2 = np.random.default_rng(1)
-        event_count = self.np_rand_state.poisson(lam = self.event_rate*self.L_0*self.sample_time)
-        return event_count
+        self.total_event_count = self.np_rand_state.poisson(lam = self.event_rate*self.L_0*self.sample_time)
+        return self.total_event_count
 
     def random_galaxy(self):
         return self.rand_rand_state.randint(0, self.n-1)
@@ -140,9 +140,9 @@ class EventGenerator(Universe):
 
     def BVM_sample(self, mu):
         if self.dimension == 3:
-            r_grid = np.linspace(0, np.sqrt(2)*self.size, 10*self.resolution)
+            r_grid = np.linspace(0, np.sqrt(3)*self.size, 10*self.resolution)
             b_r = np.linalg.norm(mu)
-            burr_w = (r_grid**2)*self.burr(r_grid, self.BVM_c, self.BVM_k, b_r)
+            burr_w = self.burr(r_grid, self.BVM_c, self.BVM_k, b_r)*r_grid**2
             burr_w = burr_w/np.sum(burr_w)
             self.dbug1 = burr_w
             r_samp = self.np_rand_state.choice(r_grid, p=burr_w)
@@ -156,6 +156,7 @@ class EventGenerator(Universe):
             vm_weight = vm_weight/np.sum(vm_weight)
             flat = vm_weight.flatten()
             sample_index = self.np_rand_state.choice(len(flat), p=flat)
+            aaaaaaa = self.np_rand_state.choice(len(flat), p=flat)
             adjusted_index = np.unravel_index(sample_index, vm_weight.shape)
             phi_samp = phi[adjusted_index]
             theta_samp = theta[adjusted_index]
@@ -206,22 +207,23 @@ class EventGenerator(Universe):
     def plot_universe_and_events(self, show = True):
         if self.dimension == 2:
             fig, ax = self.plot_universe(show = False)
-            x, y = zip(*self.BH_true_coords)
-            for (xhat, yhat, s) in zip(*zip(*self.BH_detected_coords), self.BH_detected_luminosities):
-                ax.add_artist(plt.Circle(xy=(xhat, yhat), radius=s, color="r", zorder = 4))
-            if self.plot_contours is True:
-                for i, Z in enumerate(self.BH_detected_meshgrid):
-                    X, Y = self.BH_contour_meshgrid
-                    z = Z
-                    n = 1000
-                    z = z / z.sum()
-                    t = np.linspace(0, z.max(), n)
-                    integral = ((z >= t[:, None, None]) * z).sum(axis=(1, 2))
-                    f = interpolate.interp1d(integral, t)
-                    t_contours = f(np.array([0.9973, 0.9545, 0.6827]))
-                    ax.contour(X,Y, z, t_contours, colors="r", zorder = 2)
-            for (x, y, s) in zip(x, y, self.BH_true_luminosities):
-                ax.add_artist(plt.Circle(xy=(x, y), radius=s, color="g", zorder = 4))
+            if self.detected_event_count != 0:
+                x, y = zip(*self.BH_true_coords)
+                for (xhat, yhat, s) in zip(*zip(*self.BH_detected_coords), self.BH_detected_luminosities):
+                    ax.add_artist(plt.Circle(xy=(xhat, yhat), radius=s, color="r", zorder = 4))
+                if self.plot_contours is True:
+                    for i, Z in enumerate(self.BH_detected_meshgrid):
+                        X, Y = self.BH_contour_meshgrid
+                        z = Z
+                        n = 1000
+                        z = z / z.sum()
+                        t = np.linspace(0, z.max(), n)
+                        integral = ((z >= t[:, None, None]) * z).sum(axis=(1, 2))
+                        f = interpolate.interp1d(integral, t)
+                        t_contours = f(np.array([0.9973, 0.9545, 0.6827]))
+                        ax.contour(X,Y, z, t_contours, colors="r", zorder = 2)
+                for (x, y, s) in zip(x, y, self.BH_true_luminosities):
+                    ax.add_artist(plt.Circle(xy=(x, y), radius=s, color="g", zorder = 4))
             if show:
                 plt.show()
         else:
@@ -290,9 +292,9 @@ class EventGenerator(Universe):
         radial = self.burr(r, c, k, u_r)
         Z = r * angular * radial
 
-        vals = [self.d2_gauss(u_x + 3 * s_x, u_y + 3 * s_y, u_x, u_y, s_x, s_y),
-                self.d2_gauss(u_x + 2 * s_x, u_y + 2 * s_y, u_x, u_y, s_x, s_y),
-                self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
+        # vals = [self.d2_gauss(u_x + 3 * s_x, u_y + 3 * s_y, u_x, u_y, s_x, s_y),
+        #         self.d2_gauss(u_x + 2 * s_x, u_y + 2 * s_y, u_x, u_y, s_x, s_y),
+        #         self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
         return Z
 
     def BVMShell_3d(self,mu):
@@ -341,13 +343,13 @@ class EventGenerator(Universe):
 
 #
 #
-#
+
 # Gen = EventGenerator(dimension = 3, size = 50, resolution = 100,
 #                       luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Random",
 #                       cluster_coeff=5, characteristic_luminosity=1, total_luminosity=10/3, sample_time=0.09, event_rate=10,
 #                       event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0.0, plot_contours=True, seed = 10)
-# print("plotting")
-# print(Gen.detected_event_count)
+# # print("plotting")
+# # print(Gen.detected_event_count)
 # Gen.plot_universe_and_events()
 
 

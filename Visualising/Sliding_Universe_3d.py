@@ -40,7 +40,7 @@ class Sliding_Universe_3d(HasTraits):
 
             mlab.contour3d(X, Y, Z, PDF, contours=[*t_contours], opacity=0.3, colormap="RdBu", figure=self.scene.mayavi_scene)
 
-        mlab.points3d(0, 0, 0, self.Gen.max_D * 2, color=(1.0, 1.0, 1.0), mode='sphere', opacity=0.05, scale_factor=1, figure=self.scene.mayavi_scene)
+        mlab.points3d(0, 0, 0, 1.2*self.Gen.max_D * 2, color=(1.0, 1.0, 1.0), mode='sphere', opacity=0.25, scale_factor=1, figure=self.scene.mayavi_scene)
         mlab.outline(
             extent=[-self.Gen.size, self.Gen.size, -self.Gen.size, self.Gen.size, -self.Gen.size, self.Gen.size],)
 
@@ -69,3 +69,4 @@ class Sliding_Universe_3d(HasTraits):
                      ),
                 Group("slider"),
                 )
+
