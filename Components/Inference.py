@@ -118,6 +118,10 @@ class Inference(SurveyAndEventData):
         return self.H_0_pdf
 
     def H_0_inference_3d_perfect_survey(self):
+        if self.SurveyAndEventData.noise_distribution == "BVMF_eff":
+            contour_type = "BVM"
+        else:
+            contour_type = self.SurveyAndEventData.noise_distribution
         for event_num in tqdm(range(len(self.SurveyAndEventData.BH_detected_coords))):
             H_0_pdf_single_event = np.zeros(self.resolution_H_0)
             u_r = np.sqrt(np.sum(np.square(self.SurveyAndEventData.BH_detected_coords[event_num])))
@@ -138,7 +142,7 @@ class Inference(SurveyAndEventData):
                     theta = np.arctan2(XY, Z)
                     D = (self.SurveyAndEventData.detected_redshifts[g]) / H_0
                     galaxy_H_0_contribution = ((D**2) * self.SurveyAndEventData.fluxes[g]
-                                                * self.countour[self.SurveyAndEventData.noise_distribution]
+                                                * self.countour[contour_type]
                                 (self.SurveyAndEventData.dimension, D, u_r, u_phi, u_theta=u_theta, phi=phi, theta=theta))
 
                     g_H_0_slice.append(galaxy_H_0_contribution)
@@ -356,33 +360,37 @@ class Inference(SurveyAndEventData):
 
 
 
-from Components.EventGenerator import EventGenerator
-# # '''
-# Gen = EventGenerator(dimension = 3, size = 50, sample_time=0.01, event_rate=10,
-#                         luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Random",
-#                         cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=1,
-#                         event_distribution="Proportional", noise_distribution = "BVM", contour_type = "BVM", redshift_noise_sigma = 0.0,
-#                         resolution=500, plot_contours = False, seed = 1)
-
-# Gen.plot_universe_and_events()
+# from Components.EventGenerator import EventGenerator
+# # # '''
+# Gen = EventGenerator(dimension = 3, size = 50, sample_time=0.01, event_rate=200,
+#                         luminosity_gen_type = "Full-Schechter", coord_gen_type = "Random",
+#                         cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=100,
+#                         event_distribution="Proportional", noise_distribution = "BVMF_eff", contour_type = "BVM", redshift_noise_sigma = 0.0,
+#                         resolution=100, plot_contours = False, seed = 1)
+# print(Gen.detected_event_count)
+# print(len(Gen.detected_luminosities))
+# print(Gen.total_event_count)
+#
+# for i in range(10):
+#     print(Gen.poisson_event_count())
+#
+# # Gen.plot_universe_and_events()
 # Data = Gen.GetSurveyAndEventData()
-# Y = Inference(Data, survey_type='gamma')
-#
-# CDF = []
-# X = np.arange(1,100)
-# for elem in X:
-#     CDF.append(Y.burr_cdf(elem))
-#
-# plt.plot(X, CDF)
-# plt.yscale("log")
-# Y2 = Inference(Data, survey_type='perfect')
+# Y = Inference(Data, survey_type='perfect', resolution_H_0=500)
+# #
+# # CDF = []
+# # X = np.arange(1,100)
+# # for elem in X:
+# #     CDF.append(Y.burr_cdf(elem))
+# #
+# # plt.plot(X, CDF)
+# # plt.yscale("log")
+# # Y2 = Inference(Data, survey_type='perfect')
 # plt.plot(Y.H_0_range, Y.H_0_Prob())
 # plt.plot(Y.H_0_range, Y2.H_0_Prob())
 # plt.show()
-#
-# plt.plot(Y.H_0_range, Y.gamma_marginalised)
-# plt.show()
-#
+
+# print("efficient done")
 #
 # '''
 

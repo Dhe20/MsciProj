@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec, collections
 
 #SampleUniverse_3_50_0.1_50_3508.csv
-df = pd.read_csv("SampleUniverse_3_50_0.1_100_0.csv", index_col = 0)
+df = pd.read_csv("SampleUniverse_3_50_0.1_100_7852.csv", index_col = 0)
 
 spec = gridspec.GridSpec(ncols=1, nrows=3,
                          height_ratios=[4, 1, 1], wspace=0.2,

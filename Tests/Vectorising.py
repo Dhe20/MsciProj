@@ -6,10 +6,11 @@ import time
 
 
 Gen = EventGenerator(dimension = 3, size = 50, resolution = 100,
-                      luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Random",
-                      cluster_coeff=5, characteristic_luminosity=1, total_luminosity=1000/3, sample_time=0.001, event_rate=2000,
+                      luminosity_gen_type = "Full-Schechter", coord_gen_type = "Random",
+                      cluster_coeff=5, characteristic_luminosity=1, total_luminosity=100000/3, sample_time=0.00001, event_rate=2000,
                       event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0.0, plot_contours=False, seed = 10)
-
+print(Gen.detected_event_count)
+print(len(Gen.detected_luminosities))
 H_0_Min = 50
 H_0_Max = 100
 resolution_H_0=100
@@ -39,6 +40,10 @@ burr_term1 = np.power(omegas, SurveyAndEventData.BVM_c - 1)
 burr_term2 = np.power(1+np.power(omegas, SurveyAndEventData.BVM_c), - SurveyAndEventData.BVM_k-1)
 
 burr_full = SurveyAndEventData.BVM_k*SurveyAndEventData.BVM_c*recip_Ds_tile*burr_term1*burr_term2
+
+#VMF Calc
+
+start_time_vmf = time.perf_counter()
 
 kappa = SurveyAndEventData.BVM_kappa
 vmf_C = kappa/(2*np.pi*(np.exp(kappa) - np.exp(-kappa)))
@@ -75,6 +80,13 @@ full_expression = burr_full*vmf*luminosity_term
 posterior = np.product(np.sum(full_expression, axis = 2), axis = 0)
 posterior /= np.sum(posterior) * (H_0_increment)
 
+end_time_vmf = time.perf_counter()
+
+# Calculate elapsed time
+elapsed_time_vmf = end_time_vmf - start_time_vmf
+
+print("Elapsed time: ", elapsed_time_vmf)
+
 end_time = time.perf_counter()
 
 # Calculate elapsed time
@@ -82,15 +94,15 @@ elapsed_time = end_time - start_time
 
 print("Elapsed time: ", elapsed_time)
 
-Data = Gen.GetSurveyAndEventData()
-Y = Inference(Data, survey_type='perfect', gamma = False)
-posteriorY = Y.H_0_Prob()
+# Data = Gen.GetSurveyAndEventData()
+# Y = Inference(Data, survey_type='perfect', gamma = False)
+# posteriorY = Y.H_0_Prob()
 
-plt.plot(H_0_range, posterior)
-plt.plot(H_0_range, posteriorY)
-plt.plot(H_0_range, posterior-posteriorY)
-plt.yscale("log")
-plt.show()
+# plt.plot(H_0_range, posterior)
+# plt.plot(H_0_range, posteriorY)
+# plt.plot(H_0_range, posterior-posteriorY)
+# plt.yscale("log")
+# plt.show()
 
 
 
