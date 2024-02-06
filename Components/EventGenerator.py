@@ -1,14 +1,17 @@
 #%%
-from matplotlib import pyplot as plt
-from Components.Universe import Universe
+
+import numpy as np
 import random
 import scipy as sp
-from Components.SurveyAndEventData import SurveyAndEventData
-import numpy as np
+import scipy.special as sc
+from matplotlib import pyplot as plt
 from scipy import interpolate
 from Visualising.Visualiser_3d import Visualiser_3d
 from Tools import BB1_sampling as BB1Pack
+from Components.Universe import Universe
+from Components.SurveyAndEventData import SurveyAndEventData
 
+#
 class EventGenerator(Universe):
     def __init__(self, dimension = 2, luminosity_gen_type = "Fixed",
                  coord_gen_type = "Clustered",
@@ -18,20 +21,24 @@ class EventGenerator(Universe):
                  noise_distribution = "BVMF_eff", contour_type = "BVM",
                  noise_std = 3, resolution = 400, BVM_c = 15, H_0 = 70,
                  BVM_k = 2, BVM_kappa = 200, redshift_noise_sigma = 0,
-                 plot_contours = True, seed = None, event_count_type = "Poisson"):
+                 plot_contours = True, cube=True, seed = None, event_count_type = "Poisson"):
 
         super().__init__(dimension = dimension, luminosity_gen_type = luminosity_gen_type,
                          coord_gen_type = coord_gen_type,
                          cluster_coeff = cluster_coeff, total_luminosity = total_luminosity,
                          size = size, alpha = alpha, beta = beta, characteristic_luminosity = characteristic_luminosity,
                          min_lum = min_lum, max_lum = max_lum, redshift_noise_sigma = redshift_noise_sigma, lower_lim = lower_lim,
-                         seed = seed, H_0 = H_0
+                         seed = seed, H_0 = H_0, cube = cube
                          )
+
+        self.BVM_k = BVM_k
+        self.BVM_c = BVM_c
+        self.BVM_kappa = BVM_kappa
 
         self.plot_contours = plot_contours
 
         self.event_distribution = event_distribution
-
+        
         self.event_rate = event_rate
         self.sample_time = sample_time
         self.event_count_type = event_count_type
@@ -46,7 +53,9 @@ class EventGenerator(Universe):
         self.event_choice = event_distribution
 
         self.noise_distribution = noise_distribution
-        self.noise_sigma = noise_std
+
+        self.noise_sigma = self.gauss_std_from_burr(noise_std*self.size/20)
+
         self.BH_galaxies = np.empty((self.event_count), dtype = object)
         self.BH_true_coords = np.zeros((self.event_count, self.dimension))
         self.BH_detected_luminosities = np.zeros((self.event_count))
@@ -55,12 +64,6 @@ class EventGenerator(Universe):
 
         self.contour_type = contour_type +"_"+str(self.dimension)+"d"
 
-
-        self.BVM_k = BVM_k
-        self.BVM_c = BVM_c
-        self.BVM_kappa = BVM_kappa
-
-    
         if self.plot_contours:
             if self.dimension == 2:
                 self.BH_contour_meshgrid = np.meshgrid(np.linspace(-self.size, self.size, self.resolution),
@@ -78,7 +81,8 @@ class EventGenerator(Universe):
                                      "Proportional":self.proportional_galaxy})
         self.coord_noise_generator = dict({"gauss": self.gauss_noise,
                                             "BVM": self.BVM_sample,
-                                            "BVMF_eff": self.BVMF_sample_eff})
+                                            "BVMF_eff": self.BVMF_sample_eff,
+                                            "BVMF_r2_eff": self.BVMF_r2_sample_eff})
         self.contour_generator = dict({"gauss_2d": self.gauss_2d,
                                        "gauss_3d": self.gauss_3d,
                                        "BVM_2d": self.BVMShell,
@@ -121,6 +125,13 @@ class EventGenerator(Universe):
         if self.plot_contours:
             self.BH_detected_meshgrid = self.BH_detected_meshgrid[detected_event_indices,:]
 
+    def gauss_std_from_burr(self, l):
+        s = np.sqrt(-self.burr_u(1,l)**2 + self.burr_u(2,l))
+        return s
+    
+    def burr_u(self, n, l):
+        return (l**n)*self.BVM_k*sc.beta(self.BVM_k - n/self.BVM_c , 1 + n/self.BVM_c)
+
     def poisson_event_count(self):
         # self.np_rand_state2 = np.random.default_rng(1)
         self.total_event_count = self.np_rand_state.poisson(lam = self.event_rate*self.L_0*self.sample_time)
@@ -135,6 +146,8 @@ class EventGenerator(Universe):
         return source
 
     def gauss_noise(self, mu):
+        lamb = np.linalg.norm(mu)
+        #noise = self.np_rand_state.normal(loc=0.0, scale=self.gauss_std_from_burr(lamb), size=self.dimension)
         noise = self.np_rand_state.normal(loc=0.0, scale=self.noise_sigma, size=self.dimension)
         return noise
 
@@ -192,6 +205,21 @@ class EventGenerator(Universe):
     def BVMF_sample_eff(self, mu):
         lamb = np.linalg.norm(mu)
         r_samp = BB1Pack.burr_sampling(self.np_rand_state, self.BVM_c, self.BVM_k, lamb, 1)[0]
+        if self.dimension == 2:
+            phi_mu = np.arctan2(mu[1], mu[0])
+            phi_samp = BB1Pack.von_misses_sampling(self.rand_rand_state, phi_mu, self.BVM_kappa, 1)[0]
+            x = r_samp*np.cos(phi_samp)
+            y = r_samp*np.sin(phi_samp)
+            sample = np.array([x,y])
+            return sample - mu
+        elif self.dimension == 3:
+            norm_dir_samp = BB1Pack.von_misses_fisher_sampling(self.np_rand_state, mu, self.BVM_kappa, 1)[0]
+            sample = r_samp*norm_dir_samp
+            return sample - mu
+        
+    def BVMF_r2_sample_eff(self, mu):
+        lamb = np.linalg.norm(mu)
+        r_samp = BB1Pack.r2_burr_sampling(self.rand_rand_state, self.BVM_c, self.BVM_k, lamb, 1)[0]
         if self.dimension == 2:
             phi_mu = np.arctan2(mu[1], mu[0])
             phi_samp = BB1Pack.von_misses_sampling(self.rand_rand_state, phi_mu, self.BVM_kappa, 1)[0]
@@ -339,11 +367,11 @@ class EventGenerator(Universe):
                                   VonMissesFisherFunc = self.von_misses_fisher_3d, detected_redshifts=self.detected_redshifts,
                                   detected_redshifts_uncertainties = self.detected_redshifts_uncertainties, contour_type=self.contour_type,
                                   max_D = self.max_D, detected_event_count=self.detected_event_count,
-                                  sample_time = self.sample_time, noise_distribution = self.noise_distribution, noise_sigma = self.noise_sigma)
+                                  sample_time = self.sample_time, noise_distribution = self.noise_distribution, noise_sigma = self.noise_sigma, redshift_noise_sigma = self.redshift_noise_sigma)
 
 #
 #
-
+#
 # Gen = EventGenerator(dimension = 3, size = 50, resolution = 100,
 #                       luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Random",
 #                       cluster_coeff=5, characteristic_luminosity=1, total_luminosity=10/3, sample_time=0.09, event_rate=10,

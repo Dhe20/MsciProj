@@ -12,6 +12,24 @@ f = 4*np.pi/375
 c = 1.5*32*np.pi/3000
 
 #%%
+
+investigated_characteristic = 'survey_type'
+investigated_values = ['perfect', 'imperfect']
+max_numbers = []
+b = []
+f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(survey_type= investigated_values[i], universe_count = 10, resolution_H_0=75,
+                            total_luminosity=200/3, sample_time=0.0135, redshift_noise_sigma=500,
+                            investigated_characteristic = investigated_characteristic,
+                            investigated_value = investigated_values[i])
+    Investigation.Sample()
+    b.append(Investigation.burr_i)
+    f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
 '''
 
 investigated_characteristic = 'luminosity_gen_type'
@@ -99,6 +117,95 @@ for i in tqdm(range(len(investigated_values))):
     max_numbers.append(Investigation.max_num)
 
 
+#%%
+    
+investigated_characteristic = 'redshift_noise_sigma_corrected'
+investigated_values = [10,100,1000,2500]
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(survey_type='imperfect', universe_count = 20 ,redshift_noise_sigma=investigated_values[i],
+                            total_luminosity=200/3, sample_time=0.014, resolution_H_0=100, investigated_characteristic = investigated_characteristic,
+                            investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+
+investigated_characteristic = 'redshift_noise_sigma'
+investigated_values = [100]
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 50,redshift_noise_sigma=investigated_values[i],
+                            investigated_characteristic = investigated_characteristic,
+                            investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+
+#%%
+
+investigated_characteristic = 'noise_distribution'
+investigated_values = ['gauss', 'gauss', 'BVMF_eff', 'BVMF_eff']
+infer_gauss = [True, False, True, False]
+titles = ['gauss_gauss', 'BVM_gauss', 'gauss_BVMF_eff', 'BVM_BVMF_eff']
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 100, total_luminosity=1000/3, sample_time = 0.00242, gauss=infer_gauss[i], noise_sigma=10,
+                            noise_distribution = investigated_values[i], investigated_characteristic = investigated_characteristic,
+                            investigated_value = titles[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+
+# new c
+# new cube
+investigated_characteristic = 'cube'
+investigated_values = [True, False]
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 100, cube = investigated_characteristic[i], total_luminosity=1000/3, sample_time = 0.00242, 
+                            noise_distribution = 'BVMF_r2_eff', investigated_characteristic = investigated_characteristic,
+                            investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+
+investigated_characteristic = 'gamma'
+investigated_values = [True, False]
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 100, gamma = investigated_characteristic[i], total_luminosity=1000/3, sample_time = 0.00242, 
+                            investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
 
 #%%
 
@@ -112,6 +219,8 @@ investigated_values = list(np.array([5,10,50,100,200]))
 investigated_characteristic = 'luminosity_gen_type'
 investigated_values = ['Fixed', 'Full-Schechter']
 max_numbers = ['0','0']
+
+#%%
 
 def axis_namer(s):
     index = s.find('_')

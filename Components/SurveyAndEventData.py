@@ -2,8 +2,8 @@ class SurveyAndEventData:
     def __init__(self, dimension, detected_coords, detected_luminosities,
                  detected_redshifts, detected_redshifts_uncertainties, fluxes, BH_detected_coords, BVM_k,
                  BVM_c, BVM_kappa, BurrFunc, VonMissesFunc, VonMissesFisherFunc,
-                 contour_type, noise_distribution, noise_sigma, max_D,
-                 detected_event_count, sample_time ):
+                 contour_type, noise_distribution, noise_sigma, redshift_noise_sigma, max_D,
+                 detected_event_count, sample_time):
         self.dimension = dimension
         self.detected_coords = detected_coords
         self.detected_redshifts = detected_redshifts
@@ -14,6 +14,7 @@ class SurveyAndEventData:
         self.contour_type = contour_type
         self.noise_distribution = noise_distribution
         self.noise_sigma = noise_sigma
+        self.redshift_noise_sigma = redshift_noise_sigma
         self.BVM_k = BVM_k
         self.BVM_c = BVM_c
         self.BVM_kappa = BVM_kappa
@@ -25,3 +26,4 @@ class SurveyAndEventData:
         self.gamma_upper_lim = 10**(12)
         self.gamma_lower_lim = 10
         self.sample_time = sample_time
+        #
