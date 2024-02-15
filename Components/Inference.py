@@ -15,9 +15,10 @@ class Inference(SurveyAndEventData):
     def __init__(self, SurveyAndEventData, gamma = True, vectorised = True, event_distribution_inf='Proportional', gauss=False, p_det=True,
                  survey_type='perfect', resolution_H_0=100, H_0_Min = 50, H_0_Max = 100, gamma_known = False, gauss_type = "Cartesian"):
 
-
-        self.c = self.SurveyAndEventData.c
         self.SurveyAndEventData = SurveyAndEventData
+        self.c = self.SurveyAndEventData.c
+
+
         self.distribution_calculated = False
         self.H_0_Min = H_0_Min
         self.H_0_Max = H_0_Max
