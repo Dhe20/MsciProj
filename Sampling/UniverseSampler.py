@@ -66,8 +66,8 @@ def find_file_num(name):
 
 max_num = find_file_num("SampleUniverse_"+str(dimension)+"_"+str(rate)+"_"+str(characteristic_Luminosity)+"_"+str(total_luminosity)+"_")
 
-# H_0_samples.to_csv("SampleUniverse_"+str(dimension)+"_"+str(events)+"_"+str(characteristic_Luminosity)+"_"+str(total_luminosity)+"_"+max_num+".csv")
-# print("Finished: SampleUniverse_"+str(dimension)+"_"+str(events)+"_"+str(characteristic_Luminosity)+"_"+str(total_luminosity)+"_"+max_num+".csv")
+H_0_samples.to_csv("SampleUniverse_"+str(dimension)+"_"+str(events)+"_"+str(characteristic_Luminosity)+"_"+str(total_luminosity)+"_"+max_num+".csv")
+print("Finished: SampleUniverse_"+str(dimension)+"_"+str(events)+"_"+str(characteristic_Luminosity)+"_"+str(total_luminosity)+"_"+max_num+".csv")
 
 import matplotlib.pyplot as plt
 plt.hist(means)
