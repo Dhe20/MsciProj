@@ -480,8 +480,7 @@ class EventGenerator(Universe):
                                   VonMissesFisherFunc = self.von_misses_fisher_3d, detected_redshifts=self.detected_redshifts,
                                   detected_redshifts_uncertainties = self.detected_redshifts_uncertainties, contour_type=self.contour_type,
                                   max_D = self.max_D, detected_event_count=self.detected_event_count,
-                                  sample_time = self.sample_time, noise_distribution = self.noise_distribution, noise_sigma = self.noise_sigma, redshift_noise_sigma = self.redshift_noise_sigma)
-                                  sample_time = self.sample_time, noise_distribution = self.noise_distribution, noise_sigma = self.noise_sigma,
+                                  sample_time = self.sample_time, noise_distribution = self.noise_distribution, noise_sigma = self.noise_sigma, redshift_noise_sigma = self.redshift_noise_sigma,
                                   min_flux = min_flux, event_rate = self.event_rate, c = self.c, event_distribution = self.event_distribution)
 
 #
