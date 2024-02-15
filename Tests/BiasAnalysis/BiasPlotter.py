@@ -1,12 +1,11 @@
-#%%
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import gridspec, collections
+from matplotlib import gridspec
 
-#SampleUniverse_3_50_0.1_50_3508.csv
-df = pd.read_csv("WriteUpSamples/TimeConvergence/SampleUniverse_3_1000_1_1000_0.00225_95.59_21.csv", index_col = 0)
-
+df = pd.read_csv("HailMary.csv", index_col = 0)
+# df = pd.read_csv("Gaussian_Jacobean_Trial.csv", index_col = 0, usecols = range(11))
+# print((df - df2).sum())
 spec = gridspec.GridSpec(ncols=1, nrows=3,
                          height_ratios=[4, 1, 1], wspace=0.2,
                          hspace=0.2)
@@ -35,6 +34,5 @@ for column in df.columns:
 ax2.hist(means, bins = 15)
 ax3.hist(stds, bins = 15)
 plt.show()
+print(np.mean(means))
 
-
-# %%

@@ -8,6 +8,7 @@ import numpy as np
 from scipy import interpolate
 from Visualising.Visualiser_3d import Visualiser_3d
 from Tools import BB1_sampling as BB1Pack
+import scipy.stats as ss
 
 class EventGenerator(Universe):
     def __init__(self, dimension = 2, luminosity_gen_type = "Fixed",
@@ -76,11 +77,17 @@ class EventGenerator(Universe):
 
         self.event_generator = dict({"Random": self.random_galaxy,
                                      "Proportional":self.proportional_galaxy})
-        self.coord_noise_generator = dict({"gauss": self.gauss_noise,
+        self.coord_noise_generator = dict(
+                                           {"gauss": self.gauss_noise,
                                             "BVM": self.BVM_sample,
-                                            "BVMF_eff": self.BVMF_sample_eff})
+                                            "BVMF_eff": self.BVMF_sample_eff,
+                                           "GVMF_eff": self.GVMF_sample_eff,
+                                            "GJVMF_eff": self.GJVMF_sample_eff
+                                            })
         self.contour_generator = dict({"gauss_2d": self.gauss_2d,
                                        "gauss_3d": self.gauss_3d,
+                                       "GVMF_2d": self.GVMF_eff_contour,
+                                       "GVMF_3d": self.GVMF_eff_contour,
                                        "BVM_2d": self.BVMShell,
                                        "BVM_3d" : self.BVMShell_3d
                                        })
@@ -123,7 +130,7 @@ class EventGenerator(Universe):
 
     def poisson_event_count(self):
         # self.np_rand_state2 = np.random.default_rng(1)
-        self.total_event_count = self.np_rand_state.poisson(lam = self.event_rate*self.L_0*self.sample_time)
+        self.total_event_count = self.np_rand_state.poisson(lam = self.event_rate*np.sum(self.true_luminosities)*self.sample_time)
         return self.total_event_count
 
     def random_galaxy(self):
@@ -195,14 +202,60 @@ class EventGenerator(Universe):
         if self.dimension == 2:
             phi_mu = np.arctan2(mu[1], mu[0])
             phi_samp = BB1Pack.von_misses_sampling(self.rand_rand_state, phi_mu, self.BVM_kappa, 1)[0]
-            x = r_samp*np.cos(phi_samp)
-            y = r_samp*np.sin(phi_samp)
-            sample = np.array([x,y])
+            x = r_samp * np.cos(phi_samp)
+            y = r_samp * np.sin(phi_samp)
+            sample = np.array([x, y])
             return sample - mu
         elif self.dimension == 3:
             norm_dir_samp = BB1Pack.von_misses_fisher_sampling(self.np_rand_state, mu, self.BVM_kappa, 1)[0]
-            sample = r_samp*norm_dir_samp
+            sample = r_samp * norm_dir_samp
             return sample - mu
+
+    def GVMF_sample_eff(self, mu):
+        lamb = np.linalg.norm(mu)
+        r_samp = self.np_rand_state.normal(loc=lamb, scale=self.noise_sigma)
+        if self.dimension == 2:
+            phi_mu = np.arctan2(mu[1], mu[0])
+            phi_samp = BB1Pack.von_misses_sampling(self.rand_rand_state, phi_mu, self.BVM_kappa, 1)[0]
+            x = r_samp * np.cos(phi_samp)
+            y = r_samp * np.sin(phi_samp)
+            sample = np.array([x, y])
+            return sample - mu
+        elif self.dimension == 3:
+            norm_dir_samp = BB1Pack.von_misses_fisher_sampling(self.np_rand_state, mu, self.BVM_kappa, 1)[0]
+            sample = r_samp * norm_dir_samp
+            return sample - mu
+
+    def GJVMF_sample_eff(self, mu):
+        lamb = np.linalg.norm(mu)
+        r_samp = self.polynorm_sample(lamb)
+        if self.dimension == 2:
+            phi_mu = np.arctan2(mu[1], mu[0])
+            phi_samp = BB1Pack.von_misses_sampling(self.rand_rand_state, phi_mu, self.BVM_kappa, 1)[0]
+            x = r_samp * np.cos(phi_samp)
+            y = r_samp * np.sin(phi_samp)
+            sample = np.array([x, y])
+            return sample - mu
+        elif self.dimension == 3:
+            norm_dir_samp = BB1Pack.von_misses_fisher_sampling(self.np_rand_state, mu, self.BVM_kappa, 1)[0]
+            sample = r_samp * norm_dir_samp
+            return sample - mu
+
+    def polynorm_sample(self, lamb):
+        N = 25
+        a = 1
+        b = -lamb
+        c = -2*self.noise_sigma
+        center = (-b + np.sqrt(b**2 - 4*a*c))/(2*a)
+        envelope_max = np.exp(-0.5*((center - lamb)/self.noise_sigma)**2)*center**2
+        xs = self.np_rand_state.uniform(low = center - 5*self.noise_sigma, high = center + 5*self.noise_sigma, size = N)
+        ys = self.np_rand_state.uniform(low = 0, high = envelope_max, size = N)
+        ys_limit = np.exp(-0.5 * ((xs - lamb) / self.noise_sigma) ** 2) * xs ** 2
+        xs_accepted = xs[np.where(ys <= ys_limit)]
+        if len(xs_accepted)==0:
+            return self.polynorm_sample(lamb)
+        return xs_accepted[0]
+
 
     def plot_universe_and_events(self, show = True):
         if self.dimension == 2:
@@ -331,7 +384,67 @@ class EventGenerator(Universe):
         #        self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
         return f
 
-    def GetSurveyAndEventData(self):
+
+    def GVMF_eff_contour(self,mu):
+        if self.dimension ==3:
+            u_x = mu[0]
+            u_y = mu[1]
+            u_z = mu[2]
+            # s_x = self.noise_sigma
+            # s_y = self.noise_sigma
+            # s_z = self.noise_sigma
+            X = self.BH_contour_meshgrid[0]
+            Y = self.BH_contour_meshgrid[1]
+            Z = self.BH_contour_meshgrid[2]
+            r = np.sqrt((X) ** 2 + (Y) ** 2 + (Z) ** 2)
+            u_r = np.sqrt((u_x) ** 2 + (u_y) ** 2 + (u_z) ** 2)
+
+            phi = np.arctan2(Y, X)
+            u_phi = np.arctan2(u_y, u_x)
+            XY = np.sqrt((X) ** 2 + (Y) ** 2)
+            theta = np.arctan2(XY, Z)
+            u_theta = np.arctan2(np.sqrt(u_x ** 2 + u_y ** 2), u_z)
+
+            k = self.BVM_k
+            c = self.BVM_c
+            kappa = self.BVM_kappa
+            # u_ang = mu/np.linalg.norm(mu)
+
+            # angular = self.von_misses_fisher_3d(x, u_ang, kappa)
+            angular = self.von_misses_fisher_3d(phi, theta, u_phi, u_theta, kappa)
+            radial = ss.norm.pdf(x = r, loc = u_r, scale = self.noise_sigma)
+            f = (np.sin(theta) * r ** 2) * angular * radial
+
+            # vals = [self.d2_gauss(u_x + 3 * s_x, u_y + 3 * s_y, u_x, u_y, s_x, s_y),
+            #        self.d2_gauss(u_x + 2 * s_x, u_y + 2 * s_y, u_x, u_y, s_x, s_y),
+            #        self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
+            return f
+        if self.dimension == 2:
+            u_x = mu[0]
+            u_y = mu[1]
+            s_x = self.noise_sigma
+            s_y = self.noise_sigma
+            X = self.BH_contour_meshgrid[0]
+            Y = self.BH_contour_meshgrid[1]
+            r = np.sqrt((X) ** 2 + (Y) ** 2)
+            phi = np.arctan2(Y, X)
+            u_r = np.sqrt((u_x) ** 2 + (u_y) ** 2)
+            u_phi = np.arctan2(u_y, u_x)
+
+            k = self.BVM_k
+            c = self.BVM_c
+            kappa = self.BVM_kappa
+
+            angular = self.von_misses(phi, u_phi, kappa)
+            radial = ss.norm.pdf(x = r, loc = u_r, scale = self.noise_sigma)
+            Z = r * angular * radial
+
+            # vals = [self.d2_gauss(u_x + 3 * s_x, u_y + 3 * s_y, u_x, u_y, s_x, s_y),
+            #         self.d2_gauss(u_x + 2 * s_x, u_y + 2 * s_y, u_x, u_y, s_x, s_y),
+            #         self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
+            return Z
+
+    def GetSurveyAndEventData(self, min_flux = 0):
         return SurveyAndEventData(dimension = self.dimension, detected_coords = self.detected_coords,
                                   detected_luminosities = self.detected_luminosities,
                                   fluxes = self.fluxes, BH_detected_coords = self.BH_detected_coords, BVM_k = self.BVM_k,
@@ -339,7 +452,8 @@ class EventGenerator(Universe):
                                   VonMissesFisherFunc = self.von_misses_fisher_3d, detected_redshifts=self.detected_redshifts,
                                   detected_redshifts_uncertainties = self.detected_redshifts_uncertainties, contour_type=self.contour_type,
                                   max_D = self.max_D, detected_event_count=self.detected_event_count,
-                                  sample_time = self.sample_time, noise_distribution = self.noise_distribution, noise_sigma = self.noise_sigma)
+                                  sample_time = self.sample_time, noise_distribution = self.noise_distribution, noise_sigma = self.noise_sigma,
+                                  min_flux = min_flux, event_rate = self.event_rate, c = self.c, event_distribution = self.event_distribution)
 
 #
 #

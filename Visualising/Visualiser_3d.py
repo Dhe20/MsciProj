@@ -23,17 +23,17 @@ class Visualiser_3d:
         for (xhat, yhat, zhat, s) in zip(*zip(*self.Gen.BH_detected_coords), self.Gen.BH_detected_luminosities ** (1 / 3)):
             mlab.points3d(xhat, yhat, zhat, s, color=(1.0, 0.0, 0.0), mode='sphere', opacity=1, scale_factor=1)
         mlab.points3d(0, 0, 0, self.Gen.max_D * 2, color=(1.0, 1.0, 1.0), mode='sphere', opacity=0.05, scale_factor=1)
+        if self.Gen.plot_contours is True:
+            for i, PDF in enumerate(self.Gen.BH_detected_meshgrid):
+                X, Y, Z = self.Gen.BH_contour_meshgrid
+                n = 1000
+                PDF = PDF / PDF.sum()
+                t = np.linspace(0, PDF.max(), n)
+                integral = (((PDF >= t[:, None, None, None]) * PDF).sum(axis=(1, 2, 3)))
+                f = interpolate.interp1d(integral, t)
+                t_contours = f(np.array([0.9973, 0.9545, 0.6827]))
 
-        for i, PDF in enumerate(self.Gen.BH_detected_meshgrid):
-            X, Y, Z = self.Gen.BH_contour_meshgrid
-            n = 1000
-            PDF = PDF / PDF.sum()
-            t = np.linspace(0, PDF.max(), n)
-            integral = (((PDF >= t[:, None, None, None]) * PDF).sum(axis=(1, 2, 3)))
-            f = interpolate.interp1d(integral, t)
-            t_contours = f(np.array([0.9973, 0.9545, 0.6827]))
-
-            mlab.contour3d(X, Y, Z, PDF, contours=[*t_contours], opacity=0.15, colormap="RdBu")
+                mlab.contour3d(X, Y, Z, PDF, contours=[*t_contours], opacity=0.15, colormap="RdBu")
 
         mlab.outline(extent=[-self.Gen.size, self.Gen.size, -self.Gen.size, self.Gen.size, -self.Gen.size, self.Gen.size])
         mlab.show()

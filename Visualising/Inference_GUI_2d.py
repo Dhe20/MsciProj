@@ -4,9 +4,10 @@ import numpy as np
 from matplotlib import gridspec, collections
 import matplotlib.pyplot as plt
 from scipy import interpolate
-from matplotlib.widgets import Button, Slider
+from matplotlib.widgets import Button, Slider, RangeSlider
 import seaborn as sns
 import matplotlib.patches as mpatches
+import sys
 
 
 class InferenceGUI:
@@ -22,11 +23,14 @@ class InferenceGUI:
         self.single_filler = None
         self.collection = None
         self.H_0_slider = None
+        self.event_slider = None
+        self.button = None
         self.ax1 = None
         self.ax2 = None
         self.ax3 = None
         self.fig = None
         self.colors = None
+
 
 
     def Phis2Coords(self, Rs):
@@ -40,7 +44,12 @@ class InferenceGUI:
         coords = self.Phis2Coords(Rs)
         return coords
 
-    def View(self):
+    def reset_H_0(self, event):
+        self.H_0_slider.reset()
+        self.ax1.set_ylim(-self.Gen.size,self.Gen.size)
+        self.ax1.set_xlim(-self.Gen.size,self.Gen.size)
+
+    def view(self):
 
         self.colors = sns.color_palette(n_colors = len(self.Gen.BH_true_luminosities))
 
@@ -92,8 +101,8 @@ class InferenceGUI:
             patches.append(plt.Circle(xy=(x, y), radius=s + 0.001 * self.Gen.L_star, color="w", zorder=3))
         self.collection = collections.PatchCollection(patches, alpha=1, match_original=True)
         self.ax1.add_collection(self.collection)
-        self.ax1.set_ylim(-self.Gen.size/2,self.Gen.size/2)
-        self.ax1.set_xlim(-self.Gen.size/2,self.Gen.size/2)
+        self.ax1.set_ylim(-self.Gen.size,self.Gen.size)
+        self.ax1.set_xlim(-self.Gen.size,self.Gen.size)
 
         self.ax2.plot(self.I.H_0_range, self.H_0_Pdf, c='w', label = 'Combined H_0 Posterior')
 
@@ -127,21 +136,39 @@ class InferenceGUI:
             initcolor='none'
         )
 
+        axEvent = self.fig.add_axes([0.2, 0.55, 0.03, 0.3])
+        self.event_slider = RangeSlider(
+            ax=axEvent,
+            label='Events Shown',
+            valmin=1,
+            valmax=self.Data.detected_event_count,
+            valinit=(0, self.Data.detected_event_count),
+            valstep=np.arange(1,self.Data.detected_event_count+1),
+            orientation = 'vertical'
+        )
+        #
+
         # The function to be called anytime a slider's value changes
 
         # register the update function with each slider
         self.H_0_slider.on_changed(self.update)
 
-        # Create a `matplotlib.widgets.Button` to reset the sliders to initial values.
-        resetax = self.fig.add_axes([0.8, 0.025, 0.1, 0.04])
-        button = Button(resetax, 'Reset', hovercolor='0.975')
+        self.event_slider.on_changed(self.update_events)
 
-        button.on_clicked(self.reset)
-        #
+        # Create a `matplotlib.widgets.Button` to reset the sliders to initial values.
+
+        resetax = self.fig.add_axes([0.8, 0.025, 0.1, 0.03])
+        self.button = Button(resetax, 'Reset', hovercolor='0.975')
+
+
         self.ax2.legend(fontsize=8)
         self.ax1.axes.get_xaxis().set_visible(False)
         self.ax1.axes.get_yaxis().set_visible(False)
-        plt.show()
+
+        self.button.on_clicked(self.reset_H_0)
+
+
+        # plt.show()
 
     def update(self, val):
 
@@ -179,21 +206,7 @@ class InferenceGUI:
         self.ax1.add_collection(self.collection)
         self.fig.canvas.draw_idle()
 
-    def reset(self, event):
-        self.H_0_slider.reset()
+    def update_events(self, val):
+        lower = self.event_slider.val[0]
+        upper = self.event_slider.val[1]
 
-
-# Gen = EventGenerator(dimension = 2, size = 100, event_count=5,
-#                      luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
-#                      cluster_coeff=5, characteristic_luminosity=1, total_luminosity=100,
-#                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0,
-#                      resolution=400, plot_contours=True, seed = 42)
-
-# Data = Gen.GetSurveyAndEventData()
-# resolution = 100
-# H_0_Min = 1
-# H_0_Max = 140
-# Y = Inference(Data, H_0_Min = H_0_Min, H_0_Max = H_0_Max, resolution_H_0 = resolution)
-#
-# GUI = InferenceGUI(Y, Data, Gen)
-# GUI.View()
