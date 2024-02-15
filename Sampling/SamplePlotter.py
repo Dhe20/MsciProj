@@ -15,8 +15,13 @@ from matplotlib import gridspec, collections
 
 #df = pd.read_csv("PosteriorData\SampleUniverse_gauss_axis_0.csv", index_col = 0)
 
+#df = pd.read_csv("PosteriorData\SampleUniverse_cube_False_0.csv", index_col = 0)
 
-df = pd.read_csv("PosteriorData\SampleUniverse_cube_False_0.csv", index_col = 0)
+#df = pd.read_csv("PosteriorData\SampleUniverse_random_p_det_True_0.csv", index_col = 0)
+#df = pd.read_csv("PosteriorData\SampleUniverse_proportioanal_p_det_True_0.csv", index_col = 0)
+#df = pd.read_csv("PosteriorData\SampleUniverse_gauss_proportional_p_det_True_0.csv", index_col = 0)
+df = pd.read_csv("PosteriorData\SampleUniverse_bvmf_random_p_det_imperfect_False_0.csv", index_col = 0)
+
 
 spec = gridspec.GridSpec(ncols=1, nrows=3,
                          height_ratios=[4, 1, 1], wspace=0.2,

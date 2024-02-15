@@ -75,7 +75,7 @@ class Universe:
         for i in range(len(self.detected_redshifts)):
             self.detected_redshifts[i] = self.H_0*np.sqrt(np.sum(np.square(self.detected_coords[i])))/self.c
             # Also it should depend on the true z not z_hat
-            self.detected_redshifts_uncertainties[i] = 300000*redshift_noise_sigma*(1+self.detected_redshifts[i]/300000)**3
+            self.detected_redshifts_uncertainties[i] = redshift_noise_sigma #*(1+self.detected_redshifts[i])**3
 
 
         self.fluxes = self.find_flux()

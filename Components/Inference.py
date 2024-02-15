@@ -11,7 +11,7 @@ from scipy.special import gammainc
 #%%
 
 class Inference(SurveyAndEventData):
-    def __init__(self, SurveyAndEventData, gamma = True, vectorised = True, gauss=False,
+    def __init__(self, SurveyAndEventData, gamma = True, vectorised = True, event_distribution_inf='Proportional', gauss=False, p_det=False,
                  survey_type='perfect', resolution_H_0=100,
                  H_0_Min = 50, H_0_Max = 100):
         self.SurveyAndEventData = SurveyAndEventData
@@ -20,8 +20,10 @@ class Inference(SurveyAndEventData):
         self.H_0_Min = H_0_Min
         self.H_0_Max = H_0_Max
         self.survey_type = survey_type
+        self.event_distribution_inf = event_distribution_inf
         self.gamma = gamma
         self.gauss = gauss
+        self.p_det = p_det
         self.vectorised = vectorised
         self.resolution_H_0 = resolution_H_0
         self.H_0_pdf = np.zeros(self.resolution_H_0)
@@ -41,6 +43,9 @@ class Inference(SurveyAndEventData):
             "2d": self.H_0_inference_2d_gamma,
             "3d": self.H_0_inference_3d_gamma
         })
+
+        self.lum_term = dict({'Random':self.get_lum_term_random, 
+                              'Proportional': self.get_lum_term_proportional})
 
         #if self.SurveyAndEventData.dimension==3 and self.survey_type == "perfect" and self.vectorised:
         #    self.inference_method_name = self.survey_type + "vectorised" + str(self.SurveyAndEventData.dimension) + "d"
@@ -171,6 +176,12 @@ class Inference(SurveyAndEventData):
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
+    def get_lum_term_proportional(self, Ds):
+        return np.square(Ds) * self.SurveyAndEventData.fluxes
+
+    def get_lum_term_random(self, Ds):
+        return 1
+
     def H_0_inference_3d_perfect_survey_vectorised(self):
         H_0_recip = np.reciprocal(self.H_0_range)[:, np.newaxis]
 
@@ -185,16 +196,42 @@ class Inference(SurveyAndEventData):
         vmf = self.get_vectorised_vmf()
 
         #luminosity_term = np.power(Ds,4) * self.SurveyAndEventData.fluxes
-        luminosity_term = np.square(Ds) * self.SurveyAndEventData.fluxes
+            
+        #luminosity_term = np.square(Ds) * self.SurveyAndEventData.fluxes
+    
+        #luminosity_term = 1
+
+        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
 
         full_expression = burr_full * vmf * luminosity_term
         
         #self.full = full_expression
         
         self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
+
+        if self.p_det:
+            p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
+            P_det_total = np.sum(p_det_vec, axis=1)
+            self.P_det_total = P_det_total
+            self.H_0_pdf_single_event = self.H_0_pdf_single_event/P_det_total
+
         self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
+    
+    def get_p_det_vec(self, Ds):
+        threshold = self.SurveyAndEventData.max_D
+        if self.gauss:
+            z = (threshold - Ds)/(np.sqrt(2)*self.SurveyAndEventData.noise_sigma)
+            # should be adjusted to have std proportional to Ds
+            p = 0.5*(1 + sp.special.erf(z))
+        else:
+            d_inv = np.reciprocal(Ds)
+            arg = threshold * d_inv
+            term_1 = np.power(arg, self.SurveyAndEventData.BVM_c)
+            term_2 = np.power(1 + term_1, -self.SurveyAndEventData.BVM_k)
+            p = 1 - term_2
+        return p
 
     def H_0_inference_3d_imperfect_survey_vectorised(self):
         H_0_recip = np.reciprocal(self.H_0_range)[:, np.newaxis]
@@ -214,7 +251,9 @@ class Inference(SurveyAndEventData):
 
         vmf = self.get_vectorised_vmf()
 
-        luminosity_term = np.square(us) * self.SurveyAndEventData.fluxes
+        #luminosity_term = np.square(us) * self.SurveyAndEventData.fluxes
+
+        luminosity_term = self.lum_term[self.event_distribution_inf](us)
 
         full_expression = burr_full * vmf * luminosity_term
         
@@ -225,6 +264,12 @@ class Inference(SurveyAndEventData):
         #self.H_0_pdf = np.exp(self.log_H_0_pdf - np.min(self.log_H_0_pdf[np.isfinite(self.log_H_0_pdf)]))
         #self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         
+        if self.p_det:
+            p_det_vec = luminosity_term * self.get_p_det_vec(us)
+            P_det_total = np.sum(p_det_vec, axis=1)
+            self.P_det_total = P_det_total
+            self.H_0_pdf_single_event = self.H_0_pdf_single_event/P_det_total
+
         f = np.vectorize(math.frexp)
         split = f(self.H_0_pdf_single_event)
         flo = split[0]
@@ -249,13 +294,22 @@ class Inference(SurveyAndEventData):
 
         #self.gauss_full = gauss_full
 
-        luminosity_term = np.square(Ds) * self.SurveyAndEventData.fluxes
+        #luminosity_term = np.square(Ds) * self.SurveyAndEventData.fluxes
+
+        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
 
         full_expression = gauss_full * luminosity_term
         
         #self.full = full_expression
         
         self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
+        
+        if self.p_det:
+            p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
+            P_det_total = np.sum(p_det_vec, axis=1)
+            self.P_det_total = P_det_total
+            self.H_0_pdf_single_event = self.H_0_pdf_single_event/P_det_total
+
         self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
@@ -380,6 +434,12 @@ class Inference(SurveyAndEventData):
         k = self.SurveyAndEventData.BVM_k
         max_D = self.SurveyAndEventData.max_D
         cdf = 1-(1 + (max_D/lam)**c)**-k
+        return cdf
+
+    def burr_cdf_x(self, x, lam):
+        c = self.SurveyAndEventData.BVM_c
+        k = self.SurveyAndEventData.BVM_k
+        cdf = 1-(1 + (x/lam)**c)**-k
         return cdf
 
     def get_vectorised_burr(self, Ds):
@@ -547,7 +607,7 @@ class Inference(SurveyAndEventData):
     def P_D_gal(self,x,D,U,S):
         c = self.SurveyAndEventData.BVM_c
         k = self.SurveyAndEventData.BVM_k
-        return (c*k/s)*np.exp(-(x-U)**2/(2*S**2))/((x**c)*(1+(D/x)**c)**(k+1))
+        return (c*k/s)*np.exp(-(x-U)**2/(2*S**2))/((x**(c))*(1+(D/x)**c)**(k+1))
 
     def vectorised_integrate_on_grid(self, func, lo, hi):
         """Returns a callable that can be evaluated on a grid."""

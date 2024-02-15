@@ -192,20 +192,68 @@ for i in tqdm(range(len(investigated_values))):
 
 #%%
     
-
-investigated_characteristic = 'gamma'
-investigated_values = [True, False]
+investigated_characteristic = 'gauss_random_p_det'
+investigated_values = [False, True]
 max_numbers = []
 #b = []
 #f = []
 
 for i in tqdm(range(len(investigated_values))):
-    Investigation = Sampler(universe_count = 100, gamma = investigated_characteristic[i], total_luminosity=1000/3, sample_time = 0.00242, 
-                            investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation = Sampler(universe_count = 50, p_det=investigated_values[i], gamma = False, gauss=True, event_distribution='Random', total_luminosity=1000/3, sample_time = 0.00242,
+                            noise_distribution='gauss', event_distribution_inf='Random', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
     Investigation.Sample()
     #b.append(Investigation.burr_i)
     #f.append(Investigation.full)
     max_numbers.append(Investigation.max_num)
+
+#%%
+    
+investigated_characteristic = 'bvmf_random_p_det'
+investigated_values = [False, True]
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 30, p_det=investigated_values[i], gamma = False, event_distribution='Random', total_luminosity=100/3, sample_time = 0.01162,
+                            noise_distribution='BVMF_eff', event_distribution_inf='Random', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+investigated_characteristic = 'bvmf_random_p_det_imperfect'
+investigated_values = [False, True]
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 10, p_det=investigated_values[i], gamma = False, survey_type = "imperfect", event_distribution='Random', total_luminosity=100/3, sample_time = 0.01162, resolution_H_0 = 100,
+                           redshift_noise_sigma=0.05, noise_distribution='BVMF_eff', event_distribution_inf='Random', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+investigated_characteristic = 'bvmf_random_p_det_imperfect_notinf'
+investigated_values = [False, True]
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 10, p_det=investigated_values[i], gamma = False, survey_type = "perfect", event_distribution='Random', total_luminosity=100/3, sample_time = 0.01162, resolution_H_0 = 100,
+                           redshift_noise_sigma=0.05, noise_distribution='BVMF_eff', event_distribution_inf='Random', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
 
 #%%
 
