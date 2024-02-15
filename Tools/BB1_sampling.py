@@ -1,6 +1,7 @@
 #%%
 import numpy as np
 import random
+from scipy.integrate import quad
 import scipy.stats as ss
 from scipy.optimize import fmin, fsolve
 from math import gamma, modf
@@ -299,5 +300,71 @@ def rotate(mu):
     return final_sample
 '''
 
+def burr_r_squared(x, c, k, l):
+        return ((x/l)**(c+1))*((1+(x/l)**c)**(-k-1))
+
+def pdf_burr_r_squared(x, c, k, l):
+    p = burr_r_squared(x, c, k, l)
+    A = quad(burr_r_squared, 0, np.inf, args=(c,k,l))[0]
+    return p/A
+
+def r2_burr_sampling(random_seed, c, k, l, n_samp):
+    # Efficient method made for c*k > 2
+    S = ((c*k - 1) ** (k - 1/c)) * ((c + 1) ** (1 + 1/c)) * ((c*k + c) ** (-1 - k))
+    x_1 = S**(1 / (c+1))
+    x_1 *= 0.9*x_1
+    x_2 = S**(1 / (1 - c*k))
+    x_2 *= 1.1*x_2
+    D = 1/(S*x_2 - S*x_1 + (x_1**(c+2))/(c+2) + (x_2**(2-c*k))/(c*k-2))
+    
+    F_1 = (D/(c+2)) * (x_1**(c+2))
+    F_2 = F_1 + D*S*(x_2 - x_1)
+    samples = []
+    while len(samples) < n_samp:
+        u_1 = random_seed.random()
+        if u_1 < F_1:
+            x = (u_1 * ((c+2)/D))**(1/(c+2))
+            u_2 = random_seed.random()
+            acc = (1+ x**c)**(1+k)
+            if u_2 < acc:
+                samples.append(x*l)
+        elif u_1 >= F_1 and u_1 <= F_2:
+            x = (u_1/(S*D)) + x_1 - ((x_1**(c+1))/((c+2)*S))
+            u_2 = random_seed.random()
+            acc = (1/S)*(((x)**(c+1)) / ((1 + x**c)**(k+1)))
+            if u_2 < acc:
+                samples.append(x*l)
+        else:
+            x = ((((u_1/D) - ((x_1**(c+2)) / (c+2)) + S*x_1 - S*x_2) * (2 - c*k)) + x_2**(2-c*k))**(1/(2-c*k))
+            u_2 = random_seed.random()
+            acc = (x**(c*k+c)) / ((1 + x**c)**(k+1))
+            if u_2 < acc:
+                samples.append(x*l)
+    #print(S)
+    #print(x_1)
+    #print(x_2)
+    #print(D)
+    #print(F_1)
+    #print(F_2)
+    return samples
+
+
+
+'''
+import matplotlib.pyplot as plt
+
+rand_state = random.Random(5)
+l = 300
+x = np.linspace(0,2*l,100000)
+y = pdf_burr_r_squared(x,15,2,l)
+
+samp = r2_burr_sampling(rand_state,15,2,l,1000000)
+
+plt.hist(samp, bins=100, density=True, histtype='step', edgecolor='b', facecolor='lightblue', hatch='/', fill='True', label='Samples')
+plt.plot(x,y,c='r',ls='dashed', label='PDF')
+plt.grid(c='gray', alpha=0.2)
+plt.legend()
+plt.show()
+'''
 
 # %%

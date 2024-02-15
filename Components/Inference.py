@@ -1,5 +1,6 @@
 #%%
 import numpy as np
+import math
 import scipy as sp
 from scipy.integrate import quad
 from Components.SurveyAndEventData import SurveyAndEventData
@@ -11,19 +12,22 @@ import time
 #%%
 
 class Inference(SurveyAndEventData):
-    def __init__(self, SurveyAndEventData, gamma = True, vectorised = True,
-                 survey_type='perfect', resolution_H_0=100,
-                 H_0_Min = 50, H_0_Max = 100,
-                 gaussian = False, gamma_known = False):
+    def __init__(self, SurveyAndEventData, gamma = True, vectorised = True, event_distribution_inf='Proportional', gauss=False, p_det=True,
+                 survey_type='perfect', resolution_H_0=100, H_0_Min = 50, H_0_Max = 100, gamma_known = False, gauss_type = "Cartesian"):
 
+
+        self.c = self.SurveyAndEventData.c
         self.SurveyAndEventData = SurveyAndEventData
         self.distribution_calculated = False
         self.H_0_Min = H_0_Min
         self.H_0_Max = H_0_Max
         self.survey_type = survey_type
+        self.event_distribution_inf = event_distribution_inf
         self.gamma = gamma
+        self.gauss = gauss
+        self.gauss_type = gauss_type
+        self.p_det = p_det
         self.vectorised = vectorised
-        self.gaussian = gaussian
         self.gamma_known = gamma_known
         self.resolution_H_0 = resolution_H_0
         self.H_0_pdf = np.zeros(self.resolution_H_0)
@@ -33,30 +37,39 @@ class Inference(SurveyAndEventData):
         self.event_selection = self.SurveyAndEventData.event_distribution
 
         self.inference_method = dict({"perfect2d":self.H_0_inference_2d_perfect_survey,
-                                "imperfect2d": self.H_0_inference_2d_imperfect_survey,
-                                "perfect3d": self.H_0_inference_3d_perfect_survey,
-                                "imperfect3d": self.H_0_inference_3d_imperfect_survey,
+                                # "imperfect2d": self.H_0_inference_2d_imperfect_survey,
+                                # "perfect3d": self.H_0_inference_3d_perfect_survey,
+                                # "imperfect3d": self.H_0_inference_3d_imperfect_survey,
                                 "perfectvectorised2d": self.H_0_inference_2d_perfect_survey_vectorised,
                                 "perfectvectorised3d": self.H_0_inference_3d_perfect_survey_vectorised,
-                                "perfectvectorised2dGaussian": self.H_0_inference_2d_perfect_survey_vectorised_gaussian_radius,
-                                "perfectvectorised3dGaussian": self.H_0_inference_3d_perfect_survey_vectorised_gaussian_radius,
-
+                                "perfectvectorised2dGaussRadial": self.H_0_inference_2d_perfect_survey_vectorised_gaussian_radius,
+                                "perfectvectorised3dGaussRadial": self.H_0_inference_3d_perfect_survey_vectorised_gaussian_radius,
+                                "imperfectvectorised3d": self.H_0_inference_3d_imperfect_survey_vectorised,
+                                "perfectvectorised3dGaussCartesian": self.H_0_inference_3d_perfect_survey_vectorised_gaussian
         })
         self.gamma_method = dict({
             "2d": self.H_0_inference_gamma, #Method is identical to 3d, no point writing it twice.
             "3d": self.H_0_inference_gamma,
-            "2dGaussian": self.H_0_inference_2d_gamma_gaussian,
-            "3dGaussian": self.H_0_inference_gamma_gaussian,
+            "2dGauss": self.H_0_inference_2d_gamma_gaussian,
+            "3dGauss": self.H_0_inference_gamma_gaussian,
             "3dGammaKnown": self.H_0_inference_gamma_known
+            #Need a function for cartesian Gaussian
         })
+        #Fix the if statement for selecting Inference method
+        
+        self.lum_term = dict({'Random':self.get_lum_term_random, 
+                              'Proportional': self.get_lum_term_proportional})
 
-        if self.survey_type == "perfect" and self.vectorised and not self.gaussian:
+
+        #if self.SurveyAndEventData.dimension==3 and self.survey_type == "perfect" and self.vectorised:
+        #    self.inference_method_name = self.survey_type + "vectorised" + str(self.SurveyAndEventData.dimension) + "d"
+        
+        if not self.gauss:
             self.inference_method_name = self.survey_type + "vectorised" + str(self.SurveyAndEventData.dimension) + "d"
-        elif self.gaussian:
-            self.inference_method_name = self.survey_type + "vectorised" + str(self.SurveyAndEventData.dimension) + "d" + "Gaussian"
-        else:
-            self.inference_method_name = self.survey_type + str(self.SurveyAndEventData.dimension) + "d"
-
+        elif self.gauss:
+            self.inference_method_name = self.survey_type + "vectorised" + str(
+                self.SurveyAndEventData.dimension) + "d" + "Gauss" + self.gauss_type
+        
         self.g_H_0 = dict()
 
         self.countour = dict({"gauss": self.gauss_p_hat_g_true,
@@ -68,7 +81,7 @@ class Inference(SurveyAndEventData):
         self.H_0_pdf = self.inference_method[self.inference_method_name]()
         if self.gamma: #This step is unvectorised but still only takes ~1/4 of the time of first inference stage
             gamma_method_name = str(self.SurveyAndEventData.dimension)+"d"
-            if self.gaussian:
+            if self.gauss:
                 gamma_method_name += "Gaussian"
             elif self.gamma_known:
                 gamma_method_name += "GammaKnown"
@@ -119,7 +132,7 @@ class Inference(SurveyAndEventData):
                     X = self.SurveyAndEventData.detected_coords[g][0]
                     Y = self.SurveyAndEventData.detected_coords[g][1]
                     phi = np.arctan2(Y, X)
-                    D = (self.SurveyAndEventData.detected_redshifts[g]) / H_0
+                    D = (self.SurveyAndEventData.detected_redshifts[g]) * self.c / H_0
                     galaxy_H_0_contribution = (D * self.SurveyAndEventData.fluxes[g] * u_r *
                                                    self.countour[self.SurveyAndEventData.noise_distribution](
                                                        self.SurveyAndEventData.dimension, D, u_r, u_phi, phi=phi))
@@ -161,7 +174,7 @@ class Inference(SurveyAndEventData):
                     phi = np.arctan2(Y, X)
                     XY = np.sqrt((X) ** 2 + (Y) ** 2)
                     theta = np.arctan2(XY, Z)
-                    D = (self.SurveyAndEventData.detected_redshifts[g]) / H_0
+                    D = (self.SurveyAndEventData.detected_redshifts[g]) * self.c/ H_0
                     galaxy_H_0_contribution = ((D**2) * self.SurveyAndEventData.fluxes[g]
                                                 * self.countour[contour_type]
                                 (self.SurveyAndEventData.dimension, D, u_r, u_phi, u_theta=u_theta, phi=phi, theta=theta))
@@ -181,25 +194,35 @@ class Inference(SurveyAndEventData):
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
+    def get_lum_term_proportional(self, Ds):
+        return np.square(Ds) * self.SurveyAndEventData.fluxes
+
+    def get_lum_term_random(self, Ds):
+        return 1
+
     def H_0_inference_2d_perfect_survey_vectorised(self):
         H_0_recip = np.reciprocal(self.H_0_range)[:, np.newaxis]
 
         redshifts = np.tile(self.SurveyAndEventData.detected_redshifts, (self.resolution_H_0, 1))
 
-        Ds = self.SurveyAndEventData.c * redshifts * H_0_recip
+        Ds = self.c * redshifts * H_0_recip
 
         burr_full = self.get_vectorised_burr(Ds)
 
         vm = self.get_vectorised_vm()
-        if self.event_selection == "Proportional":
-            luminosity_term = self.SurveyAndEventData.fluxes*redshifts*self.burr_cdf(Ds)
-        else: luminosity_term = self.burr_cdf(Ds)
+
+        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
 
         full_expression = burr_full * vm * luminosity_term
         self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
-        self.H_0_pdf = np.sum(np.log(self.H_0_pdf_single_event), axis=0)
-        self.H_0_pdf -= np.max(self.H_0_pdf)
-        self.H_0_pdf = np.exp(self.H_0_pdf)
+
+        if self.p_det:
+            p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
+            P_det_total = np.sum(p_det_vec, axis=1)
+            self.P_det_total = P_det_total
+            self.H_0_pdf_single_event = self.H_0_pdf_single_event / P_det_total
+
+        self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
@@ -208,36 +231,135 @@ class Inference(SurveyAndEventData):
 
         redshifts = np.tile(self.SurveyAndEventData.detected_redshifts, (self.resolution_H_0, 1))
 
-        Ds = redshifts * H_0_recip
+        Ds = redshifts * H_0_recip * self.c
 
         burr_full = self.get_vectorised_burr(Ds)
 
         vmf = self.get_vectorised_vmf()
-        if self.event_selection == "Proportional":
-            luminosity_term = self.SurveyAndEventData.fluxes*np.square(redshifts) * self.burr_cdf(Ds)
-        else: luminosity_term = self.burr_cdf(Ds)
+
+        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
 
         full_expression = burr_full * vmf * luminosity_term
         self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
-        self.H_0_pdf = np.sum(np.log(self.H_0_pdf_single_event), axis=0)
-        self.H_0_pdf -= np.max(self.H_0_pdf)
-        self.H_0_pdf = np.exp(self.H_0_pdf)
+        
+        if self.p_det:
+            p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
+            P_det_total = np.sum(p_det_vec, axis=1)
+            self.P_det_total = P_det_total
+            self.H_0_pdf_single_event = self.H_0_pdf_single_event/P_det_total
+
+        self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
+
+    def get_p_det_vec(self, Ds):
+        threshold = self.SurveyAndEventData.max_D
+        if self.gauss:
+            z = (threshold - Ds) / (np.sqrt(2) * self.SurveyAndEventData.noise_sigma)
+            # should be adjusted to have std proportional to Ds
+            p = 0.5 * (1 + sp.special.erf(z))
+        else:
+            d_inv = np.reciprocal(Ds)
+            arg = threshold * d_inv
+            term_1 = np.power(arg, self.SurveyAndEventData.BVM_c)
+            term_2 = np.power(1 + term_1, -self.SurveyAndEventData.BVM_k)
+            p = 1 - term_2
+        return p
+
+    def H_0_inference_3d_imperfect_survey_vectorised(self):
+        H_0_recip = np.reciprocal(self.H_0_range)[:, np.newaxis]
+
+        redshifts = np.tile(self.SurveyAndEventData.detected_redshifts, (self.resolution_H_0, 1))
+
+        # For now I am keeping constand sigma_z
+        redshifts_uncertanties = np.tile(np.full(len(self.SurveyAndEventData.detected_redshifts),
+                                                 self.SurveyAndEventData.redshift_noise_sigma),
+                                         (self.resolution_H_0, 1))
+
+        us = redshifts * H_0_recip * self.c
+        ss = redshifts_uncertanties * H_0_recip * self.c
+
+        burr_full = self.get_vectorised_normal_burr_int(us, ss)
+
+        # self.burr_full = burr_full
+
+        vmf = self.get_vectorised_vmf()
+
+        # luminosity_term = np.square(us) * self.SurveyAndEventData.fluxes
+
+        luminosity_term = self.lum_term[self.event_distribution_inf](us)
+
+        full_expression = burr_full * vmf * luminosity_term
+
+        # self.full = full_expression
+
+        self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
+        # self.log_H_0_pdf = np.sum(np.log(self.H_0_pdf_single_event), axis=0)
+        # self.H_0_pdf = np.exp(self.log_H_0_pdf - np.min(self.log_H_0_pdf[np.isfinite(self.log_H_0_pdf)]))
+        # self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+
+        if self.p_det:
+            p_det_vec = luminosity_term * self.get_p_det_vec(us)
+            P_det_total = np.sum(p_det_vec, axis=1)
+            self.P_det_total = P_det_total
+            self.H_0_pdf_single_event = self.H_0_pdf_single_event / P_det_total
+
+        f = np.vectorize(math.frexp)
+        split = f(self.H_0_pdf_single_event)
+        flo = split[0]
+        ex = split[1]
+        p_flo = np.prod(flo, axis=0)
+        p_ex = np.sum(ex, axis=0)
+        scaled_ex = p_ex - np.max(p_ex)
+        scaled_flo = p_ex / p_flo[np.argmax(p_ex)]
+        self.H_0_pdf = scaled_flo * (0.5 ** (-1 * scaled_ex))
+        self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+        return self.H_0_pdf
+
+    def H_0_inference_3d_perfect_survey_vectorised_gaussian(self):
+        H_0_recip = np.reciprocal(self.H_0_range)[:, np.newaxis]
+
+        redshifts = np.tile(self.SurveyAndEventData.detected_redshifts, (self.resolution_H_0, 1))
+
+        Ds = redshifts * H_0_recip * self.c
+
+        gauss_full = self.get_vectorised_3d_gauss_cartesian(Ds)
+
+        # self.gauss_full = gauss_full
+
+        # luminosity_term = np.square(Ds) * self.SurveyAndEventData.fluxes
+
+        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
+
+        full_expression = gauss_full * luminosity_term
+
+        # self.full = full_expression
+
+        self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
+
+        if self.p_det:
+            p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
+            P_det_total = np.sum(p_det_vec, axis=1)
+            self.P_det_total = P_det_total
+            self.H_0_pdf_single_event = self.H_0_pdf_single_event / P_det_total
+
+        self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
+        self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+        return self.H_0_pdf
+        
 
     def H_0_inference_2d_perfect_survey_vectorised_gaussian_radius(self):
         H_0_recip = np.reciprocal(self.H_0_range)[:, np.newaxis]
 
         redshifts = np.tile(self.SurveyAndEventData.detected_redshifts, (self.resolution_H_0, 1))
 
-        Ds = redshifts * H_0_recip
+        Ds = self.c * redshifts * H_0_recip
 
         gaussian_radius_term = self.get_vectorised_gaussian_rads(Ds)
 
         vmf = self.get_vectorised_vm()
-        if self.event_selection == "Proportional":
-            luminosity_term = redshifts * self.SurveyAndEventData.fluxes * ss.norm.cdf(x = self.SurveyAndEventData.max_D, loc = Ds, scale = self.SurveyAndEventData.noise_sigma)
-        else: luminosity_term = ss.norm.cdf(x = self.SurveyAndEventData.max_D, loc = Ds, scale = self.SurveyAndEventData.noise_sigma)
+
+        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
 
         full_expression = gaussian_radius_term * vmf * luminosity_term
         H_0_pdf_single_event = np.sum(full_expression, axis=2)
@@ -254,14 +376,13 @@ class Inference(SurveyAndEventData):
 
         redshifts = np.tile(self.SurveyAndEventData.detected_redshifts, (self.resolution_H_0, 1))
 
-        Ds = redshifts * H_0_recip
+        Ds = self.c * redshifts * H_0_recip
 
         gaussian_radius_term = self.get_vectorised_gaussian_rads(Ds)
 
         vmf = self.get_vectorised_vmf()
-        if self.event_selection == "Proportional":
-            luminosity_term = np.square(redshifts) * self.SurveyAndEventData.fluxes * ss.norm.cdf(x = self.SurveyAndEventData.max_D, loc = Ds, scale = self.SurveyAndEventData.noise_sigma)
-        else: luminosity_term = ss.norm.cdf(x = self.SurveyAndEventData.max_D, loc = Ds, scale = self.SurveyAndEventData.noise_sigma)
+
+        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
 
         full_expression = gaussian_radius_term * vmf * luminosity_term
         self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
@@ -299,7 +420,7 @@ class Inference(SurveyAndEventData):
                     X = self.SurveyAndEventData.detected_coords[g][0]
                     Y = self.SurveyAndEventData.detected_coords[g][1]
                     phi = np.arctan2(Y, X)
-                    D = (self.SurveyAndEventData.detected_redshifts[g]) / H_0
+                    D = (self.SurveyAndEventData.detected_redshifts[g]) * self.c/ H_0
                     partial_int = lambda z_har, sigma_z, H_0, u_r: quad(self.p_D_prior, 0, np.inf, args=(z_har, sigma_z, H_0, u_r,))
                     sigma_z = self.SurveyAndEventData.detected_redshifts_uncertainties[g]
                     z_hat = self.SurveyAndEventData.detected_redshifts[g]
@@ -337,7 +458,7 @@ class Inference(SurveyAndEventData):
                     phi = np.arctan2(Y, X)
                     XY = np.sqrt((X) ** 2 + (Y) ** 2)
                     theta = np.arctan2(XY, Z)
-                    D = (self.SurveyAndEventData.detected_redshifts[g]) / H_0
+                    D = (self.SurveyAndEventData.detected_redshifts[g]) * self.c/ H_0
                     partial_int = lambda z_har, sigma_z, H_0, u_r: quad(self.p_D_prior, 0, np.inf, args=(z_har, sigma_z, H_0, u_r,))
                     sigma_z = self.SurveyAndEventData.detected_redshifts_uncertainties[g]
                     z_har = self.SurveyAndEventData.detected_redshifts[g]
@@ -400,7 +521,7 @@ class Inference(SurveyAndEventData):
         self.gamma_marginalised = np.exp(log_gamma_marginalised)
         self.expected_event_num_divded_by_gamma = expected_event_num_divded_by_gamma
         return self.gamma_marginalised
-
+    
     def H_0_inference_gamma_known(self):
         gamma_marginalised = np.zeros(len(self.H_0_pdf))
         expected_event_num_divded_by_gamma = np.zeros(len(self.H_0_pdf))
@@ -433,11 +554,20 @@ class Inference(SurveyAndEventData):
         cdf = 1-np.power(1 + np.power((max_D/lam),c),-k)
         return cdf
 
+    def burr_cdf_x(self, x, lam):
+        c = self.SurveyAndEventData.BVM_c
+        k = self.SurveyAndEventData.BVM_k
+        cdf = 1-(1 + (x/lam)**c)**-k
+        return cdf
+
     def get_vectorised_burr(self, Ds):
         Ds_tile = np.tile(Ds, (self.SurveyAndEventData.detected_event_count, 1, 1))
 
         recip_Ds_tile = np.reciprocal(Ds_tile)
-        u_r = np.sqrt(np.einsum('ij,ij->i', self.SurveyAndEventData.BH_detected_coords, self.SurveyAndEventData.BH_detected_coords))[:, np.newaxis, np.newaxis]
+        u_r = np.sqrt(np.einsum('ij,ij->i', self.SurveyAndEventData.BH_detected_coords,
+                                self.SurveyAndEventData.BH_detected_coords))[:, np.newaxis, np.newaxis]
+
+        # u_r = np.sqrt(np.sum(np.square(self.SurveyAndEventData.BH_detected_coords), axis=1))[:, np.newaxis, np.newaxis]
 
         omegas = recip_Ds_tile * u_r
 
@@ -458,6 +588,26 @@ class Inference(SurveyAndEventData):
         gaussian_full = gaussian_coefficient * np.exp(-0.5*np.square((u_r - Ds_tile) / self.SurveyAndEventData.noise_sigma))
 
         return gaussian_full
+    
+    def get_vectorised_vm(self):
+        kappa = self.SurveyAndEventData.BVM_kappa
+        vm_C = kappa / (2 * np.pi * (np.exp(kappa) - np.exp(-kappa)))
+
+        u_x = self.SurveyAndEventData.BH_detected_coords[:, 0]
+        u_y = self.SurveyAndEventData.BH_detected_coords[:, 1]
+
+        u_phi = np.arctan2(u_y, u_x)[:, np.newaxis]
+
+        X = self.SurveyAndEventData.detected_coords[:, 0]
+        Y = self.SurveyAndEventData.detected_coords[:, 1]
+
+        phi = np.tile(np.arctan2(Y, X), (self.SurveyAndEventData.detected_event_count, 1))
+
+        cos_phi_diff = np.cos(phi - u_phi)
+
+        vm = vm_C * np.exp(kappa * cos_phi_diff)[:, np.newaxis,:]
+        return vm    
+    
     def get_vectorised_vmf(self):
         kappa = self.SurveyAndEventData.BVM_kappa
         vmf_C = kappa / (2 * np.pi * (np.exp(kappa) - np.exp(-kappa)))
@@ -489,29 +639,115 @@ class Inference(SurveyAndEventData):
                                       + cos_theta * cos_u_theta))[:, np.newaxis,:]
         return vmf
 
-    def get_vectorised_vm(self):
-        kappa = self.SurveyAndEventData.BVM_kappa
-        vm_C = kappa / (2 * np.pi * (np.exp(kappa) - np.exp(-kappa)))
+    def get_vectorised_normal_burr_int(self, us, ss):
+        print('Reached Burr Normal integral')
+        U = np.tile(us[np.newaxis, :], (self.SurveyAndEventData.detected_event_count, 1, 1))
+        S = np.tile(ss[np.newaxis, :], (self.SurveyAndEventData.detected_event_count, 1, 1))
+        d = np.sqrt(np.sum(np.square(self.SurveyAndEventData.BH_detected_coords), axis=1))[:, np.newaxis, np.newaxis]
+        D = np.tile(d, (1, len(self.H_0_range), len(self.SurveyAndEventData.detected_redshifts)))
+
+        integral = self.vectorised_integrate_on_grid(self.P_D_gal, 0, np.inf)
+        burr_full = integral(D, U, S)
+        print('Ended Burr Normal integral')
+        return burr_full
+    
+    def get_vectorised_3d_gauss_cartesian(self, Ds):
+        Ds_tile = np.tile(Ds, (self.SurveyAndEventData.detected_event_count, 1, 1))
+
+        #recip_Ds_tile = np.reciprocal(Ds_tile)
 
         u_x = self.SurveyAndEventData.BH_detected_coords[:, 0]
         u_y = self.SurveyAndEventData.BH_detected_coords[:, 1]
+        u_z = self.SurveyAndEventData.BH_detected_coords[:, 2]
 
-        u_phi = np.arctan2(u_y, u_x)[:, np.newaxis]
+        uu_x = u_x[:, np.newaxis, np.newaxis]
+        uu_y = u_y[:, np.newaxis, np.newaxis]
+        uu_z = u_z[:, np.newaxis, np.newaxis]
+        
+        #uu_x = np.tile(u_x, (self.SurveyAndEventData.detected_event_count, 1, 1))
+        #uu_y = np.tile(u_y, (self.SurveyAndEventData.detected_event_count, 1, 1))
+        #uu_z = np.tile(u_z, (self.SurveyAndEventData.detected_event_count, 1, 1))
+
 
         X = self.SurveyAndEventData.detected_coords[:, 0]
         Y = self.SurveyAndEventData.detected_coords[:, 1]
+        Z = self.SurveyAndEventData.detected_coords[:, 2]
+        XY = np.sqrt((X) ** 2 + (Y) ** 2)
 
         phi = np.tile(np.arctan2(Y, X), (self.SurveyAndEventData.detected_event_count, 1))
+        theta = np.tile(np.arctan2(XY, Z), (self.SurveyAndEventData.detected_event_count, 1))
 
-        cos_phi_diff = np.cos(phi - u_phi)
+        #x_g = Ds_tile * np.sin(theta)[:,np.newaxis,:] * np.cos(phi)[np.newaxis,:,:]
+        #y_g = Ds_tile * np.sin(theta)[:,np.newaxis,:] * np.sin(phi)[np.newaxis,:,:]
+        #z_g = Ds_tile * np.cos(theta)[:,np.newaxis,:]
 
-        vm = vm_C * np.exp(kappa * cos_phi_diff)[:, np.newaxis,:]
-        return vm
+        sin_cos = np.sin(theta) * np.cos(phi)
+        sin_sin = np.sin(theta) * np.sin(phi)
+        cos = np.cos(theta)
+        x_g = Ds_tile * sin_cos[:,np.newaxis,:]
+        y_g = Ds_tile * sin_sin[:,np.newaxis,:]
+        z_g = Ds_tile * cos[:,np.newaxis,:]
+        #x_g = Ds_tile * np.sin(theta)[np.newaxis,np.newaxis,:] * np.cos(phi)[np.newaxis,np.newaxis,:]
+        #y_g = Ds_tile * np.sin(theta)[np.newaxis,np.newaxis,:] * np.sin(phi)[np.newaxis,np.newaxis,:]
+        #z_g = Ds_tile * np.cos(theta)[np.newaxis,np.newaxis,:]
+
+        omega_x = uu_x - x_g
+        omega_y = uu_y - y_g
+        omega_z = uu_z - z_g
+
+        gauss_term = np.square(omega_x) + np.square(omega_y) + np.square(omega_z)
+
+        gauss_full = np.exp(-gauss_term/(2*self.SurveyAndEventData.noise_sigma**2))
+
+        return gauss_full
+
+    def get_vectorised_3d_gauss_cartesian_version_2(self, Ds):
+        # gives the same result but with slightly different code
+
+        u_x = self.SurveyAndEventData.BH_detected_coords[:, 0]
+        u_y = self.SurveyAndEventData.BH_detected_coords[:, 1]
+        u_z = self.SurveyAndEventData.BH_detected_coords[:, 2]
+
+        uu_x = u_x[:, np.newaxis, np.newaxis]
+        uu_y = u_y[:, np.newaxis, np.newaxis]
+        uu_z = u_z[:, np.newaxis, np.newaxis]
+        
+        #uu_x = np.tile(u_x, (self.SurveyAndEventData.detected_event_count, 1, 1))
+        #uu_y = np.tile(u_y, (self.SurveyAndEventData.detected_event_count, 1, 1))
+        #uu_z = np.tile(u_z, (self.SurveyAndEventData.detected_event_count, 1, 1))
+
+
+        X = self.SurveyAndEventData.detected_coords[:, 0]
+        Y = self.SurveyAndEventData.detected_coords[:, 1]
+        Z = self.SurveyAndEventData.detected_coords[:, 2]
+        XY = np.sqrt((X) ** 2 + (Y) ** 2)
+
+        phi = np.arctan2(Y, X)
+        theta = np.arctan2(XY, Z)
+
+        sin_cos = np.sin(theta) * np.cos(phi)
+        sin_sin = np.sin(theta) * np.sin(phi)
+        cos = np.cos(theta)
+        x_g = Ds * sin_cos[np.newaxis,:]
+        y_g = Ds * sin_sin[np.newaxis,:]
+        z_g = Ds * cos[np.newaxis,:]
+
+        omega_x = uu_x - x_g[np.newaxis,:]
+        omega_y = uu_y - y_g[np.newaxis,:]
+        omega_z = uu_z - z_g[np.newaxis,:]
+
+        gauss_term = np.square(omega_x) + np.square(omega_y) + np.square(omega_z)
+
+        gauss_full = np.exp(-gauss_term/(2*self.SurveyAndEventData.noise_sigma**2))
+
+        return gauss_full
+
+
 
     def calc_N1(self, H_0):
         N1 = 0
         for g_i, flux in enumerate(self.SurveyAndEventData.fluxes):
-            D_gi = self.SurveyAndEventData.c*self.SurveyAndEventData.detected_redshifts[g_i]/H_0
+            D_gi = self.SurveyAndEventData.detected_redshifts[g_i] * self.c / H_0
             if self.SurveyAndEventData.dimension == 2:
                 luminosity = 2*np.pi*flux*D_gi
             else:
@@ -519,6 +755,7 @@ class Inference(SurveyAndEventData):
             N1 += luminosity*self.burr_cdf(lam = D_gi)
         N1 *= self.SurveyAndEventData.sample_time
         return N1
+    
     def calc_N1_gaussian(self, H_0):
         N1 = 0
         for g_i, flux in enumerate(self.SurveyAndEventData.fluxes):
@@ -530,11 +767,24 @@ class Inference(SurveyAndEventData):
             N1 += luminosity*ss.norm.cdf(x = self.SurveyAndEventData.max_D ,loc = D_gi, scale = self.SurveyAndEventData.noise_sigma)
         N1 *= self.SurveyAndEventData.sample_time
         return N1
+    
+    
+    def P_D_gal(self,x,D,U,S):
+        c = self.SurveyAndEventData.BVM_c
+        k = self.SurveyAndEventData.BVM_k
+        return np.exp(-(x-U)**2/(2*S**2))/((x**(c))*(1+(D/x)**c)**(k+1))
+
+    def vectorised_integrate_on_grid(self, func, lo, hi):
+        """Returns a callable that can be evaluated on a grid."""
+        return np.vectorize(lambda n,m,l: quad(func, lo, hi, (n,m,l))[0])
+
+
+
 
 
 
 # from Components.EventGenerator import EventGenerator
-# # # # '''
+# # # '''
 # Gen = EventGenerator(dimension = 3, size = 50, sample_time=0.01, event_rate=200,
 #                         luminosity_gen_type = "Full-Schechter", coord_gen_type = "Random",
 #                         cluster_coeff=5, characteristic_luminosity=.1, total_luminosity=100,
@@ -569,5 +819,53 @@ class Inference(SurveyAndEventData):
 
 
 
+
+# %%
+# 
+# import numpy as np    
+# from scipy.integrate import quad
+# 
+# def f(x,u,s):
+#     return np.exp(-(x-u)**2/(2*s**2))
+# 
+# def g(x,D,c,k):
+#     return 1/((x**c)*(1+(D/x)**c)**(k+1))
+# 
+# def h(x,D,u,s):
+#     c = 15
+#     k = 2
+#     return f(x,u,s)*g(x,D,c,k)
+# 
+# c = 15
+# k = 2
+# s = 0.05
+# u = np.arange(1,1000)
+# D = np.arange(1,1000,20)
+# 
+# #for i in D:
+# #    for j in u:
+# #        r = quad(h,0,np.inf, args=(i,j,s,c,k))[0]
+# #        print(r)
+# 
+# #%%
+# 
+# def bgauss(D,u,s):
+#     c = 15
+#     k = 2
+#     return quad(h,0,np.inf,args=(D,u,s))[0]
+# 
+# vec_pos = np.vectorize(bgauss)
+# 
+# 
+# #%%
+# 
+# def integrate_on_grid(func, lo, hi):
+#     """Returns a callable that can be evaluated on a grid."""
+#     return np.vectorize(lambda n,m,l: quad(func, lo, hi, (n,m,l))[0])
+# 
+# #Ds, us = np.mgrid[1:1000:20, 1:1000:1]
+# c = 15
+# k = 2
+# #I = integrate_on_grid(h, 0, np.inf, c,k)(Ds,us)
 
 # %%

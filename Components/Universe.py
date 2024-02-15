@@ -1,3 +1,4 @@
+#%%
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -13,10 +14,12 @@ class Universe:
                  cluster_coeff = 2, total_luminosity = 1000, size = 1,
                  alpha = .3, beta=-1.5, characteristic_luminosity = 1, min_lum = 0,
                  max_lum = .5, H_0 = 70, redshift_noise_sigma=0.,
-                 lower_lim=1, seed = None):
+                 lower_lim=1, cube=True, seed = None):
 
         self.H_0 = H_0
-        self.c = 1
+        self.c = 3*(10**5)
+
+        self.cube = cube
 
         if seed is not None:
             self.seed = seed
@@ -72,7 +75,7 @@ class Universe:
         for i in range(len(self.detected_redshifts)):
             self.detected_redshifts[i] = self.H_0*np.sqrt(np.sum(np.square(self.detected_coords[i])))/self.c
             # Also it should depend on the true z not z_hat
-            self.detected_redshifts_uncertainties[i] = 300000*redshift_noise_sigma*(1+self.detected_redshifts[i]/300000)**3
+            self.detected_redshifts_uncertainties[i] = redshift_noise_sigma #*(1+self.detected_redshifts[i])**3
 
 
         self.fluxes = self.find_flux()
@@ -164,8 +167,14 @@ class Universe:
 
     def random_coords(self):
         random_coords = np.zeros((self.n, self.dimension))
-        for i in range(self.n):
-            random_coords[i] = np.array([(self.rand_rand_state.random()-0.5)*2*self.size for _ in range(self.dimension)])
+        if self.cube:
+            for i in range(self.n):
+                random_coords[i] = np.array([(self.rand_rand_state.random()-0.5)*2*self.size for _ in range(self.dimension)])
+        else:
+            for i in range(self.n):
+                point = np.array([(self.rand_rand_state.random()-0.5)*2*self.size for _ in range(self.dimension)])
+                if np.linalg.norm(point) < self.size:
+                    random_coords[i] = point
         return random_coords
 
     def clustered_coords(self):
@@ -197,7 +206,8 @@ class Universe:
         for i in range(self.n):
             r = np.sqrt(np.sum(np.square(self.true_coords[i])))
             rhat = self.true_coords[i] / r
-            sigma = self.redshift_noise_sigma*(r/(np.sqrt(self.dimension)*self.size))
+            #sigma = self.redshift_noise_sigma*(r/(np.sqrt(self.dimension)*self.size))
+            sigma = self.redshift_noise_sigma*self.c/self.H_0
             noise = self.np_rand_state.normal(loc=0.0, scale=sigma, size=1)
             detected_coords[i][:] = self.true_coords[i] + rhat*noise
             distance_range[i][:] = np.array([self.true_coords[i] - rhat*sigma*3,
@@ -234,3 +244,5 @@ class Universe:
 #                ,lower_lim=0.05, min_lum=0.05, seed = 1)
 # Gen.plot_universe()
 #
+
+# %%
