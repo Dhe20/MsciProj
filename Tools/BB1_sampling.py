@@ -7,6 +7,15 @@ from scipy.optimize import fmin, fsolve
 from math import gamma, modf
 
 
+# Flux values calculation
+
+def flux_percentile(a , L_star, size):
+    return  (L_star/(4*np.pi* (size**2))) * (1-a)**(-2/3)
+
+
+#################
+#################
+#################
 
 def neg_gamma(z):
     # Full analytic continuation of gamma function

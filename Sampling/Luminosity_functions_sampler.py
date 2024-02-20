@@ -208,15 +208,15 @@ for i in tqdm(range(len(investigated_values))):
 
 #%%
     
-investigated_characteristic = 'bvmf_random_p_det'
+investigated_characteristic = 'bvmf_prop_p_det'
 investigated_values = [False, True]
 max_numbers = []
 #b = []
 #f = []
 
 for i in tqdm(range(len(investigated_values))):
-    Investigation = Sampler(universe_count = 30, p_det=investigated_values[i], gamma = False, event_distribution='Random', total_luminosity=100/3, sample_time = 0.01162,
-                            noise_distribution='BVMF_eff', event_distribution_inf='Random', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation = Sampler(universe_count = 50, p_det=investigated_values[i], gamma = False, event_distribution='Proportional', total_luminosity=1000/3, sample_time = 0.001937,
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
     Investigation.Sample()
     #b.append(Investigation.burr_i)
     #f.append(Investigation.full)

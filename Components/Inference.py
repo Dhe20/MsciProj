@@ -215,15 +215,17 @@ class Inference(SurveyAndEventData):
         luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
 
         full_expression = burr_full * vm * luminosity_term
+        
         self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
+        self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
 
         if self.p_det:
             p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
             P_det_total = np.sum(p_det_vec, axis=1)
             self.P_det_total = P_det_total
-            self.H_0_pdf_single_event = self.H_0_pdf_single_event / P_det_total
-
-        self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
+            P_det_total_power = np.power(P_det_total, self.SurveyAndEventData.detected_event_count)
+            self.H_0_pdf = self.H_0_pdf/P_det_total_power
+        
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
@@ -241,15 +243,17 @@ class Inference(SurveyAndEventData):
         luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
 
         full_expression = burr_full * vmf * luminosity_term
-        self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
         
+        self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
+        self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
+
         if self.p_det:
             p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
             P_det_total = np.sum(p_det_vec, axis=1)
             self.P_det_total = P_det_total
-            self.H_0_pdf_single_event = self.H_0_pdf_single_event/P_det_total
-
-        self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
+            P_det_total_power = np.power(P_det_total, self.SurveyAndEventData.detected_event_count)
+            self.H_0_pdf = self.H_0_pdf/P_det_total_power
+        
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
@@ -326,10 +330,6 @@ class Inference(SurveyAndEventData):
 
         gauss_full = self.get_vectorised_3d_gauss_cartesian(Ds)
 
-        # self.gauss_full = gauss_full
-
-        # luminosity_term = np.square(Ds) * self.SurveyAndEventData.fluxes
-
         luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
 
         full_expression = gauss_full * luminosity_term
@@ -337,14 +337,15 @@ class Inference(SurveyAndEventData):
         # self.full = full_expression
 
         self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
+        self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
 
         if self.p_det:
             p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
             P_det_total = np.sum(p_det_vec, axis=1)
             self.P_det_total = P_det_total
-            self.H_0_pdf_single_event = self.H_0_pdf_single_event / P_det_total
-
-        self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
+            P_det_total_power = np.power(P_det_total, self.SurveyAndEventData.detected_event_count)
+            self.H_0_pdf = self.H_0_pdf/P_det_total_power
+        
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
         
@@ -363,9 +364,18 @@ class Inference(SurveyAndEventData):
         luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
 
         full_expression = gaussian_radius_term * vmf * luminosity_term
+        
         H_0_pdf_single_event = np.sum(full_expression, axis=2)
         self.H_0_pdf_single_event = np.reciprocal((np.sum(H_0_pdf_single_event, axis=1))*self.H_0_increment)[:, np.newaxis] * H_0_pdf_single_event
         self.H_0_pdf = np.sum(np.log(H_0_pdf_single_event), axis=0)
+        
+        if self.p_det:
+            p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
+            P_det_total = np.sum(p_det_vec, axis=1)
+            self.P_det_total = P_det_total
+            P_det_total_power_log = self.SurveyAndEventData.detected_event_count * np.log(P_det_total)
+            self.H_0_pdf = self.H_0_pdf - P_det_total_power_log
+        
         self.H_0_pdf -= np.max(self.H_0_pdf)
         self.H_0_pdf = np.exp(self.H_0_pdf)
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
@@ -386,8 +396,19 @@ class Inference(SurveyAndEventData):
         luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
 
         full_expression = gaussian_radius_term * vmf * luminosity_term
+        
         self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
+        self.H_0_pdf_single_event = np.reciprocal((np.sum(H_0_pdf_single_event, axis=1))*self.H_0_increment)[:, np.newaxis] * H_0_pdf_single_event
         self.H_0_pdf = np.sum(np.log(self.H_0_pdf_single_event), axis=0)
+        
+        if self.p_det:
+            p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
+            P_det_total = np.sum(p_det_vec, axis=1)
+            self.P_det_total = P_det_total
+            P_det_total_power_log = self.SurveyAndEventData.detected_event_count * np.log(P_det_total)
+            self.H_0_pdf = self.H_0_pdf - P_det_total_power_log
+        
+
         self.H_0_pdf -= np.max(self.H_0_pdf)
         self.H_0_pdf = np.exp(self.H_0_pdf)
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
