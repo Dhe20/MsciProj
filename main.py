@@ -7,22 +7,22 @@ import matplotlib.pyplot as plt
 
 
 # while OutsideBox:
-Gen = EventGenerator(dimension = 3, size = 50, sample_time= 2*10**(-2), event_rate=10**3,
+Gen = EventGenerator(dimension = 2, size = 50, sample_time=0.05*10**(-2), event_rate=10**3,
                      luminosity_gen_type = "Full-Schechter", coord_gen_type = "Random",
                      cluster_coeff=5, characteristic_luminosity=.5, total_luminosity=100,
                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0,
-                     resolution=200, plot_contours=False, seed = 10)
+                     resolution=200, plot_contours=True, seed = 10)
 Data = Gen.GetSurveyAndEventData()
 print(Gen.detected_event_count)
 # print(len(Gen.detected_redshifts))
 
-# Gen.plot_universe_and_events()
+Gen.plot_universe_and_events()
 
 
-Y = Inference(Data, H_0_Min=60, H_0_Max = 80, resolution_H_0 = 200)
-Y.H_0_Prob()
-Y.plot_H_0()
-print(Y.get_mean())
+# Y = Inference(Data, H_0_Min=60, H_0_Max = 80, resolution_H_0 = 200)
+# Y.H_0_Prob()
+# Y.plot_H_0()
+# print(Y.get_mean())
 # #
 # Y2 = Inference(Data, H_0_Min=50, H_0_Max = 140, resolution_H_0 = 100, gamma = False)
 # Y2.H_0_Prob()
