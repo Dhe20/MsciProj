@@ -2,17 +2,20 @@
 import numpy as np
 import math
 import scipy as sp
-from scipy.integrate import quad
+import scipy.stats as sps
+from scipy.integrate import quad, dblquad
 from Components.SurveyAndEventData import SurveyAndEventData
+from Tools.BB1_sampling import p as BB1_pdf, neg_gamma
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scipy.special import gammainc
 import scipy.stats as ss
 import time
+
 #%%
 
 class Inference(SurveyAndEventData):
-    def __init__(self, SurveyAndEventData, gamma = True, vectorised = True, event_distribution_inf='Proportional', gauss=False, p_det=True,
+    def __init__(self, SurveyAndEventData, gamma = True, vectorised = True, event_distribution_inf='Proportional', lum_function_inf = 'Full-Schechter', gauss=False, p_det=True, poster=False,
                  survey_type='perfect', resolution_H_0=100, H_0_Min = 50, H_0_Max = 100, gamma_known = False, gauss_type = "Cartesian"):
 
         self.SurveyAndEventData = SurveyAndEventData
@@ -24,10 +27,12 @@ class Inference(SurveyAndEventData):
         self.H_0_Max = H_0_Max
         self.survey_type = survey_type
         self.event_distribution_inf = event_distribution_inf
+        self.lum_function_inf = lum_function_inf
         self.gamma = gamma
         self.gauss = gauss
         self.gauss_type = gauss_type
         self.p_det = p_det
+        self.poster = poster
         self.vectorised = vectorised
         self.gamma_known = gamma_known
         self.resolution_H_0 = resolution_H_0
@@ -46,7 +51,8 @@ class Inference(SurveyAndEventData):
                                 "perfectvectorised2dGaussRadial": self.H_0_inference_2d_perfect_survey_vectorised_gaussian_radius,
                                 "perfectvectorised3dGaussRadial": self.H_0_inference_3d_perfect_survey_vectorised_gaussian_radius,
                                 "imperfectvectorised3d": self.H_0_inference_3d_imperfect_survey_vectorised,
-                                "perfectvectorised3dGaussCartesian": self.H_0_inference_3d_perfect_survey_vectorised_gaussian
+                                "perfectvectorised3dGaussCartesian": self.H_0_inference_3d_perfect_survey_vectorised_gaussian,
+                                "perfectvectorised3dposter": self.poster_H_0_inference_3d_perfect_survey_vectorised,
         })
         self.gamma_method = dict({
             "2d": self.H_0_inference_gamma, #Method is identical to 3d, no point writing it twice.
@@ -61,6 +67,13 @@ class Inference(SurveyAndEventData):
         self.lum_term = dict({'Random':self.get_lum_term_random, 
                               'Proportional': self.get_lum_term_proportional})
 
+        self.lum_term_integrand = dict({'Random':self.var_lum_const, 
+                              'Proportional': self.var_lum_prop})
+
+        self.lum_function_integrand = dict({'Full-Schechter':self.var_BB1,
+                                            'Shoddy-Schechter': self.var_schechter})
+
+
 
         #if self.SurveyAndEventData.dimension==3 and self.survey_type == "perfect" and self.vectorised:
         #    self.inference_method_name = self.survey_type + "vectorised" + str(self.SurveyAndEventData.dimension) + "d"
@@ -70,6 +83,9 @@ class Inference(SurveyAndEventData):
         elif self.gauss:
             self.inference_method_name = self.survey_type + "vectorised" + str(
                 self.SurveyAndEventData.dimension) + "d" + "Gauss" + self.gauss_type
+        
+        if self.poster:
+            self.inference_method_name+='poster'
         
         self.g_H_0 = dict()
 
@@ -88,7 +104,8 @@ class Inference(SurveyAndEventData):
                 gamma_method_name += "GammaKnown"
             gamma_marginalisation = self.gamma_method[gamma_method_name]()
             self.H_0_pdf *= gamma_marginalisation
-        self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+        if not self.poster:  
+            self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
 
@@ -256,6 +273,35 @@ class Inference(SurveyAndEventData):
         
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
+
+    def poster_H_0_inference_3d_perfect_survey_vectorised(self):
+        H_0_recip = np.reciprocal(self.H_0_range)[:, np.newaxis]
+
+        redshifts = np.tile(self.SurveyAndEventData.detected_redshifts, (self.resolution_H_0, 1))
+
+        Ds = redshifts * H_0_recip * self.c
+
+        burr_full = self.get_vectorised_burr(Ds)
+
+        vmf = self.get_vectorised_vmf()
+
+        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
+
+        full_expression = burr_full * vmf * luminosity_term
+        
+        self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
+        #self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
+
+        if self.p_det:
+            p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
+            P_det_total = np.sum(p_det_vec, axis=1)
+            self.P_det_total = P_det_total
+            #P_det_total_power = np.power(P_det_total, self.SurveyAndEventData.detected_event_count)
+            #self.H_0_pdf = self.H_0_pdf/P_det_total_power
+            self.H_0_pdf_single_event = self.H_0_pdf_single_event/P_det_total
+        
+        self.H_0_pdf_single_event /= np.sum(self.H_0_pdf_single_event, axis=1)[:,np.newaxis] * (self.H_0_increment)
+        return self.H_0_pdf_single_event
 
     def get_p_det_vec(self, Ds):
         threshold = self.SurveyAndEventData.max_D
@@ -801,8 +847,47 @@ class Inference(SurveyAndEventData):
         return np.vectorize(lambda n,m,l: quad(func, lo, hi, (n,m,l))[0])
 
 
+    ### Completeness
+
+    def BB1_p(self,x,b,u,l):
+        b = b-2
+        C =1/((neg_gamma(1+b))*(1-1/(1+u/l)**(b+1)))
+        p =(C/u)*(1-np.exp(-x/l))*((x/u)**b)*np.exp(-x/u)
+        return p
+
+    def var_lum_prop(self, L):
+        return L
+    
+    def var_lum_const(self, L):
+        return 1
+    
+    def var_schechter(self, L):
+        return sps.gamma.pdf(L , 0.3, scale=1)
+    
+    def var_BB1(self, L):
+        return self.BB1_p(L, -1.5, 1, 0.1)
+    
+    def p_G_integrad(self, L, z, H_0):
+        return z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * self.lum_term_integrand[self.event_distribution_inf](L) * self.lum_function_integrand[self.lum_function_inf](L)
+
+    def p_G(self, H_0_values):
+        # Need to integrate one for every H_0 value
+        p_g = self.vectorised_integrate_2d(self.p_G_integrad, 0, np.inf, lambda z: 4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z/H_0_values)**2, np.inf)(H_0_values) / (
+                self.vectorised_integrate_2d(self.p_G_integrad, 0, np.inf, 0, np.inf)(H_0_values))
+        return p_g
+    
+    def vectorised_integrate_2d(self, func, lo, hi, gfun, hfun):
+        """Returns a callable that can be evaluated on a grid."""
+        return np.vectorize(lambda n: dblquad(func, lo, hi, gfun, hfun, [n])[0])
 
 
+    def p_G_trial(self, H_0_values):
+        # Need to integrate one for every H_0 value
+        p_g = np.zeros(len(H_0_values))
+        for i in range(len(H_0_values)):
+            p_g[i] = dblquad(self.p_G_integrad, 0, np.inf, lambda z: 4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z/H_0_values[i])**2, np.inf, args=[H_0_values[i],], epsabs=0.00001)[0] / (
+                    dblquad(self.p_G_integrad, 0, np.inf, 0, np.inf, args=[H_0_values[i],],  epsabs=0.00001)[0])
+        return p_g
 
 
 # from Components.EventGenerator import EventGenerator

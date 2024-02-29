@@ -48,3 +48,12 @@ ax.yaxis.set_major_locator(MultipleLocator(0.1))
 plt.show()
 
 # %%
+
+s = 500
+b = 20
+samples = sps.norm.rvs(size=s, loc=70, scale=1.5)
+
+plt.hist(samples,bins=b)
+plt.show()
+
+# %%
