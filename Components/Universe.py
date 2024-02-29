@@ -11,7 +11,7 @@ from scipy.special import gamma, gammaincc
 plt.style.use('dark_background')
 class Universe:
     def __init__(self, dimension = 3, luminosity_gen_type = "Fixed", coord_gen_type = "Random",
-                 cluster_coeff = 2, total_luminosity = 1000, size = 1,
+                 cluster_coeff = 2, total_luminosity = 1000, size = 1, d_ratio = 0.4,
                  alpha = .3, beta=-1.5, characteristic_luminosity = 1, min_lum = 0,
                  max_lum = .5, H_0 = 70, redshift_noise_sigma=0.,
                  lower_lim=1, cube=True, seed = None):
@@ -44,7 +44,9 @@ class Universe:
         self.beta = beta
 
         self.cluster_coeff = cluster_coeff
-        self.max_D = self.size*0.4
+
+        self.d_ratio = d_ratio
+        self.max_D = self.size*self.d_ratio
         # self.n = self.L_0 / self.L_star
 
         self.luminosity_generator = dict({"Uniform": self.uniform_galaxies,
@@ -171,10 +173,12 @@ class Universe:
             for i in range(self.n):
                 random_coords[i] = np.array([(self.rand_rand_state.random()-0.5)*2*self.size for _ in range(self.dimension)])
         else:
-            for i in range(self.n):
+            count = 0
+            while count < self.n:
                 point = np.array([(self.rand_rand_state.random()-0.5)*2*self.size for _ in range(self.dimension)])
                 if np.linalg.norm(point) < self.size:
-                    random_coords[i] = point
+                    random_coords[count] = point
+                    count += 1
         return random_coords
 
     def clustered_coords(self):
