@@ -7,7 +7,7 @@ import numpy as np
 from scipy import interpolate
 
 class Sliding_Universe_3d(HasTraits):
-    slider = Range(40, 140, 70, )
+    slider = Range(50, 100, 70, )
     # figure = mlab.figure(figure=None, bgcolor=(0, 0, 0), fgcolor=(1, 1, 1), size=(600, 600))
     scene = Instance(MlabSceneModel, ())
 
@@ -24,7 +24,7 @@ class Sliding_Universe_3d(HasTraits):
         self.thetas = np.arccos(self.z/self.Rs)
 
 
-        self.s = mlab.points3d(self.x, self.y, self.z, self.Gen.detected_luminosities ** (1 / 3), figure=self.scene.mayavi_scene,
+        self.s = mlab.points3d(self.x, self.y, self.z, (self.Gen.size/100)*self.Gen.detected_luminosities ** (1 / 3), figure=self.scene.mayavi_scene,
                                scale_factor = 1, color = (1,1,1),  mode='sphere')
 
         mlab.points3d(0, 0, 0, color=(1.0, 1.0, 1.0), mode='axes', scale_factor=self.Gen.size / 20, figure=self.scene.mayavi_scene)
@@ -60,7 +60,7 @@ class Sliding_Universe_3d(HasTraits):
         return Points
 
     def get_coords(self, H_0):
-        Rs = self.Gen.detected_redshifts / H_0
+        Rs = self.Gen.detected_redshifts * self.Gen.c / H_0
         coords = self.Phis2Coords(Rs)
         return coords
 

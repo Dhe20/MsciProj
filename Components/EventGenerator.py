@@ -291,7 +291,7 @@ class EventGenerator(Universe):
             if self.detected_event_count != 0:
                 x, y = zip(*self.BH_true_coords)
                 for (xhat, yhat, s) in zip(*zip(*self.BH_detected_coords), self.BH_detected_luminosities):
-                    ax.add_artist(plt.Circle(xy=(xhat, yhat), radius=s, color="r", zorder = 4))
+                    ax.add_artist(plt.Circle(xy=(xhat, yhat), radius=self.L_star, color="red", zorder = 4))
                 if self.plot_contours is True:
                     for i, Z in enumerate(self.BH_detected_meshgrid):
                         X, Y = self.BH_contour_meshgrid
@@ -302,13 +302,14 @@ class EventGenerator(Universe):
                         integral = ((z >= t[:, None, None]) * z).sum(axis=(1, 2))
                         f = interpolate.interp1d(integral, t)
                         t_contours = f(np.array([0.9973, 0.9545, 0.6827]))
-                        ax.contour(X,Y, z, t_contours, colors="r", zorder = 2)
+                        ax.contour(X,Y, z, t_contours, colors="red", zorder = 2)
                 for (x, y, s) in zip(x, y, self.BH_true_luminosities):
                     ax.add_artist(plt.Circle(xy=(x, y), radius=s, color="g", zorder = 4))
             if show:
                 plt.show()
+            else: return fig, ax
         else:
-            Visualiser_3d(Gen = self).plot_universe_and_events()
+            return Visualiser_3d(Gen = self).plot_universe_and_events(show = show)
 
 
     def gauss_2d(self, mu):

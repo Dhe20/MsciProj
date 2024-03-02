@@ -18,11 +18,14 @@ import time
 
 class Inference(SurveyAndEventData):
     def __init__(self, SurveyAndEventData, gamma = True, vectorised = True, event_distribution_inf='Proportional', lum_function_inf = 'Full-Schechter', gauss=False, p_det=True, poster=False,
-                 survey_type='perfect', resolution_H_0=100, H_0_Min = 50, H_0_Max = 100, gamma_known = False, gauss_type = "Cartesian"):
+                 survey_type='perfect', resolution_H_0=100, H_0_Min = 50, H_0_Max = 100, gamma_known = False, gauss_type = "Cartesian", flux_threshold = 0):
 
         self.SurveyAndEventData = SurveyAndEventData
         self.c = self.SurveyAndEventData.c
-
+        self.flux_threshold = flux_threshold
+        if self.flux_threshold !=0:
+            self.completeness_method = "incomplete"
+        else: self.completeness_method = ""
 
         self.distribution_calculated = False
         self.H_0_Min = H_0_Min
@@ -50,6 +53,7 @@ class Inference(SurveyAndEventData):
                                 # "imperfect3d": self.H_0_inference_3d_imperfect_survey,
                                 "perfectvectorised2d": self.H_0_inference_2d_perfect_survey_vectorised,
                                 "perfectvectorised3d": self.H_0_inference_3d_perfect_survey_vectorised,
+                                "perfectvectorised3dincomplete": self.H_0_inference_3d_perfect_survey_vectorised_incomplete,
                                 "perfectvectorised2dGaussRadial": self.H_0_inference_2d_perfect_survey_vectorised_gaussian_radius,
                                 "perfectvectorised3dGaussRadial": self.H_0_inference_3d_perfect_survey_vectorised_gaussian_radius,
                                 "imperfectvectorised3d": self.H_0_inference_3d_imperfect_survey_vectorised,
@@ -79,13 +83,13 @@ class Inference(SurveyAndEventData):
 
         #if self.SurveyAndEventData.dimension==3 and self.survey_type == "perfect" and self.vectorised:
         #    self.inference_method_name = self.survey_type + "vectorised" + str(self.SurveyAndEventData.dimension) + "d"
-        
+
         if not self.gauss:
-            self.inference_method_name = self.survey_type + "vectorised" + str(self.SurveyAndEventData.dimension) + "d"
+            self.inference_method_name = self.survey_type + "vectorised" + str(self.SurveyAndEventData.dimension) + "d"+self.completeness_method
         elif self.gauss:
             self.inference_method_name = self.survey_type + "vectorised" + str(
                 self.SurveyAndEventData.dimension) + "d" + "Gauss" + self.gauss_type
-        
+
         if self.poster:
             self.inference_method_name+='poster'
         
@@ -214,8 +218,8 @@ class Inference(SurveyAndEventData):
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
-    def get_lum_term_proportional(self, Ds):
-        return np.square(Ds) * self.SurveyAndEventData.fluxes
+    def get_lum_term_proportional(self, redshifts):
+        return np.square(redshifts) * self.SurveyAndEventData.fluxes
 
     def get_lum_term_random(self, Ds):
         return 1
@@ -231,7 +235,7 @@ class Inference(SurveyAndEventData):
 
         vm = self.get_vectorised_vm()
 
-        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
+        luminosity_term = self.lum_term[self.event_distribution_inf](redshifts)
 
         full_expression = burr_full * vm * luminosity_term
         
@@ -259,7 +263,7 @@ class Inference(SurveyAndEventData):
 
         vmf = self.get_vectorised_vmf()
 
-        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
+        luminosity_term = self.lum_term[self.event_distribution_inf](redshifts)
 
         full_expression = burr_full * vmf * luminosity_term
         
@@ -287,7 +291,7 @@ class Inference(SurveyAndEventData):
 
         vmf = self.get_vectorised_vmf()
 
-        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
+        luminosity_term = self.lum_term[self.event_distribution_inf](redshifts)
 
         full_expression = burr_full * vmf * luminosity_term
         
@@ -340,7 +344,7 @@ class Inference(SurveyAndEventData):
 
         # luminosity_term = np.square(us) * self.SurveyAndEventData.fluxes
 
-        luminosity_term = self.lum_term[self.event_distribution_inf](us)
+        luminosity_term = self.lum_term[self.event_distribution_inf](redshifts)
 
         full_expression = burr_full * vmf * luminosity_term
 
@@ -378,7 +382,7 @@ class Inference(SurveyAndEventData):
 
         gauss_full = self.get_vectorised_3d_gauss_cartesian(Ds)
 
-        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
+        luminosity_term = self.lum_term[self.event_distribution_inf](redshifts)
 
         full_expression = gauss_full * luminosity_term
 
@@ -409,7 +413,7 @@ class Inference(SurveyAndEventData):
 
         vmf = self.get_vectorised_vm()
 
-        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
+        luminosity_term = self.lum_term[self.event_distribution_inf](redshifts)
 
         full_expression = gaussian_radius_term * vmf * luminosity_term
         
@@ -441,12 +445,12 @@ class Inference(SurveyAndEventData):
 
         vmf = self.get_vectorised_vmf()
 
-        luminosity_term = self.lum_term[self.event_distribution_inf](Ds)
+        luminosity_term = self.lum_term[self.event_distribution_inf](redshifts)
 
         full_expression = gaussian_radius_term * vmf * luminosity_term
         
         self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
-        self.H_0_pdf_single_event = np.reciprocal((np.sum(H_0_pdf_single_event, axis=1))*self.H_0_increment)[:, np.newaxis] * H_0_pdf_single_event
+        self.H_0_pdf_single_event = np.reciprocal((np.sum(self.H_0_pdf_single_event, axis=1))*self.H_0_increment)[:, np.newaxis] * self.H_0_pdf_single_event
         self.H_0_pdf = np.sum(np.log(self.H_0_pdf_single_event), axis=0)
         
         if self.p_det:
@@ -548,6 +552,8 @@ class Inference(SurveyAndEventData):
         return self.H_0_pdf
 
     def H_0_inference_gamma(self):
+        #Technically we should have a gaussian cdf method here (and gaussian with jacobean cdf)
+        # - it has negligible effect so haven't done it.
         log_gamma_marginalised = np.zeros(len(self.H_0_pdf))
         expected_event_num_divded_by_gamma = np.zeros(len(self.H_0_pdf))
         for H_0_index, H_0 in enumerate(self.H_0_range):
@@ -812,8 +818,6 @@ class Inference(SurveyAndEventData):
 
         return gauss_full
 
-
-
     def calc_N1(self, H_0):
         N1 = 0
         for g_i, flux in enumerate(self.SurveyAndEventData.fluxes):
@@ -851,6 +855,60 @@ class Inference(SurveyAndEventData):
 
     ### Completeness
 
+    def H_0_inference_3d_perfect_survey_vectorised_incomplete(self):
+
+        H_0_recip = np.reciprocal(self.H_0_range)[:, np.newaxis]
+
+        redshifts = np.tile(self.SurveyAndEventData.detected_redshifts, (self.resolution_H_0, 1))
+
+        Ds = self.c * redshifts * H_0_recip
+
+        # In Survey Terms (above Fth)
+
+        P_G = 1
+
+        #Initiate the Cube
+
+        burr_full = self.get_vectorised_burr(Ds)
+        vmf = self.get_vectorised_vmf()
+        luminosity_term = self.lum_term[self.event_distribution_inf](redshifts)
+
+        #Collapse the Cube
+
+        P_GWdata_given_G = np.sum(burr_full * vmf * luminosity_term, axis=2) * P_G
+
+        if self.p_det:
+            p_det_vec_given_G = luminosity_term * self.get_p_det_vec(Ds)  # Change the final term
+            P_det_total_given_G = np.sum(p_det_vec_given_G, axis=1)
+            # Note it is the same for all galaxies - collapse the cube first
+            P_GWdata_given_G = np.divide(P_GWdata_given_G, P_det_total_given_G)
+
+        # Out of Survey Terms (below Fth)
+
+        P_Gbar = 1 - P_G
+
+        # This should be dealt with after the galaxy side of the cube is collapsed
+
+        P_GWdata_given_Gbar = 1  # Replace this term
+
+        P_GWdata_given_Gbar = P_GWdata_given_Gbar * P_Gbar
+
+        if self.p_det:
+            p_det_vec_given_Gbar = luminosity_term * self.get_p_det_vec(Ds)  # Change the final term
+            P_det_total_given_Gbar = np.sum(p_det_vec_given_Gbar, axis=1)
+            # Note it is the same for all galaxies - collapse the cube first
+            P_GWdata_given_Gbar = np.divide(P_GWdata_given_Gbar, P_det_total_given_Gbar)
+
+        likelihood_expression = P_GWdata_given_G + P_GWdata_given_Gbar
+
+        self.H_0_pdf_single_event = likelihood_expression
+
+        self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
+
+        self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+
+        return self.H_0_pdf
+
     def BB1_p(self,x,b,u,l):
         b = b-2
         C =1/((neg_gamma(1+b))*(1-1/(1+u/l)**(b+1)))
@@ -881,7 +939,6 @@ class Inference(SurveyAndEventData):
     def vectorised_integrate_2d(self, func, lo, hi, gfun, hfun):
         """Returns a callable that can be evaluated on a grid."""
         return np.vectorize(lambda n: dblquad(func, lo, hi, gfun, hfun, [n])[0])
-
 
     def p_G_trial(self, H_0_values):
         # Need to integrate one for every H_0 value

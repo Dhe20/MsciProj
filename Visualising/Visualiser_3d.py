@@ -6,7 +6,7 @@ class Visualiser_3d:
 
         self.Gen = Gen
 
-    def plot_universe_and_events(self):
+    def plot_universe_and_events(self, show = True):
         from mayavi import mlab
         x = self.Gen.detected_coords[:, 0]
         y = self.Gen.detected_coords[:, 1]
@@ -22,7 +22,7 @@ class Visualiser_3d:
                           scale_factor=1)
         for (xhat, yhat, zhat, s) in zip(*zip(*self.Gen.BH_detected_coords), self.Gen.BH_detected_luminosities ** (1 / 3)):
             mlab.points3d(xhat, yhat, zhat, s, color=(1.0, 0.0, 0.0), mode='sphere', opacity=1, scale_factor=1)
-        mlab.points3d(0, 0, 0, self.Gen.max_D * 2, color=(1.0, 1.0, 1.0), mode='sphere', opacity=0.05, scale_factor=1)
+        mlab.points3d(0, 0, 0, self.Gen.max_D * 2, color=(1.0, 1.0, 1.0), mode='sphere', opacity=0.1, scale_factor=1)
         if self.Gen.plot_contours is True:
             for i, PDF in enumerate(self.Gen.BH_detected_meshgrid):
                 X, Y, Z = self.Gen.BH_contour_meshgrid
@@ -36,4 +36,7 @@ class Visualiser_3d:
                 mlab.contour3d(X, Y, Z, PDF, contours=[*t_contours], opacity=0.15, colormap="RdBu")
 
         mlab.outline(extent=[-self.Gen.size, self.Gen.size, -self.Gen.size, self.Gen.size, -self.Gen.size, self.Gen.size])
-        mlab.show()
+        if show:
+            mlab.show()
+            return fig
+        else: return fig
