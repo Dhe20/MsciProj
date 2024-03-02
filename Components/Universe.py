@@ -12,7 +12,7 @@ plt.style.use('dark_background')
 class Universe:
     def __init__(self, dimension = 3, luminosity_gen_type = "Fixed", coord_gen_type = "Random",
                  cluster_coeff = 2, total_luminosity = 1000, size = 1, d_ratio = 0.4,
-                 alpha = .3, beta=-1.5, characteristic_luminosity = 1, min_lum = 0,
+                 alpha = .3, beta=-1.5, characteristic_luminosity = 1, min_lum = 0.1,
                  max_lum = .5, H_0 = 70, redshift_noise_sigma=0.,
                  lower_lim=1, cube=True, seed = None):
 

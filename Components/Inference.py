@@ -8,11 +8,13 @@ from Components.SurveyAndEventData import SurveyAndEventData
 from Tools.BB1_sampling import p as BB1_pdf, neg_gamma
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from scipy.special import gammainc
+from scipy.special import gammaincc
+from scipy.special import gamma as gamma_function
+from mpmath import gammainc as mp_gammainc
 import scipy.stats as ss
 import time
 
-#%%
+
 
 class Inference(SurveyAndEventData):
     def __init__(self, SurveyAndEventData, gamma = True, vectorised = True, event_distribution_inf='Proportional', lum_function_inf = 'Full-Schechter', gauss=False, p_det=True, poster=False,
@@ -888,6 +890,40 @@ class Inference(SurveyAndEventData):
             p_g[i] = dblquad(self.p_G_integrad, 0, np.inf, lambda z: 4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z/H_0_values[i])**2, np.inf, args=[H_0_values[i],], epsabs=0.00001)[0] / (
                     dblquad(self.p_G_integrad, 0, np.inf, 0, np.inf, args=[H_0_values[i],],  epsabs=0.00001)[0])
         return p_g
+
+    ### Better completeness
+
+    def denominator_integrand(self, z , H_0):
+        return z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0)
+
+    def schecher_lum_uni(self, z, H_0):
+        return z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * gammaincc(self.SurveyAndEventData.alpha, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star)
+
+    def schecher_lum_prop(self, z, H_0):
+        return z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * gammaincc(self.SurveyAndEventData.alpha + 1, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star)
+
+    def BB1_lum_uni(self, z, H_0):
+        return (1/(1 - (1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-1-self.SurveyAndEventData.beta))) * z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * ( gammaincc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star) - ((4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2/self.SurveyAndEventData.L_star)**(1 + self.SurveyAndEventData.beta)) * np.exp(-4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2/self.SurveyAndEventData.L_star)/gamma_function(self.SurveyAndEventData.beta + 2) - ((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-1-self.SurveyAndEventData.beta)) * ( gammaincc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum)) - ((4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum))**(1 + self.SurveyAndEventData.beta)) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum)) / gamma_function(2 + self.SurveyAndEventData.beta) ))
+
+    def BB1_lum_prop(self, z, H_0):
+        return (1/(1 - (1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-2-self.SurveyAndEventData.beta))) * z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * ( gammaincc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star) - ((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-2-self.SurveyAndEventData.beta)) * gammaincc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum)) )
+    
+    def p_x_gw_G_bar(self, z, H_0, x_gw):
+        return 
+
+    def P_G_single(self, H_0_values):
+        iss = np.zeros(len(H_0_values))
+        for i in range(len(H_0_values)):
+            iss[i] = quad(self.BB1_lum_uni, 0, np.inf, args=(H_0_values[i],))[0] / quad(self.denominator_integrand, 0, np.inf, args=(H_0_values[i],))[0]
+        return iss
+
+
+
+
+
+#%%
+
+
 
 
 # from Components.EventGenerator import EventGenerator

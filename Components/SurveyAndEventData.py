@@ -4,8 +4,15 @@ class SurveyAndEventData:
                  detected_redshifts, detected_redshifts_uncertainties, fluxes, BH_detected_coords, BVM_k,
                  BVM_c, BVM_kappa, BurrFunc, VonMissesFunc, VonMissesFisherFunc, event_distribution,
                  contour_type, noise_distribution, noise_sigma, max_D, d_ratio, redshift_noise_sigma,
-                 detected_event_count, sample_time, c, min_flux = 0, survey_incompleteness = 0, completeness_type = 'cut_lim', event_rate = 0):
+                 detected_event_count, sample_time, c, 
+                 alpha, beta, characteristic_luminosity, min_lum,
+                 min_flux = 0, survey_incompleteness = 0, completeness_type = 'cut_lim', event_rate = 0):
         
+        self.alpha = alpha
+        self.beta = beta
+        self.L_star = characteristic_luminosity
+        self.min_lum = min_lum
+
         self.completeness_type = completeness_type
 
         if self.completeness_type == 'cut_lim':
