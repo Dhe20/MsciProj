@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec, collections
 
 #SampleUniverse_3_50_0.1_50_3508.csv
-df = pd.read_csv("PosteriorData\\SampleUniverse_event_num_100_0.csv", index_col = 0)
+df = pd.read_csv("PosteriorData\\SampleUniverse_trial_survey_completeness_2.5464790894703255e-07_0.csv", index_col = 0)
 df.dropna(inplace=True, axis=1)
 
 spec = gridspec.GridSpec(ncols=1, nrows=3,

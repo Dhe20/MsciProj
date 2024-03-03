@@ -27,7 +27,7 @@ class Sampler():
                 cluster_coeff=0, characteristic_luminosity=1, lower_lim=0.1, total_luminosity=3333.333,
                 BVM_c = 15, BVM_k = 2, BVM_kappa = 200, event_distribution="Proportional", noise_distribution="BVMF_eff", redshift_noise_sigma=0, noise_sigma=5,
                 resolution=10, plot_contours=False, alpha = 0.3, beta=-1.5, min_flux=0, survey_incompleteness=0, completeness_type='cut_lim', resolution_H_0 = 200, 
-                H_0_Min = 50, H_0_Max = 100, universe_count = 200, survey_type = "perfect", gamma=True, gauss=False, p_det=False, event_distribution_inf='Proportioanl', poster=False,
+                H_0_Min = 50, H_0_Max = 100, universe_count = 200, survey_type = "perfect", gamma=True, gauss=False, p_det=False, event_distribution_inf='Proportioanl', lum_function_inf = 'Full-Schechter', poster=False, flux_threshold=0,
                 investigated_characteristic='0', investigated_value=0):
 
         # Event generator params - to use super __init__ have to change defaults in EventGenerator to be useful
@@ -67,8 +67,10 @@ class Sampler():
         self.gauss = gauss
         self.p_det = p_det
         self.poster = poster
+        self.flux_threshold = flux_threshold
 
         self.event_distribution_inf = event_distribution_inf
+        self.lum_function_inf = lum_function_inf
 
         self.min_flux = min_flux
         self.survey_incompleteness = survey_incompleteness
@@ -117,8 +119,9 @@ class Sampler():
             Data = Gen.GetSurveyAndEventData(min_flux = self.min_flux, survey_incompleteness = self.survey_incompleteness, completeness_type = self.completeness_type)
             percentage = len(Data.detected_galaxy_indices)/len(Gen.detected_luminosities)
             self.survey_percentage.append(percentage)
-            I = Inference(Data, H_0_Min=self.H_0_Min, H_0_Max=self.H_0_Max, resolution_H_0=self.resolution_H_0, survey_type = self.survey_type, gamma = self.gamma, 
-                          event_distribution_inf = self.event_distribution_inf, gauss = self.gauss, p_det = self.p_det, poster = self.poster)
+            I = Inference(Data, H_0_Min = self.H_0_Min, H_0_Max = self.H_0_Max, resolution_H_0 = self.resolution_H_0, survey_type = self.survey_type, gamma = self.gamma, 
+                          event_distribution_inf = self.event_distribution_inf, lum_function_inf = self.lum_function_inf, gauss = self.gauss, p_det = self.p_det, 
+                          poster = self.poster, flux_threshold = self.flux_threshold)
             H_0_sample = I.H_0_Prob()
             if not self.poster:    
                 self.H_0_samples[Universe] = H_0_sample
@@ -128,8 +131,8 @@ class Sampler():
 
         #self.burr_i = I.burr_full
         #self.full = I.full
-        if self.p_det:    
-            self.P_det_total = I.P_det_total
+        #if self.p_det:    
+        #    self.P_det_total = I.P_det_total
         print(I.inference_method_name)
         self.max_num = self.find_file_num("PosteriorData/SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_")
         self.H_0_samples.to_csv("PosteriorData/SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_"+self.max_num+".csv")

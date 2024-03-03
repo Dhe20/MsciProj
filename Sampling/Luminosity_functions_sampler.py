@@ -386,6 +386,30 @@ for i in tqdm(range(len(investigated_values))):
     #f.append(Investigation.full)
     max_numbers.append(Investigation.max_num)
 
+
+#%%
+
+# RUN THIS ONE
+
+investigated_characteristic = 'trial_survey_completeness'
+#investigated_values = [25,75,95]
+investigated_values = np.array([0.5]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 60, min_flux=investigated_values[i], completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', lum_function_inf='Full-Schechter', flux_threshold=1, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+
 #%%
 
 #investigated_values = list(np.array([5,10,50,100,200]))
