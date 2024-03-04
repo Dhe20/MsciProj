@@ -283,15 +283,31 @@ class Inference(SurveyAndEventData):
         full_expression = burr_full * vmf * luminosity_term
         
         self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
-        self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
-
+        #self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
+        '''
         if self.p_det:
             p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
             P_det_total = np.sum(p_det_vec, axis=1)
             self.P_det_total = P_det_total
             P_det_total_power = np.power(P_det_total, self.SurveyAndEventData.detected_event_count)
             self.H_0_pdf = self.H_0_pdf/P_det_total_power
-        
+        '''
+        if self.p_det:
+            p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
+            P_det_total = np.sum(p_det_vec, axis=1)
+            self.P_det_total = P_det_total
+            self.H_0_pdf_single_event = self.H_0_pdf_single_event / P_det_total
+
+        f = np.vectorize(math.frexp)
+        split = f(self.H_0_pdf_single_event)
+        flo = split[0]
+        ex = split[1]
+        p_flo = np.prod(flo, axis=0)
+        p_ex = np.sum(ex, axis=0)
+        scaled_ex = p_ex - np.max(p_ex)
+        scaled_flo = p_ex / p_flo[np.argmax(p_ex)]
+        self.H_0_pdf = scaled_flo * (0.5 ** (-1 * scaled_ex))
+
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
