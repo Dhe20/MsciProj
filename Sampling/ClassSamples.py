@@ -28,7 +28,7 @@ class Sampler():
                 BVM_c = 15, BVM_k = 2, BVM_kappa = 200, event_distribution="Proportional", noise_distribution="BVMF_eff", redshift_noise_sigma=0, noise_sigma=5,
                 resolution=10, plot_contours=False, alpha = 0.3, beta=-1.5, min_flux=0, survey_incompleteness=0, completeness_type='cut_lim', resolution_H_0 = 200, 
                 H_0_Min = 50, H_0_Max = 100, universe_count = 200, survey_type = "perfect", gamma=True, gauss=False, p_det=False, event_distribution_inf='Proportioanl', lum_function_inf = 'Full-Schechter', poster=False, flux_threshold=0,
-                investigated_characteristic='0', investigated_value=0):
+                investigated_characteristic='0', investigated_value=0, save_normally = True):
 
         # Event generator params - to use super __init__ have to change defaults in EventGenerator to be useful
         self.dimension = dimension
@@ -88,6 +88,8 @@ class Sampler():
 
         self.events_estimate = self.sample_time * (self.total_luminosity*self.event_rate*(1.5*32*np.pi/3000))
 
+        self.save_normally = save_normally
+
         if self.events_estimate * 10 > self.total_luminosity / self.characteristic_luminosity:
             print("Risk of too many events for galaxy number")
 
@@ -106,16 +108,16 @@ class Sampler():
     def Sample(self):
         det_event_counts = []
         self.survey_percentage = []
-        for Universe in range(self.universe_count):
+        for Universe in tqdm(range(self.universe_count)):
             Gen = EventGenerator(dimension=self.dimension, cube=self.cube, size=self.size, event_rate = self.event_rate, sample_time = self.sample_time,
                                 luminosity_gen_type=self.luminosity_gen_type, coord_gen_type=self.coord_gen_type,
                                 cluster_coeff=self.cluster_coeff, characteristic_luminosity=self.characteristic_luminosity, lower_lim=self.lower_lim, total_luminosity=self.total_luminosity,
                                 event_distribution=self.event_distribution, noise_distribution=self.noise_distribution, redshift_noise_sigma=self.redshift_noise_sigma, noise_std=self.noise_sigma,
                                 resolution=self.resolution, plot_contours=self.plot_contours, alpha = self.alpha, beta=self.beta, BVM_c=self.BVM_c, BVM_k=self.BVM_k, BVM_kappa=self.BVM_kappa, seed=Universe)
             det_event_counts.append(Gen.detected_event_count)
-            print("# of detected events: " + str(Gen.detected_event_count))
-            if Universe==0:    
-                print("# of galaxies: " + str(len(Gen.detected_luminosities)))
+            # print("# of detected events: " + str(Gen.detected_event_count))
+            # if Universe==0:
+            #     print("# of galaxies: " + str(len(Gen.detected_luminosities)))
             Data = Gen.GetSurveyAndEventData(min_flux = self.min_flux, survey_incompleteness = self.survey_incompleteness, completeness_type = self.completeness_type)
             percentage = len(Data.detected_galaxy_indices)/len(Gen.detected_luminosities)
             self.survey_percentage.append(percentage)
@@ -134,10 +136,18 @@ class Sampler():
         #if self.p_det:    
         #    self.P_det_total = I.P_det_total
         print(I.inference_method_name)
-        self.max_num = self.find_file_num("PosteriorData/SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_")
-        self.H_0_samples.to_csv("PosteriorData/SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_"+self.max_num+".csv")
-        print('Average # of detected events = {:.2f}'.format(np.mean(det_event_counts)))
-        print("Finished: SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_"+self.max_num+".csv")
+        if self.save_normally:
+            self.max_num = self.find_file_num("PosteriorData/SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_")
+            self.H_0_samples.to_csv("PosteriorData/SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_"+self.max_num+".csv")
+            print('Average # of detected events = {:.2f}'.format(np.mean(det_event_counts)))
+            print("Finished: SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_"+self.max_num+".csv")
+        else:
+            self.max_num = self.find_file_num("SampleUniverse_" + str(self.investigated_characteristic) + "_" + str(self.investigated_value) + "_")
+            self.H_0_samples.to_csv("SampleUniverse_" + str(self.investigated_characteristic) + "_" + str(self.investigated_value) + "_" + self.max_num + ".csv")
+            print('Average # of detected events = {:.2f}'.format(np.mean(det_event_counts)))
+            print("Finished: SampleUniverse_" + str(self.investigated_characteristic) + "_" + str(self.investigated_value) + "_" + self.max_num + ".csv")
+
+
 
 
     #Automated Labelling

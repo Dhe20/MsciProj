@@ -12,7 +12,7 @@ from Sampling.ClassSamples import Sampler
 from tqdm import tqdm
 import matplotlib
 matplotlib.rcParams['mathtext.fontset'] = 'cm'
-matplotlib.rcParams['font.family'] = 'Calibri'
+matplotlib.rcParams['font.family'] = 'Arial'
 matplotlib.rcParams['figure.constrained_layout.use'] = True
 
 f = 4*np.pi/375
@@ -317,7 +317,7 @@ for i in tqdm(range(len(investigated_values))):
 
 investigated_characteristic = 'survey_incompleteness_many'
 #investigated_values = [25,75,95]
-investigated_values = np.array([0.01,0.1,0.5])
+investigated_values = np.array([0,1,2])
 investigated_values /= (4*np.pi*(0.4*625)**2)
 max_numbers = []
 percentage1 = []
@@ -441,8 +441,19 @@ investigated_values = list(np.array([5,10,50,100,200]))
 
 investigated_characteristic = 'luminosity_gen_type'
 investigated_values = ['Fixed', 'Full-Schechter']
-max_numbers = ['0','0']
+max_numbers = ['0']
 
+
+
+#%%
+
+
+investigated_characteristic = 'trial_survey_completeness_0'
+#investigated_values = [25,75,95]
+investigated_values = np.array([1.0]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+investigated_values = [1.2732395447351628e-06]
+max_numbers = ['0']*2
 #%%
 
 def axis_namer(s):

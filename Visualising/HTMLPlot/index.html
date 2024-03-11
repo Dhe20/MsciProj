@@ -78,12 +78,11 @@
 <!--    </div>-->
 
     <div class="topimagechange">
-        <img src="images/range-slider/top_70.jpg" id="topImage">
-
+        <img src="images/range-slider/new_top_70.jpg" id="topImage">
     </div>
 
     <div class="bottomimagechange">
-            <img src="images/range-slider/bottom_70.jpg" id="bottomImage">
+            <img src="images/range-slider/new_bottom_70.jpg" id="bottomImage">
     </div>
 
     <div class="H0Value">
@@ -95,6 +94,30 @@
     </div>
 
     <script>
+
+    window.onload = function() {
+        preloadImages();
+        };
+
+    function preloadImages() {
+        // Define the range and step of your slider
+        const min = 50;
+        const max = 100;
+        const step = 0.5;
+
+        for (let value = min; value <= max; value += step) {
+            // Replace '.' with '_' in values for file naming convention
+            const formattedValue = value.toString().replace('.', '_');
+
+            // Preload top image
+            const topImage = new Image();
+            topImage.src = `images/range-slider/top_${formattedValue}.jpg`;
+
+            // Preload bottom image
+            const bottomImage = new Image();
+            bottomImage.src = `images/range-slider/bottom_${formattedValue}.jpg`;
+        }
+    }
 
     // let countdownNumber = 0;
     // let countdownElement = document.getElementById('countdown');
@@ -129,60 +152,8 @@
     rangevalue.oninput = function() {
         let getvalue = rangevalue.value.toString().replace('.', '_');
         setvalue.innerHTML = this.value + " km/s/Mpc";
-        topImage.setAttribute("src", `images/range-slider/top_${getvalue}.jpg`);
-        bottomImage.setAttribute("src", `images/range-slider/bottom_${getvalue}.jpg`);
-    };
-
-    // Zoom and pan functionality
-    topImage.onwheel = function(event) {
-        event.preventDefault();
-        let rect = topImage.getBoundingClientRect();
-        let offsetX = event.clientX - rect.left;
-        let offsetY = event.clientY - rect.top;
-
-        let delta = (event.deltaY > 0 ? 1 : -1) * -0.1;
-        let zoomIntensity = 1 + delta;
-
-        // Calculate the new scale and limit its range between 1 and 10
-        let newScale = Math.min(Math.max(1, scale * zoomIntensity), 10);
-        let ratio = newScale / scale;
-        scale = newScale;
-
-        // Calculate the new origin (fixed point)
-        originX = offsetX / scale + originX - offsetX / newScale;
-        originY = offsetY / scale + originY - offsetY / newScale;
-
-        // Apply transformations
-        topImage.style.transformOrigin = `${originX}px ${originY}px`;
-        topImage.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-    };
-
-    // Pan functionality
-    topImage.onmousedown = function(event) {
-        isDragging = true;
-        startX = event.clientX - translateX;
-        startY = event.clientY - translateY;
-        topImage.style.cursor = 'grabbing';
-    };
-
-    document.onmousemove = function(event) {
-        if (isDragging) {
-            translateX = event.clientX - startX;
-            translateY = event.clientY - startY;
-            topImage.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-        }
-    };
-
-    document.onmouseup = function(event) {
-        if (isDragging) {
-            isDragging = false;
-            topImage.style.cursor = 'grab';
-        }
-    };
-
-    // Disable the context menu on right-click over the image
-    topImage.oncontextmenu = function(event) {
-        event.preventDefault();
+        topImage.setAttribute("src", `images/range-slider/new_top_${getvalue}.jpg`);
+        bottomImage.setAttribute("src", `images/range-slider/new_bottom_${getvalue}.jpg`);
     };
 </script>
 
