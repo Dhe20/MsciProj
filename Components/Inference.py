@@ -309,6 +309,9 @@ class Inference(SurveyAndEventData):
         self.H_0_pdf = scaled_flo * (0.5 ** (-1 * scaled_ex))
 
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+
+        self.H_0_pdf_single_event /= np.sum(self.H_0_pdf_single_event, axis=1)[:, np.newaxis] * (self.H_0_increment)
+
         return self.H_0_pdf
 
     def poster_H_0_inference_3d_perfect_survey_vectorised(self):
@@ -336,8 +339,13 @@ class Inference(SurveyAndEventData):
             #P_det_total_power = np.power(P_det_total, self.SurveyAndEventData.detected_event_count)
             #self.H_0_pdf = self.H_0_pdf/P_det_total_power
             self.H_0_pdf_single_event = self.H_0_pdf_single_event/P_det_total
+
+        self.log_H_0_pdf = np.sum(np.log(self.H_0_pdf_single_event), axis=0)
+        self.H_0_pdf = np.exp(self.log_H_0_pdf - np.min(self.log_H_0_pdf[np.isfinite(self.log_H_0_pdf)]))
+        self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         
         self.H_0_pdf_single_event /= np.sum(self.H_0_pdf_single_event, axis=1)[:,np.newaxis] * (self.H_0_increment)
+
         return self.H_0_pdf_single_event
 
     def get_p_det_vec(self, Ds):
@@ -428,7 +436,9 @@ class Inference(SurveyAndEventData):
             self.P_det_total = P_det_total
             P_det_total_power = np.power(P_det_total, self.SurveyAndEventData.detected_event_count)
             self.H_0_pdf = self.H_0_pdf/P_det_total_power
-        
+
+        self.log_H_0_pdf = np.sum(np.log(self.H_0_pdf_single_event), axis=0)
+        self.H_0_pdf = np.exp(self.log_H_0_pdf - np.min(self.log_H_0_pdf[np.isfinite(self.log_H_0_pdf)]))
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
         

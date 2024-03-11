@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 
 
 # while OutsideBox:
-Gen = EventGenerator(dimension = 2, size = 50, sample_time=0.05*10**(-2), event_rate=10**3,
-                     luminosity_gen_type = "Full-Schechter", coord_gen_type = "Random",
-                     cluster_coeff=5, characteristic_luminosity=.5, total_luminosity=100,
+Gen = EventGenerator(dimension = 3, size = 50, sample_time=0.05*10**(-2), event_rate=10**3,
+                     luminosity_gen_type = "Full-Schechter", coord_gen_type = "Clustered",
+                     cluster_coeff=25, characteristic_luminosity=.5, total_luminosity=100,
                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0,
                      resolution=200, plot_contours=True, seed = 10)
 Data = Gen.GetSurveyAndEventData()

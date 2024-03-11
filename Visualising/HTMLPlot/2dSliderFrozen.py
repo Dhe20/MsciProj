@@ -12,7 +12,7 @@ Gen = EventGenerator(dimension = 2, size = 625, sample_time=0.01*10**(-2), event
                      luminosity_gen_type = "Full-Schechter", coord_gen_type = "Random",
                      cluster_coeff=5, characteristic_luminosity=5, total_luminosity=500,
                      event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0,
-                     resolution=200, plot_contours=True, seed = 22)
+                     resolution=400, plot_contours=True, seed = 22)
 Data = Gen.GetSurveyAndEventData()
 
 I = Inference(Data, gamma = True, vectorised = True, event_distribution_inf='Proportional', gauss=False, p_det=True,
@@ -21,15 +21,15 @@ I = Inference(Data, gamma = True, vectorised = True, event_distribution_inf='Pro
 I.H_0_Prob()
 
 H_0_s = np.arange(50, 101, 0.5)
-for H_0 in tqdm(H_0_s):
+for i, H_0 in tqdm(enumerate(H_0_s)):
     InferenceGUI(I, Data, Gen, H_0 = H_0).view()
     if H_0%1 == 0:
         H_0 = round(H_0)
     else:
         H_0 = str(H_0)
         H_0 = H_0[0:2] + "_" + H_0[-1]
-    plt.close("all")
-    plt.savefig("images/range-slider/"+str(H_0)+".jpg", dpi = 400)
+    # plt.close("all")
+    # plt.savefig("images/range-slider/"+str(H_0)+".jpg", dpi = 400)
     # plt.close("all")
 
 

@@ -185,8 +185,13 @@ class Universe:
 
         power = lambda k: self.cluster_coeff * k ** -3
 
+        if self.dimension==2:
+            N=512
+        else:
+            N=256
+
         lnpb = pbox.LogNormalPowerBox(
-            N=512,  # Number of grid-points in the box
+            N=N,  # Number of grid-points in the box
             dim=self.dimension,  # 2D box
             pk=power,  # The power-spectrum
             boxlength=1.,  # Size of the box (sets the units of k in pk)
@@ -198,6 +203,11 @@ class Universe:
                                                       randomise_in_cell=True,  # nbar specifies the number density
                                                       # min_at_zero=False  # by default the samples are centred at 0. This shifts them to be positive.
                                                       )
+        if num_of_galaxies>len(clustered_sample):
+            clustered_sample = lnpb.create_discrete_sample(nbar=int(1.4 * num_of_galaxies/(1-len(clustered_sample)/num_of_galaxies)),
+                                                           randomise_in_cell=True,  # nbar specifies the number density
+                                                           # min_at_zero=False  # by default the samples are centred at 0. This shifts them to be positive.
+                                                           )
         index_of_galaxies = list(np.arange(0, len(clustered_sample), 1))
         selected_index = self.rand_rand_state.sample(index_of_galaxies, k=num_of_galaxies)
         selected_galaxies = clustered_sample[selected_index, :]*self.size*2
