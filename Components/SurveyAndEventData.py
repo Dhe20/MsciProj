@@ -5,9 +5,13 @@ class SurveyAndEventData:
                  BVM_c, BVM_kappa, BurrFunc, VonMissesFunc, VonMissesFisherFunc, event_distribution,
                  contour_type, noise_distribution, noise_sigma, max_D, d_ratio, redshift_noise_sigma,
                  detected_event_count, sample_time, c, 
-                 alpha, beta, characteristic_luminosity, min_lum,
-                 min_flux = 0, survey_incompleteness = 0, completeness_type = 'cut_lim', event_rate = 0):
+                 alpha, beta, characteristic_luminosity, min_lum, event_rate,
+                 min_flux = 0, survey_incompleteness = 0, completeness_type = 'cut_lim',  DD = 0):
         
+        # Just a consistency check
+        self.DD = DD
+        #
+
         self.alpha = alpha
         self.beta = beta
         self.L_star = characteristic_luminosity
@@ -20,7 +24,11 @@ class SurveyAndEventData:
         elif self.completeness_type == 'percentile_lim':
             self.min_flux = np.percentile(fluxes, survey_incompleteness)
         
-        self.detected_galaxy_indices = np.where(fluxes > self.min_flux)[0]
+        if self.DD == 0:
+            self.detected_galaxy_indices = np.where(fluxes > self.min_flux)[0]
+        else:
+            # Only for completely accurate redshifts
+            self.detected_galaxy_indices = np.where(detected_redshifts < self.DD*70/c)[0]
 
         self.detected_coords = detected_coords[self.detected_galaxy_indices]
         self.detected_redshifts = detected_redshifts[self.detected_galaxy_indices]

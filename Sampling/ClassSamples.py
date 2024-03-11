@@ -26,8 +26,9 @@ class Sampler():
                 wanted_det_events = 50, specify_event_number = False, luminosity_gen_type="Full-Schechter", coord_gen_type="Random",
                 cluster_coeff=0, characteristic_luminosity=1, lower_lim=0.1, total_luminosity=3333.333,
                 BVM_c = 15, BVM_k = 2, BVM_kappa = 200, event_distribution="Proportional", noise_distribution="BVMF_eff", redshift_noise_sigma=0, noise_sigma=5,
-                resolution=10, plot_contours=False, alpha = 0.3, beta=-1.5, min_flux=0, survey_incompleteness=0, completeness_type='cut_lim', resolution_H_0 = 200, 
-                H_0_Min = 50, H_0_Max = 100, universe_count = 200, survey_type = "perfect", gamma=True, gauss=False, p_det=False, event_distribution_inf='Proportioanl', lum_function_inf = 'Full-Schechter', poster=False, flux_threshold=0,
+                resolution=10, plot_contours=False, alpha = 0.3, beta=-1.5, min_flux=0, survey_incompleteness=0, completeness_type='cut_lim', DD = 0, resolution_H_0 = 200, 
+                H_0_Min = 50, H_0_Max = 100, universe_count = 200, survey_type = "perfect", gamma=True, gauss=False, p_det=True, event_distribution_inf='Proportioanl', 
+                lum_function_inf = 'Full-Schechter', poster=False, flux_threshold=0,
                 investigated_characteristic='0', investigated_value=0):
 
         # Event generator params - to use super __init__ have to change defaults in EventGenerator to be useful
@@ -75,6 +76,7 @@ class Sampler():
         self.min_flux = min_flux
         self.survey_incompleteness = survey_incompleteness
         self.completeness_type = completeness_type
+        self.DD = DD
 
         self.investigated_characteristic = investigated_characteristic
         self.investigated_value = investigated_value
@@ -116,7 +118,7 @@ class Sampler():
             print("# of detected events: " + str(Gen.detected_event_count))
             if Universe==0:    
                 print("# of galaxies: " + str(len(Gen.detected_luminosities)))
-            Data = Gen.GetSurveyAndEventData(min_flux = self.min_flux, survey_incompleteness = self.survey_incompleteness, completeness_type = self.completeness_type)
+            Data = Gen.GetSurveyAndEventData(min_flux = self.min_flux, survey_incompleteness = self.survey_incompleteness, completeness_type = self.completeness_type, DD = self.DD)
             percentage = len(Data.detected_galaxy_indices)/len(Gen.detected_luminosities)
             self.survey_percentage.append(percentage)
             I = Inference(Data, H_0_Min = self.H_0_Min, H_0_Max = self.H_0_Max, resolution_H_0 = self.resolution_H_0, survey_type = self.survey_type, gamma = self.gamma, 

@@ -473,7 +473,7 @@ class EventGenerator(Universe):
             #         self.d2_gauss(u_x + s_x, u_y + s_y, u_x, u_y, s_x, s_y)]
             return Z
 
-    def GetSurveyAndEventData(self, min_flux = 0, survey_incompleteness = 0, completeness_type = 'cut_lim'):
+    def GetSurveyAndEventData(self, min_flux = 0, survey_incompleteness = 0, completeness_type = 'cut_lim', DD = 0):
         return SurveyAndEventData(dimension = self.dimension, detected_coords = self.detected_coords,
                                   detected_luminosities = self.detected_luminosities,
                                   fluxes = self.fluxes, BH_detected_coords = self.BH_detected_coords, BVM_k = self.BVM_k,
@@ -482,7 +482,7 @@ class EventGenerator(Universe):
                                   detected_redshifts_uncertainties = self.detected_redshifts_uncertainties, contour_type=self.contour_type,
                                   max_D = self.max_D, d_ratio = self.d_ratio, detected_event_count=self.detected_event_count,
                                   sample_time = self.sample_time, noise_distribution = self.noise_distribution, noise_sigma = self.noise_sigma, redshift_noise_sigma = self.redshift_noise_sigma,
-                                  min_flux = min_flux, survey_incompleteness = survey_incompleteness, completeness_type = completeness_type, event_rate = self.event_rate, c = self.c, event_distribution = self.event_distribution,
+                                  min_flux = min_flux, survey_incompleteness = survey_incompleteness, completeness_type = completeness_type, DD = DD, event_rate = self.event_rate, c = self.c, event_distribution = self.event_distribution,
                                   alpha = self.alpha, beta = self.beta, characteristic_luminosity = self.L_star, min_lum = self.lower_lim)
 
 #
