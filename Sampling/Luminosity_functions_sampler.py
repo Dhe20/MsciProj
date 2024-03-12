@@ -20,6 +20,25 @@ c = 1.5*32*np.pi/3000
 
 #%%
 
+def bias_dist(x, H=70):
+    ps = []
+    inc = x.index[1]-x.index[0]
+    cut_x = x.loc[x.index<=H]
+    for i in cut_x.columns:
+        ps.append(inc*np.sum(cut_x[i]))
+    return ps
+
+def C_I_samp(x):
+    H = np.random.uniform(50,100)
+    ps = []
+    inc = x.index[1]-x.index[0]
+    cut_x = x.loc[x.index<=H]
+    for i in cut_x.columns:
+        ps.append(inc*np.sum(cut_x[i]))
+    return ps
+
+#%%
+
 investigated_characteristic = 'survey_type'
 investigated_values = ['perfect', 'imperfect']
 max_numbers = []
@@ -411,6 +430,96 @@ for i in tqdm(range(len(investigated_values))):
 
 #%%
     
+# Consistency check
+investigated_characteristic = 'trial_survey_completeness_wrong_2_based_on_distance'
+#investigated_values = [25,75,95]
+lstars = np.array([0.05,0.1,0.2,0.3]) #,0.5])
+#investigated_values /= (4*np.pi*(0.4*625)**2)
+investigated_values = 0.4*625 * (lstars)**(-0.5)
+investigated_values = np.array([500,400,300,200])
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 500, min_flux=0, completeness_type='cut_lim', DD = investigated_values[i], p_det=True, gamma = False, event_distribution='Random', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Random', luminosity_gen_type='Shoddy-Schechter' , lum_function_inf='Shoody-Schechter', flux_threshold=0, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+# RUN THIS ONE
+
+investigated_characteristic = 'trial_survey_completeness_wrong_3'
+#investigated_values = [25,75,95]
+investigated_values = np.array([0.05,0.1,0.2,0.3]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 500, min_flux=investigated_values[i], completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Random', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Random', luminosity_gen_type='Full-Schechter' , lum_function_inf='Full-Schechter', flux_threshold=0, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+# RUN THIS ONE
+
+investigated_characteristic = 'trial_survey_completeness_wrong_4'
+#investigated_values = [25,75,95]
+investigated_values = np.array([0.05,0.1,0.2,0.3]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 500, min_flux=investigated_values[i], completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', luminosity_gen_type='Shoddy-Schechter' , lum_function_inf='Shoddy-Schechter', flux_threshold=0, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+investigated_characteristic = 'trial_survey_completeness_wrong_5'
+#investigated_values = [25,75,95]
+investigated_values = np.array([0.05,0.1,0.2,0.3]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 500, min_flux=investigated_values[i], completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', luminosity_gen_type='Full-Schechter' , lum_function_inf='Full-Schechter', flux_threshold=0, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+
+
+
+#%%
+    
 investigated_characteristic = 'trial_survey_completeness_right_2'
 #investigated_values = [25,75,95]
 investigated_values = np.array([0.05,0.1,0.2,0.3]) #,0.5])
@@ -429,6 +538,177 @@ for i in tqdm(range(len(investigated_values))):
     #f.append(Investigation.full)
     max_numbers.append(Investigation.max_num)
 
+#%%
+    
+investigated_characteristic = 'trial_survey_completeness_right_2_corrected'
+#investigated_values = [25,75,95]
+investigated_values = np.array([0.05,0.1,0.2,0.3]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 100, min_flux=investigated_values[i], completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Random', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Random', luminosity_gen_type='Shoddy-Schechter', lum_function_inf='Shoddy-Schechter', flux_threshold=1, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+investigated_characteristic = 'trial_survey_completeness_right_2_L_star'
+#investigated_values = [25,75,95]
+investigated_values = np.array([0.05,0.1,0.2,0.3]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 100, min_flux=investigated_values[i], completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Random', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Random', luminosity_gen_type='Shoddy-Schechter', lum_function_inf='Shoddy-Schechter', flux_threshold=1, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+investigated_characteristic = 'trial_survey_completeness_right_3'
+#investigated_values = [25,75,95]
+investigated_values = np.array([0.05,0.1,0.2,0.3]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 100, min_flux=investigated_values[i], completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Random', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Random', luminosity_gen_type='Full-Schechter', lum_function_inf='Full-Schechter', flux_threshold=1, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+investigated_characteristic = 'trial_survey_completeness_right_3_L_star'
+#investigated_values = [25,75,95]
+investigated_values = np.array([0.05,0.1,0.2,0.3]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 100, min_flux=investigated_values[i], completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Random', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Random', luminosity_gen_type='Full-Schechter', lum_function_inf='Full-Schechter', flux_threshold=1, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+
+investigated_characteristic = 'trial_survey_completeness_right_4'
+#investigated_values = [25,75,95]
+investigated_values = np.array([0.05,0.1,0.2,0.3]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 100, min_flux=investigated_values[i], completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', luminosity_gen_type='Shoddy-Schechter', lum_function_inf='Shoddy-Schechter', flux_threshold=1, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+investigated_characteristic = 'trial_survey_completeness_right_4_L_star'
+#investigated_values = [25,75,95]
+investigated_values = np.array([0.05,0.1,0.2,0.3]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 100, min_flux=investigated_values[i], completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', luminosity_gen_type='Shoddy-Schechter', lum_function_inf='Shoddy-Schechter', flux_threshold=1, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+investigated_characteristic = 'trial_survey_completeness_right_5'
+#investigated_values = [25,75,95]
+investigated_values = np.array([0.05,0.1,0.2,0.3]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 100, min_flux=investigated_values[i], completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', luminosity_gen_type='Full-Schechter', lum_function_inf='Full-Schechter', flux_threshold=1, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+investigated_characteristic = 'clustering'
+investigated_values = [0, 10, 30, 50, 70, 90]
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 200, coord_gen_type='Clustered', cluster_coeff=investigated_values[i], gamma = False, event_distribution='Proportional', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution ='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+investigated_characteristic = 'delta_D'
+investigated_values = [4.035, 6.382, 13.804, 28.878]
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 100, p_det=True, BVM_c=investigated_values[i], gamma = False, event_distribution='Proportional', total_luminosity=1000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
 
 #%%
 
@@ -477,23 +757,30 @@ meanss = []
 stdss = []
 pos = []
 
+p_i_s = []
+c_i_s = []
+
 for i in range(len(investigated_values)):
     #print(i)
     filename = "PosteriorData/SampleUniverse_"+str(investigated_characteristic)+"_"+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
     df = pd.read_csv(filename, index_col = 0)
     means = []
     stds = []
+    inc = df.index[1]-df.index[0]
+    p_i_s.append(bias_dist(df))
+    c_i_s.append(C_I_samp(df))
     for column in df.columns:
-        pdf_single = df[column]/df[column].sum()
+        pdf_single = df[column]/(inc * df[column].sum())
+        #print(df[column].sum())
         pdf_single.dropna(inplace=True)
         vals = np.array(pdf_single.index)
-        mean = sum(pdf_single*vals)
+        mean = sum(inc * pdf_single*vals)
         # means or modes
         #mean = vals[np.argmax(pdf_single*vals)]
         if mean==0:
             continue
         means.append(mean)
-        stds.append(np.sqrt(sum((pdf_single*pdf_single.index**2))-mean**2))
+        stds.append(np.sqrt(sum((inc*pdf_single*pdf_single.index**2))-mean**2))
     meanss.append(means)
     stdss.append(stds)
     pos.append(i+1)
@@ -518,6 +805,26 @@ plt.show()
 
 #%%
 
+N = 50
+ci = np.linspace(1/N,1,50)
+
+for i in range(len(investigated_values)):
+    fraction = []
+    for j in ci:    
+        fraction.append(sum(k<j for k in c_i_s[i])/len(c_i_s[i]))
+    plt.stairs(fraction, np.insert(ci, 0, 0), lw=3, label=investigated_values[i])
+plt.legend()
+plt.show()
+
+#%%
+
+for i in range(len(investigated_values)):
+    plt.hist(p_i_s[i], bins=np.linspace(0,1,30), density=1, histtype='step', lw=3, label=investigated_values[i])
+plt.legend()
+plt.show()
+
+#%%
+
 def expected(data, sig):
     sig = np.array(sig)
     S = np.sum(1/sig**2)
@@ -529,8 +836,22 @@ for i in range(len(investigated_values)):
     s = 'H_0 = {:.2f}+/-{:.2f}'.format(bias, bias_err)
     print(s)
 
+
 #%%
 
+
+
+
+
+
+
+
+
+
+
+
+
+#%%
 
 fig = plt.figure(figsize = (12,9.5), layout="constrained")
 # create grid for different subplots
@@ -1057,7 +1378,7 @@ ax4.set_xlim(50,90)
 
 plt.subplots_adjust(wspace=0, hspace=0)
 
-b = 16
+b = 12
 bias_0 = np.mean(meanss[0])-70
 bias_1 = np.mean(meanss[1])-70
 bias_2 = np.mean(meanss[2])-70
@@ -1124,7 +1445,7 @@ ax4.annotate(r'$f_{{\mathrm{{det}}}} = {:.0f}\%$'.format(per[3]), xy=(53,0.08 *0
 
 ax4.set_xlabel(r'$\hat H_0$ (km s$^{-1}$ Mpc$^{-1}$)',fontsize=35, labelpad=15)
 
-ax1.set_title('Survey completenes Wrong', fontsize=40, pad=30)
+ax1.set_title('Survey completenes Right', fontsize=40, pad=30)
 
 for axis in ['top','bottom','left','right']:
     ax1.spines[axis].set_linewidth(3)
