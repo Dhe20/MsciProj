@@ -5,33 +5,73 @@ import powerbox as pbox
 import matplotlib.pyplot as plt
 import random
 import numpy as np
-cluster_coeff=50
-power = lambda k: cluster_coeff*k**-3
+import powerbox as pb
+cluster_coeff=0.05
+
 import time
 
 start_time = time.perf_counter()
 
+fig, ax = plt.subplots(3, 2)
+
+for i, coeff in enumerate([0.1,5,10,20,30,50]):
+
+    power = lambda k: coeff * k ** -3
+
+    lnpb = pbox.LogNormalPowerBox(
+        N=256,                     # Number of grid-points in the box
+        dim=2,                     # 2D box
+        pk = power, # The power-spectrum
+        boxlength = 1.0,           # Size of the box (sets the units of k in pk)
+        seed = 42                # Set a seed to ensure the box looks the same every time (optional)
+    )
+
+    end_time = time.perf_counter()
+    elapsed_time = end_time - start_time
+
+    print("Elapsed time: ", elapsed_time)
+    y = lnpb.delta_x()
+    cax1 = ax[i%3,i//3].imshow(lnpb.delta_x(), extent = (-.5,.5, -.5, .5), vmin = -1, vmax = 8.99385236638655)
+    ax[i % 3, i // 3].set_title("Cluster Coefficient: " + str(round(coeff,2)))
+    ax[i % 3, i // 3].set_xticklabels([])
+    ax[i % 3, i // 3].set_yticklabels([])
+
+fig.colorbar(cax1, ax=ax, orientation='vertical', shrink=0.8, aspect=40)
 
 
+# fig.constrained_layout()
+plt.show()
+    # time.sleep(2)
 
+##
 
+power = lambda k: 0.01 * k ** -3
+start_time = time.perf_counter()
 lnpb = pbox.LogNormalPowerBox(
-    N=512,                     # Number of grid-points in the box
-    dim=2,                     # 2D box
-    pk = power, # The power-spectrum
-    boxlength = 1.0,           # Size of the box (sets the units of k in pk)
-    seed = 42                # Set a seed to ensure the box looks the same every time (optional)
+    N=256,  # Number of grid-points in the box
+    dim=3,  # 2D box
+    pk=power,  # The power-spectrum
+    boxlength=1.0,  # Size of the box (sets the units of k in pk)
+    seed=42  # Set a seed to ensure the box looks the same every time (optional)
 )
 
 end_time = time.perf_counter()
 elapsed_time = end_time - start_time
 
 print("Elapsed time: ", elapsed_time)
-# y = lnpb.delta_x()
-# plt.imshow(lnpb.delta_x(), extent = (-.5,.5, -.5, .5))
-# plt.colorbar()
-# plt.show()
 
+
+start_time = time.perf_counter()
+N=5000
+ClusteredSample = lnpb.create_discrete_sample(nbar=int(2*N),
+                                              randomise_in_cell= True,
+                                              # nbar specifies the number density
+                                    # min_at_zero=False  # by default the samples are centred at 0. This shifts them to be positive.
+                                   )
+end_time = time.perf_counter()
+elapsed_time = end_time - start_time
+
+print("Elapsed time: ", elapsed_time)
 
 ##
 

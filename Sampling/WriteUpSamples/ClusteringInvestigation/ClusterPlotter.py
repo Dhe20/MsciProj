@@ -14,8 +14,8 @@ def expected(data, sig):
 title = 'Clustering'
 
 investigated_characteristic = "clustering"
-investigated_values = [5,10,20,30,50]
-max_numbers = ["1" for i in range(len(investigated_values))]
+investigated_values = [30]
+max_numbers = ["2" for i in range(len(investigated_values))]
 
 means = []
 stds = []
