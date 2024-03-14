@@ -73,6 +73,12 @@ class Inference(SurveyAndEventData):
         self.lum_term = dict({'Random':self.get_lum_term_random, 
                               'Proportional': self.get_lum_term_proportional})
 
+        self.lum_term_uncertain_z = dict({'Random':self.get_lum_term_random_x, 
+                                    'Proportional': self.get_lum_term_proportional_x})
+
+        self.flux_contribution = dict({'Random':self.flux_if_random, 
+                                    'Proportional': self.flux_if_prop})
+
         #self.lum_term_integrand = dict({'Random':self.var_lum_const, 
         #                      'Proportional': self.var_lum_prop})
 
@@ -238,6 +244,18 @@ class Inference(SurveyAndEventData):
 
     def get_lum_term_random(self, Ds):
         return 1
+    
+    def get_lum_term_proportional_x(self, x):
+        return x**2
+    
+    def get_lum_term_random_x(self, x):
+        return 1
+    
+    def flux_if_prop(self, F):
+        return F
+    
+    def flux_if_random(self, F):
+        return 1
 
     def H_0_inference_2d_perfect_survey_vectorised(self):
         H_0_recip = np.reciprocal(self.H_0_range)[:, np.newaxis]
@@ -381,21 +399,25 @@ class Inference(SurveyAndEventData):
 
         vmf = self.get_vectorised_vmf()
 
-        # luminosity_term = np.square(us) * self.SurveyAndEventData.fluxes
+        #luminosity_term = self.lum_term[self.event_distribution_inf](redshifts)
 
-        luminosity_term = self.lum_term[self.event_distribution_inf](redshifts)
-
-        full_expression = burr_full * vmf * luminosity_term
+        flux_term = self.flux_contribution[self.event_distribution_inf](self.SurveyAndEventData.fluxes)
+        weight = flux_term / (self.SurveyAndEventData.redshift_noise_sigma**2 + self.SurveyAndEventData.detected_redshifts**2)
+        #full_expression = burr_full * vmf * luminosity_term
+        
+        full_expression = burr_full * vmf * weight
 
         # self.full = full_expression
 
         self.H_0_pdf_single_event = np.sum(full_expression, axis=2)
+
         # self.log_H_0_pdf = np.sum(np.log(self.H_0_pdf_single_event), axis=0)
         # self.H_0_pdf = np.exp(self.log_H_0_pdf - np.min(self.log_H_0_pdf[np.isfinite(self.log_H_0_pdf)]))
         # self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
 
         if self.p_det:
-            p_det_vec = luminosity_term * self.get_p_det_vec(us)
+            P_det_full = self.get_normal_P_det_int(us,ss)
+            p_det_vec = P_det_full * weight
             P_det_total = np.sum(p_det_vec, axis=1)
             self.P_det_total = P_det_total
             self.H_0_pdf_single_event = self.H_0_pdf_single_event / P_det_total
@@ -769,11 +791,21 @@ class Inference(SurveyAndEventData):
         d = np.sqrt(np.sum(np.square(self.SurveyAndEventData.BH_detected_coords), axis=1))[:, np.newaxis, np.newaxis]
         D = np.tile(d, (1, len(self.H_0_range), len(self.SurveyAndEventData.detected_redshifts)))
 
-        integral = self.vectorised_integrate_on_grid(self.P_D_gal, 0, np.inf)
+        integral = self.vectorised_integrate_on_grid_eps(self.L_GW_z_uncertain, 0.0001, 1500, 0.0001)#, points=(self.SurveyAndEventData.max_D,))
         burr_full = integral(D, U, S)
         print('Ended Burr Normal integral')
         return burr_full
     
+    def get_normal_P_det_int(self, us, ss):
+        print('Reached P_det Normal integral')
+        #U = np.tile(us[np.newaxis, :], (self.SurveyAndEventData.detected_event_count, 1, 1))
+        #S = np.tile(ss[np.newaxis, :], (self.SurveyAndEventData.detected_event_count, 1, 1))
+
+        integral = self.vectorised_integrate_on_grid_2_arg_eps(self.P_det_z_uncertain, 0.0001, 1500, 0.0001)#, points=(self.SurveyAndEventData.max_D,))
+        p_det_full = integral(us, ss)
+        print('Ended P_det Normal integral')
+        return p_det_full
+
     def get_vectorised_3d_gauss_cartesian(self, Ds):
         Ds_tile = np.tile(Ds, (self.SurveyAndEventData.detected_event_count, 1, 1))
 
@@ -895,10 +927,43 @@ class Inference(SurveyAndEventData):
         k = self.SurveyAndEventData.BVM_k
         return np.exp(-(x-U)**2/(2*S**2))/((x**(c))*(1+(D/x)**c)**(k+1))
 
+    #def L_GW_z_uncertain(self,x,D,U,S):
+    #    c = self.SurveyAndEventData.BVM_c
+    #    k = self.SurveyAndEventData.BVM_k
+    #    return self.lum_term_uncertain_z[self.event_distribution_inf](x) * np.exp(-(x-U)**2/(2*S**2)) * (x**(3-c)) * (1 + (D/x)**c)**(-1-k)
+
+    def L_GW_z_uncertain(self,x,D,U,S):
+        c = self.SurveyAndEventData.BVM_c
+        k = self.SurveyAndEventData.BVM_k
+        return self.lum_term_uncertain_z[self.event_distribution_inf](x) * np.exp(-(x-U)**2/(2*S**2)) *x**2 * ((D/x)**(c-1)) * (1 + (D/x)**c)**(-1-k)
+
+
+    def P_det_z_uncertain(self,x,U,S):
+        c = self.SurveyAndEventData.BVM_c
+        k = self.SurveyAndEventData.BVM_k
+        D_max = self.SurveyAndEventData.max_D
+        return self.lum_term_uncertain_z[self.event_distribution_inf](x) * np.exp(-(x-U)**2/(2*S**2)) * x**2 *(1 - (1 + (D_max/x)**c)**(-k))
+
+
     def vectorised_integrate_on_grid(self, func, lo, hi):
         """Returns a callable that can be evaluated on a grid."""
         return np.vectorize(lambda n,m,l: quad(func, lo, hi, (n,m,l))[0])
 
+    def vectorised_integrate_on_grid_eps(self, func, lo, hi, epsrel):#, points):
+        """Returns a callable that can be evaluated on a grid."""
+        return np.vectorize(lambda n,m,l: quad(func, lo, hi, (n,m,l), epsrel=epsrel, epsabs=0)[0])
+
+    def vectorised_integrate_on_grid_1_arg(self, func, lo, hi):
+        """Returns a callable that can be evaluated on a grid."""
+        return np.vectorize(lambda n: quad(func, lo, hi, (n,))[0])
+    
+    def vectorised_integrate_on_grid_2_arg(self, func, lo, hi):
+        """Returns a callable that can be evaluated on a grid."""
+        return np.vectorize(lambda n,l: quad(func, lo, hi, (n,l))[0])
+    
+    def vectorised_integrate_on_grid_2_arg_eps(self, func, lo, hi, epsrel):#, points):
+        """Returns a callable that can be evaluated on a grid."""
+        return np.vectorize(lambda n,l: quad(func, lo, hi, (n,l), epsrel=epsrel, epsabs=0)[0])
 
     ### Completeness
 
@@ -1041,13 +1106,6 @@ class Inference(SurveyAndEventData):
     def gw_numerator_BB1_lum_prop(self, z, x_GW, H_0):
         return z**2 * self.burr_pdf(x_GW, self.c * z / H_0) * (gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star) - (1/((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(2 + self.SurveyAndEventData.beta))) * gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum)))
 
-    def vectorised_integrate_on_grid_1_arg(self, func, lo, hi):
-        """Returns a callable that can be evaluated on a grid."""
-        return np.vectorize(lambda n: quad(func, lo, hi, (n,))[0])
-    
-    def vectorised_integrate_on_grid_2_arg(self, func, lo, hi):
-        """Returns a callable that can be evaluated on a grid."""
-        return np.vectorize(lambda n,l: quad(func, lo, hi, (n,l))[0])
 
 
     '''

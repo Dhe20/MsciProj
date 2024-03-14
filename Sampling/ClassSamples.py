@@ -23,7 +23,7 @@ from tqdm import tqdm
 
 class Sampler():
     def __init__(self, dimension=3, cube=True, size=625, d_ratio=0.4, event_rate = 1540.0, sample_time = 0.00019378,# 0.00029066,
-                wanted_det_events = 50, specify_event_number = False, luminosity_gen_type="Full-Schechter", coord_gen_type="Random",
+                wanted_det_events = 50, specify_event_number = False, wanted_gal_n = 1000, specify_gal_number = False, luminosity_gen_type="Full-Schechter", coord_gen_type="Random",
                 cluster_coeff=0, characteristic_luminosity=1, lower_lim=0.1, total_luminosity=3333.333,
                 BVM_c = 15, BVM_k = 2, BVM_kappa = 200, event_distribution="Proportional", noise_distribution="BVMF_eff", redshift_noise_sigma=0, noise_sigma=5,
                 resolution=10, plot_contours=False, alpha = 0.3, beta=-1.5, min_flux=0, survey_incompleteness=0, completeness_type='cut_lim', DD = 0, resolution_H_0 = 200, 
@@ -39,6 +39,9 @@ class Sampler():
         self.sample_time = sample_time
         self.wanted_det_events = wanted_det_events
         self.specify_event_number = specify_event_number
+        self.wanted_gal_n = wanted_gal_n
+        self.specify_gal_number = specify_gal_number
+
 
         self.luminosity_gen_type = luminosity_gen_type
         self.coord_gen_type = coord_gen_type
@@ -80,6 +83,9 @@ class Sampler():
         self.investigated_characteristic = investigated_characteristic
         self.investigated_value = investigated_value
 
+        if self.specify_gal_number:
+            self.total_luminosity = self.gal_lum_factor()
+
         if self.specify_event_number:
             self.sample_time = self.factor()
 
@@ -105,6 +111,12 @@ class Sampler():
             integral, err = quad(lambda x: 3 * (1 - 1/((1 + (self.d_ratio/x)**self.BVM_c)**self.BVM_k)) * (x**2) , 0, 1)
         req_time = self.wanted_det_events/(self.total_luminosity * self.event_rate * integral * np.pi/6)
         return req_time
+
+    def gal_lum_factor(self):
+        if self.luminosity_gen_type == 'Full-Schechter':
+            A = 1 + self.characteristic_luminosity/self.lower_lim
+            E = self.characteristic_luminosity*(1+self.beta) * ((A**(2+self.beta) - 1)/(A**(2+self.beta) - A))
+            return self.wanted_gal_n * E
 
     def Sample(self):
         det_event_counts = []
@@ -139,7 +151,7 @@ class Sampler():
         print(I.inference_method_name)
         if self.save_normally:
             self.max_num = self.find_file_num("PosteriorData/SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_")
-            self.H_0_samples.to_csv("PosteriorData/SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_"+self.max_num+".csv")
+            self.H_0_samples.to_csv("c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\PosteriorData/SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_"+self.max_num+".csv")
             print('Average # of detected events = {:.2f}'.format(np.mean(det_event_counts)))
             print("Finished: SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_"+self.max_num+".csv")
         else:

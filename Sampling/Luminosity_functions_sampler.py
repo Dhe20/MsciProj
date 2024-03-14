@@ -30,6 +30,7 @@ def bias_dist(x, H=70):
 
 def C_I_samp(x):
     H = np.random.uniform(50,100)
+    H = 70
     ps = []
     inc = x.index[1]-x.index[0]
     cut_x = x.loc[x.index<=H]
@@ -306,6 +307,23 @@ max_numbers = []
 
 for i in tqdm(range(len(investigated_values))):
     Investigation = Sampler(universe_count = 1000, redshift_noise_sigma=investigated_values[i] , p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=1000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+
+#%%
+
+investigated_characteristic = 'redshift_uncertainty_corrected_approx'
+investigated_values = [0.005]
+max_numbers = []
+#b = []
+#f = []
+
+for i in range(len(investigated_values)):
+    Investigation = Sampler(universe_count = 20, survey_type='imperfect', redshift_noise_sigma=investigated_values[i], resolution_H_0=100, H_0_Max=80, H_0_Min=60 , p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=500/3, specify_gal_number=True, wanted_gal_n=500, wanted_det_events = 10, specify_event_number = True, 
                             noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
     Investigation.Sample()
     #b.append(Investigation.burr_i)
@@ -698,12 +716,67 @@ for i in tqdm(range(len(investigated_values))):
     
 investigated_characteristic = 'delta_D'
 investigated_values = [4.035, 6.382, 13.804, 28.878]
+rel = [5, 10, 20, 30]
 max_numbers = []
 #b = []
 #f = []
 
 for i in tqdm(range(len(investigated_values))):
     Investigation = Sampler(universe_count = 100, p_det=True, BVM_c=investigated_values[i], gamma = False, event_distribution='Proportional', total_luminosity=1000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+    
+investigated_characteristic = 'delta_D'
+investigated_values = [2.964, 3.409, 4.953, 8.827, 74.244]
+rel = [40, 35, 25, 15, 2]
+max_numbers = []
+#b = []
+#f = []
+
+for i in range(len(investigated_values)):
+    Investigation = Sampler(universe_count = 100, p_det=True, BVM_c=investigated_values[i], gamma = False, event_distribution='Proportional', total_luminosity=1000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+
+
+#%%
+    
+'''
+investigated_characteristic = 'event_num_log_rigorous'
+investigated_values = [5, 7, 10, 15, 20, 40, 80, 160]
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 100, p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=1000/3, wanted_det_events = investigated_values[i], specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+'''
+
+#%%
+
+investigated_characteristic = 'gal_num_set'
+investigated_values = [250, 500, 1000, 2000, 4000, 8000, 16000, 32000]
+max_numbers = []
+#b = []
+#f = []
+
+for i in range(len(investigated_values)):
+    Investigation = Sampler(universe_count = 100, beta=-1.3, p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=1000/3, wanted_det_events = 50, specify_event_number = True,
+                            wanted_gal_n = investigated_values[i], specify_gal_number = True,
                             noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
     Investigation.Sample()
     #b.append(Investigation.burr_i)
@@ -727,13 +800,13 @@ max_numbers = ['0']
 
 #%%
 
-
 investigated_characteristic = 'trial_survey_completeness_0'
 #investigated_values = [25,75,95]
 investigated_values = np.array([1.0]) #,0.5])
 investigated_values /= (4*np.pi*(0.4*625)**2)
 investigated_values = [1.2732395447351628e-06]
 max_numbers = ['0']*2
+
 #%%
 
 def axis_namer(s):
@@ -805,21 +878,41 @@ plt.show()
 
 #%%
 
-N = 50
-ci = np.linspace(1/N,1,50)
+N = 500
+ci = np.linspace(1/N,1,N)
+
+'''
+significance = [1,2,3]
+for i in range(len(significance)): 
+    df_sig = pd.DataFrame(index=df.index)
+    for j in range(100):
+        #h = np.random.uniform(65,75)# + 5*significance[i])
+        h = 70 + 5*significance[i]
+        df_sig[str(j)] = sps.norm.pdf(df.index, loc=h, scale=5)
+
+c_i_s_signif = C_I_samp(df_sig)
+'''
 
 for i in range(len(investigated_values)):
     fraction = []
     for j in ci:    
         fraction.append(sum(k<j for k in c_i_s[i])/len(c_i_s[i]))
     plt.stairs(fraction, np.insert(ci, 0, 0), lw=3, label=investigated_values[i])
+
+'''
+sigs_fraction = []
+for j in ci:    
+        sigs_fraction.append(sum(k<j for k in c_i_s_signif)/len(c_i_s_signif))
+plt.stairs(sigs_fraction, np.insert(ci, 0, 0), lw=3, label=investigated_values[i])
+'''
+
 plt.legend()
 plt.show()
 
 #%%
 
 for i in range(len(investigated_values)):
-    plt.hist(p_i_s[i], bins=np.linspace(0,1,30), density=1, histtype='step', lw=3, label=investigated_values[i])
+    plt.hist(p_i_s[i], bins=np.linspace(0,1,10), density=0, histtype='step', lw=3, label=investigated_values[i])
 plt.legend()
 plt.show()
 
