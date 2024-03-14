@@ -122,6 +122,10 @@ class Inference(SurveyAndEventData):
 
     def H_0_Prob(self):
         self.distribution_calculated = True
+        if self.SurveyAndEventData.detected_event_count == 0:
+            self.H_0_pdf = np.ones(self.resolution_H_0)
+            self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+            return self.H_0_pdf
         self.H_0_pdf = self.inference_method[self.inference_method_name]()
         if self.gamma: #This step is unvectorised but still only takes ~1/4 of the time of first inference stage
             gamma_method_name = str(self.SurveyAndEventData.dimension)+"d"
