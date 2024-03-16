@@ -28,7 +28,7 @@ class Sampler():
                 BVM_c = 15, BVM_k = 2, BVM_kappa = 200, event_distribution="Proportional", noise_distribution="BVMF_eff", redshift_noise_sigma=0, noise_sigma=5,
                 resolution=10, plot_contours=False, alpha = 0.3, beta=-1.5, min_flux=0, survey_incompleteness=0, completeness_type='cut_lim', DD = 0, resolution_H_0 = 200, 
                 H_0_Min = 50, H_0_Max = 100, universe_count = 200, survey_type = "perfect", gamma=True, gauss=False, p_det=False, event_distribution_inf='Proportioanl', lum_function_inf = 'Full-Schechter', poster=False, flux_threshold=0,
-                investigated_characteristic='0', investigated_value=0, save_normally = True, start_seed = 0):
+                investigated_characteristic='0', investigated_value=0, save_normally = 1, start_seed = 0):
 
         # Event generator params - to use super __init__ have to change defaults in EventGenerator to be useful
         self.dimension = dimension
@@ -117,7 +117,7 @@ class Sampler():
         if self.luminosity_gen_type == 'Full-Schechter':
             A = 1 + self.characteristic_luminosity/self.lower_lim
             E = self.characteristic_luminosity*(1+self.beta) * ((A**(2+self.beta) - 1)/(A**(2+self.beta) - A))
-            return self.wanted_gal_n * E
+        return self.wanted_gal_n * E
 
     def Sample(self):
         det_event_counts = []
@@ -130,8 +130,8 @@ class Sampler():
                                 resolution=self.resolution, plot_contours=self.plot_contours, alpha = self.alpha, beta=self.beta, BVM_c=self.BVM_c, BVM_k=self.BVM_k, BVM_kappa=self.BVM_kappa, seed= self.start_seed + Universe)
             det_event_counts.append(Gen.detected_event_count)
             # print("# of detected events: " + str(Gen.detected_event_count))
-            # if Universe==0:
-            #     print("# of galaxies: " + str(len(Gen.detected_luminosities)))
+            #if Universe<10:
+            #    print("# of galaxies: " + str(len(Gen.detected_luminosities)))
             Data = Gen.GetSurveyAndEventData(min_flux = self.min_flux, survey_incompleteness = self.survey_incompleteness, completeness_type = self.completeness_type)
             percentage = len(Data.detected_galaxy_indices)/len(Gen.detected_luminosities)
             self.survey_percentage.append(percentage)
@@ -150,9 +150,16 @@ class Sampler():
         #if self.p_det:    
         #    self.P_det_total = I.P_det_total
         print(I.inference_method_name)
-        if self.save_normally:
+        self.det_event_count_for_analysis = det_event_counts
+        if self.save_normally==1:
             self.max_num = self.find_file_num("PosteriorData/SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_")
             self.H_0_samples.to_csv("c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\PosteriorData/SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_"+self.max_num+".csv")
+            print('Average # of detected events = {:.2f}'.format(np.mean(det_event_counts)))
+            print("Finished: SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_"+self.max_num+".csv")
+        
+        elif self.save_normally==2:
+            self.max_num = self.find_file_num("PosteriorData/SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_")
+            self.H_0_samples.to_csv("c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\WriteUpSamples\RedshiftUncertainty\Z_Samples\SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_"+self.max_num+".csv")
             print('Average # of detected events = {:.2f}'.format(np.mean(det_event_counts)))
             print("Finished: SampleUniverse_"+str(self.investigated_characteristic)+"_"+str(self.investigated_value)+"_"+self.max_num+".csv")
         else:

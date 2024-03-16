@@ -32,8 +32,9 @@ max_numbers = []
 #f = []
 
 for i in range(len(investigated_values)):
-    Investigation = Sampler(universe_count = 500, survey_type='perfect', redshift_noise_sigma=investigated_values[i], resolution_H_0=100, H_0_Max=80, H_0_Min=60 , p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=500/3, specify_gal_number=True, wanted_gal_n=500, wanted_det_events = 10, specify_event_number = True, 
-                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation = Sampler(universe_count = 1, survey_type='perfect', redshift_noise_sigma=investigated_values[i], resolution_H_0=100, H_0_Max=80, H_0_Min=60 , p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=500/3, specify_gal_number=True, wanted_gal_n=500, wanted_det_events = 10, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i],
+                            save_normally=False)
     Investigation.Sample()
     #b.append(Investigation.burr_i)
     #f.append(Investigation.full)

@@ -38,6 +38,8 @@ def C_I_samp(x):
         ps.append(inc*np.sum(cut_x[i]))
     return ps
 
+
+
 #%%
 
 investigated_characteristic = 'survey_type'
@@ -697,6 +699,26 @@ for i in tqdm(range(len(investigated_values))):
     max_numbers.append(Investigation.max_num)
 
 #%%
+
+investigated_characteristic = 'trial_survey_completeness_right_5_RIGHT'
+#investigated_values = [25,75,95]
+investigated_values = np.array([0.05,0.1,0.2,0.3]) #,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+max_numbers = []
+percentage = []
+#b = []
+#f = []
+
+for i in range(len(investigated_values)):
+    Investigation = Sampler(universe_count = 100, min_flux=investigated_values[i], completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=2000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', luminosity_gen_type='Full-Schechter', lum_function_inf='Full-Schechter', flux_threshold=1, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
     
 investigated_characteristic = 'clustering'
 investigated_values = [0, 10, 30, 50, 70, 90]
@@ -783,6 +805,24 @@ for i in range(len(investigated_values)):
     #f.append(Investigation.full)
     max_numbers.append(Investigation.max_num)
 
+
+#%%
+    
+investigated_characteristic = 'redshift_uncertainty_trash'
+investigated_values = [0.005]
+max_numbers = []
+#b = []
+#f = []
+
+for i in range(len(investigated_values)):
+    Investigation = Sampler(universe_count = 100, d_ratio=0.6, beta=-1.3, survey_type='perfect', redshift_noise_sigma=investigated_values[i], resolution_H_0=100, H_0_Max=80, H_0_Min=60 , p_det=True, gamma = False, event_distribution='Proportional',
+                            total_luminosity = 500/3, specify_gal_number=True, wanted_gal_n=2000, wanted_det_events = 10, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
 #%%
 
 #investigated_values = list(np.array([5,10,50,100,200]))
@@ -817,6 +857,10 @@ def axis_namer(s):
         title = s[0].upper()+s[1:]
     return title
 
+def is_unique(s):
+    a = s.to_numpy() # s.values (pandas<0.24)
+    return (a[0] == a).all()
+
 fig = plt.figure(figsize = (12,8))
 # create grid for different subplots
 spec = gridspec.GridSpec(ncols=1, nrows=2,
@@ -843,6 +887,9 @@ for i in range(len(investigated_values)):
     p_i_s.append(bias_dist(df))
     c_i_s.append(C_I_samp(df))
     for column in df.columns:
+        if is_unique(df[column]):
+            print('Gotcha')
+            continue
         pdf_single = df[column]/(inc * df[column].sum())
         #print(df[column].sum())
         pdf_single.dropna(inplace=True)

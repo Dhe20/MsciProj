@@ -41,13 +41,29 @@ def C_I_samp(x):
 #%%
 
 investigated_characteristic = 'redshift_uncertainty_corrected_approx'
-investigated_characteristic = 'redshift_uncertainty_incorrect'
+#investigated_characteristic = 'redshift_uncertainty_incorrect'
 investigated_values = [0.005]
-investigated_values = [0.01]
+#investigated_values = [0.01]
 max_numbers = ["0" for i in range(len(investigated_values))]
 
+#%%
+
+investigated_characteristic_2 = 'corrected_redshift_multiprocessing'
+filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\WriteUpSamples\RedshiftUncertainty\Z_Samples\SampleUniverse_"+str(investigated_characteristic_2)+'0'+"_"+str(investigated_values[0])+"_"+max_numbers[0]+".csv"
+DF = pd.read_csv(filename, index_col = 0)
+DF.rename(columns={"0": "20"}, inplace=True)
+for i in range(1,60):
+    if i !=43:
+        filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\WriteUpSamples\RedshiftUncertainty\Z_Samples\SampleUniverse_"+str(investigated_characteristic_2)+str(i)+"_"+str(investigated_values[0])+"_"+max_numbers[0]+".csv"
+        df = pd.read_csv(filename, index_col = 0)
+        DF[str(20+i)] = df['0']
+    
 
 #%%
+        
+def is_unique(s):
+    a = s.to_numpy() # s.values (pandas<0.24)
+    return (a[0] == a).all()
 
 def axis_namer(s):
     index = s.find('_')
@@ -76,13 +92,107 @@ c_i_s = []
 for i in range(len(investigated_values)):
     #print(i)
     filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\PosteriorData\SampleUniverse_"+str(investigated_characteristic)+"_"+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
-    df = pd.read_csv(filename, index_col = 0)
+    df1 = pd.read_csv(filename, index_col = 0)
+    df = pd.concat([df1, DF], axis=1)
+    #df = df1 
     means = []
     stds = []
     inc = df.index[1]-df.index[0]
     p_i_s.append(bias_dist(df))
     c_i_s.append(C_I_samp(df))
     for column in df.columns:
+        if is_unique(df[column]):
+            print('Gotcha')
+            continue
+
+        pdf_single = df[column]/(inc * df[column].sum())
+        #print(df[column].sum())
+        pdf_single.dropna(inplace=True)
+        vals = np.array(pdf_single.index)
+        mean = sum(inc * pdf_single*vals)
+        # means or modes
+        #mean = vals[np.argmax(pdf_single*vals)]
+        if mean==0:
+            continue
+        means.append(mean)
+        stds.append(np.sqrt(sum((inc*pdf_single*pdf_single.index**2))-mean**2))
+    meanss.append(means)
+    stdss.append(stds)
+    pos.append(i+1)
+
+ax1.tick_params(axis='both', which='major', labelsize=20)
+ax2.tick_params(axis='both', which='major', labelsize=20)
+
+ax1.violinplot(meanss, bw_method=0.4, vert=False, showmeans=True)
+ax1.set_yticks(pos)
+ax1.set_yticklabels(investigated_values, fontsize=20)
+ax1.set_title('Means', fontsize = 25)
+ax1.grid(axis='x')
+
+ax2.violinplot(stdss, vert=False, showmeans=True)
+ax2.set_yticks(pos)
+ax2.set_yticklabels(investigated_values, fontsize=20)
+ax2.set_title('Standard deviations', fontsize = 25)
+fig.supylabel(axis_namer(investigated_characteristic), fontsize=20)
+ax2.grid(axis='x')
+
+plt.show()
+
+#%%
+
+investigated_characteristic = 'better_corrected_redshift_multiprocessing'
+investigated_values = [0.01]
+max_numbers = ["0" for i in range(len(investigated_values))]
+
+filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\WriteUpSamples\RedshiftUncertainty\Z_Samples\SampleUniverse_"+str(investigated_characteristic)+'0'+"_"+str(investigated_values[0])+"_"+max_numbers[0]+".csv"
+df = pd.read_csv(filename, index_col = 0)
+for i in range(1,40):
+#    if i !=43:
+    filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\WriteUpSamples\RedshiftUncertainty\Z_Samples\SampleUniverse_"+str(investigated_characteristic)+str(i)+"_"+str(investigated_values[0])+"_"+max_numbers[0]+".csv"
+    df_d = pd.read_csv(filename, index_col = 0)
+    df[str(i)] = df_d['0']
+
+#%%
+def is_unique(s):
+    a = s.to_numpy() # s.values (pandas<0.24)
+    return (a[0] == a).all()
+
+def axis_namer(s):
+    index = s.find('_')
+    if index != -1:
+        title = s[0].upper()+s[1:index]+' '+s[index+1].upper()+s[index+2:]
+    else:
+        title = s[0].upper()+s[1:]
+    return title
+
+fig = plt.figure(figsize = (12,8))
+# create grid for different subplots
+spec = gridspec.GridSpec(ncols=1, nrows=2,
+                        wspace=0.2,
+                         hspace=0.3)
+
+ax1 = fig.add_subplot(spec[0])
+ax2 = fig.add_subplot(spec[1])
+
+meanss = []
+stdss = []
+pos = []
+
+p_i_s = []
+c_i_s = []
+
+for i in range(len(investigated_values)):
+    #print(i)
+    means = []
+    stds = []
+    inc = df.index[1]-df.index[0]
+    p_i_s.append(bias_dist(df))
+    c_i_s.append(C_I_samp(df))
+    for column in df.columns:
+        if is_unique(df[column]):
+            print('Gotcha')
+            continue
+
         pdf_single = df[column]/(inc * df[column].sum())
         #print(df[column].sum())
         pdf_single.dropna(inplace=True)

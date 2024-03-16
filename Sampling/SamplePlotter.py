@@ -9,6 +9,7 @@ from matplotlib import gridspec, collections
 df = pd.read_csv("PosteriorData\\SampleUniverse_trial_survey_completeness_2.5464790894703255e-07_0.csv", index_col = 0)
 df = pd.read_csv("PosteriorData\\SampleUniverse_redshift_uncertainty_corrected_approx_0.005_0.csv", index_col = 0)
 df = pd.read_csv("PosteriorData\\SampleUniverse_redshift_uncertainty_corrected_approx_0.005_0.csv", index_col = 0)
+df = pd.read_csv("PosteriorData\\SampleUniverse_delta_D_5_average_events_3.409_0.csv", index_col = 0)
 
 df.dropna(inplace=True, axis=1)
 
