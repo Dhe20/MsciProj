@@ -124,7 +124,7 @@ main_ax.indicate_inset_zoom(inset_ax, edgecolor="white")
 for axis in ['top','bottom','left','right']:
     main_ax.spines[axis].set_linewidth(3)
 
-plt.savefig("2DAnnotatedUniverse.png", dpi = 1500)
+# plt.savefig("2DAnnotatedUniverse.png", dpi = 1500)
 
 # careful! warn if aspect ratio of inset axes doesn't match main axes
 # if not isclose(inset_ax._get_aspect_ratio(), main_ax._get_aspect_ratio()):

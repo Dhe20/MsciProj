@@ -34,7 +34,7 @@ if __name__ == '__main__':
 '''
 
 import sys
-sys.path.insert(0,'c:\\Users\\manco\\OneDrive\\Ambiente de Trabalho\\Masters_Project\\MsciProj')
+# sys.path.insert(0,'c:\\Users\\manco\\OneDrive\\Ambiente de Trabalho\\Masters_Project\\MsciProj')
 from Sampling.ClassSamples import Sampler
 
 
