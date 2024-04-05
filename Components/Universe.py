@@ -13,11 +13,14 @@ class Universe:
     def __init__(self, dimension = 3, luminosity_gen_type = "Fixed", coord_gen_type = "Random",
                  cluster_coeff = 2, total_luminosity = 1000, size = 1, d_ratio = 0.4,
                  alpha = .3, beta=-1.5, characteristic_luminosity = 1, min_lum = 0.1,
-                 max_lum = .5, H_0 = 70, redshift_noise_sigma=0.,
-                 lower_lim=1, cube=True, seed = None):
+                 max_lum = .5, H_0 = 70, q_0 = -0.53, hubble_law = 'linear', redshift_noise_sigma=0.,
+                 lower_lim=0.1, cube=True, seed = None):
 
         self.H_0 = H_0
         self.c = 3*(10**5)
+
+        self.q_0 = q_0
+        self.hubble_law = hubble_law
 
         self.cube = cube
 
@@ -75,7 +78,11 @@ class Universe:
         # Not entirely sure if z_sigma is measurable
         self.detected_redshifts_uncertainties = np.zeros(len(self.detected_coords))
         for i in range(len(self.detected_redshifts)):
-            self.detected_redshifts[i] = self.H_0*np.sqrt(np.sum(np.square(self.detected_coords[i])))/self.c
+            if self.hubble_law == 'linear':
+                self.detected_redshifts[i] = self.H_0*np.sqrt(np.sum(np.square(self.detected_coords[i])))/self.c
+            elif self.hubble_law == 'quadratic':
+                self.detected_redshifts[i] = -(1/(1-self.q_0)) + np.sqrt(1/(1-self.q_0)**2 + 2 * self.H_0 * np.sqrt(np.sum(np.square(self.detected_coords[i])))/(self.c*(1-self.q_0)))
+
             # Also it should depend on the true z not z_hat
             self.detected_redshifts_uncertainties[i] = redshift_noise_sigma #*(1+self.detected_redshifts[i])**3
 
@@ -221,7 +228,11 @@ class Universe:
             r = np.sqrt(np.sum(np.square(self.true_coords[i])))
             rhat = self.true_coords[i] / r
             #sigma = self.redshift_noise_sigma*(r/(np.sqrt(self.dimension)*self.size))
-            sigma = self.redshift_noise_sigma*self.c/self.H_0
+            if self.hubble_law == 'linear':
+                sigma = self.redshift_noise_sigma*self.c/self.H_0
+            elif self.hubble_law == 'quadratic':
+                zz = -(1/(1-self.q_0)) + np.sqrt(1/(1-self.q_0)**2 + 2 * self.H_0 * np.sqrt(np.sum(np.square(self.true_coords[i])))/(self.c*(1-self.q_0)))
+                sigma = (self.redshift_noise_sigma*self.c/self.H_0) * (1 + (1-self.q_0)*zz)
             noise = self.np_rand_state.normal(loc=0.0, scale=sigma, size=1)
             detected_coords[i][:] = self.true_coords[i] + rhat*noise
             distance_range[i][:] = np.array([self.true_coords[i] - rhat*sigma*3,
