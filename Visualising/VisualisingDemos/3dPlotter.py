@@ -8,5 +8,3 @@ Gen = EventGenerator(dimension = 3, size = 50, sample_time=0.03*10**(-2), event_
                      resolution=100, plot_contours=True, seed = 22)
 Data = Gen.GetSurveyAndEventData()
 print(Gen.detected_event_count)
-
-Gen.plot_universe_and_events()

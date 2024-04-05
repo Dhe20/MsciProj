@@ -22,6 +22,7 @@ class EventGenerator(Universe):
                  noise_distribution = "BVMF_eff", contour_type = "BVM",
                  noise_std = 3, resolution = 400, BVM_c = 15, H_0 = 70, q_0 = -0.53, hubble_law = 'linear',
                  BVM_k = 2, BVM_kappa = 200, redshift_noise_sigma = 0,
+                 centroid_n=6, centroid_sigma=0.1,
                  plot_contours = True, cube=True, seed = None, event_count_type = "Poisson"):
 
         super().__init__(dimension = dimension, luminosity_gen_type = luminosity_gen_type,
@@ -29,7 +30,8 @@ class EventGenerator(Universe):
                          cluster_coeff = cluster_coeff, total_luminosity = total_luminosity,
                          size = size, d_ratio = d_ratio, alpha = alpha, beta = beta, characteristic_luminosity = characteristic_luminosity,
                          min_lum = min_lum, max_lum = max_lum, lower_lim = lower_lim, redshift_noise_sigma = redshift_noise_sigma,
-                         seed = seed, H_0 = H_0, q_0 = q_0, hubble_law = hubble_law, cube = cube
+                         seed = seed, H_0 = H_0, q_0 = q_0, hubble_law = hubble_law, cube = cube,
+                         centroid_n=centroid_n, centroid_sigma=centroid_sigma
                          )
         
         self.BVM_k = BVM_k

@@ -14,7 +14,8 @@ class Universe:
                  cluster_coeff = 2, total_luminosity = 1000, size = 1, d_ratio = 0.4,
                  alpha = .3, beta=-1.5, characteristic_luminosity = 1, min_lum = 0.1,
                  max_lum = .5, H_0 = 70, q_0 = -0.53, hubble_law = 'linear', redshift_noise_sigma=0.,
-                 lower_lim=0.1, cube=True, seed = None):
+                 lower_lim=0.1, cube=True, seed = None, centroid_n = 6, centroid_sigma = 0.1):
+
 
         self.H_0 = H_0
         self.c = 3*(10**5)
@@ -46,6 +47,9 @@ class Universe:
         self.lower_lim = lower_lim
         self.beta = beta
 
+        self.centroid_n = centroid_n
+        self.centroid_sigma = centroid_sigma
+
         self.cluster_coeff = cluster_coeff
 
         self.d_ratio = d_ratio
@@ -64,7 +68,8 @@ class Universe:
         self.galaxies = np.empty((self.n), dtype = object)
 
         self.coord_generator = dict({"Random": self.random_coords,
-                                     "Clustered": self.clustered_coords})
+                                     "Clustered": self.clustered_coords,
+                                     "Centroids": self.centroid_coords})
 
         self.true_coords = self.coord_generator[coord_gen_type]()
 
@@ -221,6 +226,38 @@ class Universe:
 
         return selected_galaxies
 
+    def centroid_coords(self):
+
+        centroid_center_coords = np.zeros((self.centroid_n, self.dimension))
+        galaxy_coords = np.zeros((self.n, self.dimension))
+        galaxies_per_centroid = self.n // self.centroid_n
+        overflow_galaxy_count = self.n - galaxies_per_centroid*self.centroid_n
+
+        if self.cube:
+            for i in range(self.centroid_n):
+                centroid_center_coords[i, :] = np.array(
+                    [(self.rand_rand_state.random() - 0.5) * 2 * self.size for _ in range(self.dimension)])
+                galaxy_count = 0
+                while galaxy_count < galaxies_per_centroid:
+                    galaxy_coords[i*galaxies_per_centroid+galaxy_count] = self.np_rand_state.normal(loc=centroid_center_coords[i],
+                                                                            scale=self.centroid_sigma*self.size,
+                                                                            size=self.dimension)
+                    if np.all(np.abs(galaxy_coords[galaxy_count]) < self.size):
+                        galaxy_count+=1
+            self.centroid_center_coords = centroid_center_coords
+            galaxy_count = 0
+            while galaxy_count < overflow_galaxy_count:
+                galaxy_coords[galaxies_per_centroid*self.centroid_n + galaxy_count] = self.np_rand_state.normal(
+                                                                        loc=centroid_center_coords[self.rand_rand_state.randint(0, self.centroid_n-1)],
+                                                                        scale=self.centroid_sigma*self.size,
+                                                                        size=self.dimension)
+                if np.all(np.abs(galaxy_coords[galaxy_count]) < self.size):
+                    galaxy_count += 1
+
+        else: raise "Not implemented this for spherical universes"
+
+        return galaxy_coords
+
     def distance_error(self):
         detected_coords = np.zeros((self.n, self.dimension))
         distance_range = np.zeros((self.n, 2, self.dimension))
@@ -263,11 +300,12 @@ class Universe:
             plt.show()
         return fig, ax
 #
-# Gen = Universe(size = 50, dimension = 2,
-#                luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Clustered",
-#                cluster_coeff=0, characteristic_luminosity=.1, total_luminosity=500
-#                ,lower_lim=0.05, min_lum=0.05, seed = 1)
-# Gen.plot_universe()
+Gen = Universe(size = 625, dimension = 2,
+               luminosity_gen_type = "Full-Schechter", coord_gen_type = "Centroids",
+               cluster_coeff=0, characteristic_luminosity=.1, total_luminosity=500/3
+               ,lower_lim=0.05, min_lum=0.05, seed = 10, centroid_sigma=.1, centroid_n = 10)
+
+Gen.plot_universe()
 #
 
 # %%
