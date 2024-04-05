@@ -7,7 +7,7 @@ from tqdm import tqdm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib import gridspec
 
-plt.style.use('dark_background')
+plt.style.use('default')
 
 cluster_coeffs = np.arange(0,11)
 # cluster_coeffs = [5]
@@ -53,10 +53,10 @@ for cluster_coeff in tqdm(cluster_coeffs):
     selected_index = random.sample(index_of_galaxies, k=num_of_galaxies)
     selected_galaxies = clustered_sample[selected_index]
 
-    ax[1].scatter(selected_galaxies[:,1],-selected_galaxies[:,0], alpha = 0.3, marker = ".", color = 'white')
+    ax[1].scatter(selected_galaxies[:,1],-selected_galaxies[:,0], alpha = 0.3, marker = ".", color = 'black')
     ax[1].set_aspect('equal', 'box')  # Make the second subplot square
     ax[1].set_adjustable('box')
-    ax[1].set_facecolor('black')
+    ax[1].set_facecolor('white')
     ax[1].set_xticklabels([])
     ax[1].set_yticklabels([])
     ax[0].set_xticklabels([])
@@ -70,9 +70,9 @@ for cluster_coeff in tqdm(cluster_coeffs):
 
 
 
-    suptitle_text = fig.suptitle(r'$\zeta_{0} = $' + str(cluster_coeff), fontsize=20, color='white', va='top')
-    ax[0].set_title('Over-Density Heatmap', pad=20, fontsize=16, color='white')
-    ax[1].set_title('Sampled Galactic Survey', pad=20, fontsize=16, color='white')
+    suptitle_text = fig.suptitle(r'$\xi_{0} = $' + str(cluster_coeff), fontsize=30, color='black', va='top')
+    ax[0].set_title('Over-Density Heatmap', pad=10, fontsize=30, color='black')
+    ax[1].set_title('Sampled Galactic Survey', pad=10, fontsize=30, color='black')
 
     # Display the figure
     fig.subplots_adjust(top=0.85)
@@ -98,7 +98,7 @@ for cluster_coeff in tqdm(cluster_coeffs):
     cbar = fig.colorbar(im, cax=cbar_ax)
     cbar_ax.yaxis.set_ticks_position('left')
     # plt.show()
-    plt.savefig('/Users/daneverett/PycharmProjects/MSciProject/Visualising/ClusteringGIF/Images/figure_cluster_coeff_{}.png'.format(cluster_coeff), facecolor='black')
+    plt.savefig('/Users/daneverett/PycharmProjects/MSciProject/Visualising/ClusteringGIF/Images/figure_cluster_coeff_{}.png'.format(cluster_coeff), facecolor='white')
     plt.close(fig)
 
     plt.tight_layout()

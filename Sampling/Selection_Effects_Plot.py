@@ -133,9 +133,9 @@ bias_1, bias_err_1 = expected(meanss[1], stdss[1])
 bias_0 -= 70
 bias_1 -= 70
 
-rectangle_patch = mpatches.Rectangle((70, 0), width=0, height=0, color='green', label='Included', alpha=0)
+rectangle_patch = mpatches.Rectangle((70, 0), width=0, height=0, color='green', label='Mismodelled', alpha=0)
 ax1.add_patch(rectangle_patch)
-rectangle_patch = mpatches.Rectangle((70, 0), width=0, height=0, color='green', label='Not Included', alpha=0)
+rectangle_patch = mpatches.Rectangle((70, 0), width=0, height=0, color='green', label='Correctly Modelled', alpha=0)
 ax2.add_patch(rectangle_patch)
 
 ax1.hist(meanss[0], bins=b, histtype='step', edgecolor='#e16462', lw=3.5, density=1, hatch='//')

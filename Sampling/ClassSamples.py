@@ -28,7 +28,8 @@ class Sampler():
                 BVM_c = 15, BVM_k = 2, BVM_kappa = 200, event_distribution="Proportional", noise_distribution="BVMF_eff", redshift_noise_sigma=0, noise_sigma=5,
                 resolution=10, plot_contours=False, alpha = 0.3, beta=-1.5, min_flux=0, survey_incompleteness=0, completeness_type='cut_lim', DD = 0, resolution_H_0 = 200, 
                 H_0_Min = 50, H_0_Max = 100, universe_count = 200, survey_type = "perfect", gamma=True, gauss=False, p_det=False, event_distribution_inf='Proportioanl', lum_function_inf = 'Full-Schechter', poster=False, flux_threshold=0,
-                investigated_characteristic='0', investigated_value=0, save_normally = 1, start_seed = 0):
+                investigated_characteristic='0', investigated_value=0, save_normally = 1, start_seed = 0, centroid_n = 10, centroid_sigma = 0.1, log_event_count = True
+                 ):
 
         # Event generator params - to use super __init__ have to change defaults in EventGenerator to be useful
         self.dimension = dimension
@@ -41,6 +42,9 @@ class Sampler():
         self.specify_event_number = specify_event_number
         self.wanted_gal_n = wanted_gal_n
         self.specify_gal_number = specify_gal_number
+
+        self.centroid_n = centroid_n
+        self.centroid_sigma = centroid_sigma
 
 
         self.luminosity_gen_type = luminosity_gen_type
@@ -90,13 +94,15 @@ class Sampler():
             self.sample_time = self.factor()
 
         self.H_0_samples = pd.DataFrame()
-
         self.H_0_samples.index = np.linspace(self.H_0_Min, self.H_0_Max, self.resolution_H_0)
+
+        self.Event_Count_Samples = pd.DataFrame()
 
         self.events_estimate = self.sample_time * (self.total_luminosity*self.event_rate*(1.5*32*np.pi/3000))
 
         self.save_normally = save_normally
         self.start_seed = start_seed
+        self.log_event_count = log_event_count
 
         if self.events_estimate * 10 > self.total_luminosity / self.characteristic_luminosity:
             print("Risk of too many events for galaxy number")
@@ -127,7 +133,9 @@ class Sampler():
                                 luminosity_gen_type=self.luminosity_gen_type, coord_gen_type=self.coord_gen_type,
                                 cluster_coeff=self.cluster_coeff, characteristic_luminosity=self.characteristic_luminosity, lower_lim=self.lower_lim, total_luminosity=self.total_luminosity,
                                 event_distribution=self.event_distribution, noise_distribution=self.noise_distribution, redshift_noise_sigma=self.redshift_noise_sigma, noise_std=self.noise_sigma,
-                                resolution=self.resolution, plot_contours=self.plot_contours, alpha = self.alpha, beta=self.beta, BVM_c=self.BVM_c, BVM_k=self.BVM_k, BVM_kappa=self.BVM_kappa, seed= self.start_seed + Universe)
+                                resolution=self.resolution, plot_contours=self.plot_contours, alpha = self.alpha, beta=self.beta, BVM_c=self.BVM_c, BVM_k=self.BVM_k, BVM_kappa=self.BVM_kappa, seed= self.start_seed + Universe,
+                                centroid_n = self.centroid_n, centroid_sigma = self.centroid_sigma)
+
             det_event_counts.append(Gen.detected_event_count)
             # print("# of detected events: " + str(Gen.detected_event_count))
             #if Universe<10:
@@ -141,6 +149,9 @@ class Sampler():
             H_0_sample = I.H_0_Prob()
             if not self.poster:    
                 self.H_0_samples[Universe] = H_0_sample
+                if self.log_event_count:
+                    self.Event_Count_Samples[str(Universe)] = [Gen.detected_event_count]
+
         if self.poster:
             for i in range(det_event_counts[0]):
                 self.H_0_samples[str(i)] = H_0_sample[i,:]
@@ -168,8 +179,13 @@ class Sampler():
             print('Average # of detected events = {:.2f}'.format(np.mean(det_event_counts)))
             print("Finished: SampleUniverse_" + str(self.investigated_characteristic) + "_" + str(self.investigated_value) + "_" + self.max_num + ".csv")
 
-
-
+        if self.log_event_count:
+            self.max_num = self.find_file_num(
+                "EventCount_SampleUniverse_" + str(self.investigated_characteristic) + "_" + str(self.investigated_value) + "_")
+            self.Event_Count_Samples.to_csv("EventCount_SampleUniverse_" + str(self.investigated_characteristic) + "_" + str(
+                self.investigated_value) + "_" + self.max_num + ".csv")
+            print("Finished: EventCount_SampleUniverse_" + str(self.investigated_characteristic) + "_" + str(
+                self.investigated_value) + "_" + self.max_num + ".csv")
 
     #Automated Labelling
 

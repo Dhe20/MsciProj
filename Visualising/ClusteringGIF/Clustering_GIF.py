@@ -3,7 +3,7 @@ import imageio
 # Define the file pattern for the saved images
 file_pattern = 'Images/figure_cluster_coeff_{}.png'
 # Define the duration that each image (frame) will display in the GIF
-frame_duration = 2 # seconds per frame
+frame_duration = 200 # seconds per frame
 
 # Create a list to hold the images
 images = []
