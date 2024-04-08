@@ -490,12 +490,12 @@ class EventGenerator(Universe):
 #
 #
 #
-# Gen = EventGenerator(dimension = 3, size = 50, resolution = 100,
+# Gen = EventGenerator(dimension = 2, size = 625, resolution = 100, BVM_kappa=20, BVM_k=2, BVM_c=3.409,
 #                       luminosity_gen_type = "Cut-Schechter", coord_gen_type = "Random",
-#                       cluster_coeff=5, characteristic_luminosity=1, total_luminosity=10/3, sample_time=0.09, event_rate=10,
-#                       event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0.0, plot_contours=True, seed = 10)
-# # print("plotting")
-# # print(Gen.detected_event_count)
+#                       cluster_coeff=5, characteristic_luminosity=1, total_luminosity=10, sample_time=0.2, event_rate=10,
+#                       event_distribution="Proportional", contour_type = "BVM", redshift_noise_sigma = 0.0, plot_contours=True, seed = 26)
+# # # print("plotting")
+# # # print(Gen.detected_event_count)
 # Gen.plot_universe_and_events()
 
 

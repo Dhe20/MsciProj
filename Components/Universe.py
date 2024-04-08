@@ -292,7 +292,7 @@ class Universe:
 Gen = Universe(size = 625, dimension = 2,
                luminosity_gen_type = "Full-Schechter", coord_gen_type = "Centroids",
                cluster_coeff=0, characteristic_luminosity=.1, total_luminosity=500/3
-               ,lower_lim=0.05, min_lum=0.05, seed = 10, centroid_sigma=.1, centroid_n = 10)
+               ,lower_lim=0.05, min_lum=0.05, seed = 10, centroid_sigma=.2, centroid_n = 20)
 
 Gen.plot_universe()
 #

@@ -14,24 +14,26 @@ start_time = time.perf_counter()
 
 fig, ax = plt.subplots(3, 2)
 
-for i, coeff in enumerate([0.1,5,10,20,30,50]):
+for i, coeff in enumerate([0.01,0.05, 0.1,0.5,1, 1.5]):
 
-    power = lambda k: coeff * k ** -3
+    power = lambda k: coeff * k ** -1.2
 
     lnpb = pbox.LogNormalPowerBox(
         N=256,                     # Number of grid-points in the box
         dim=2,                     # 2D box
         pk = power, # The power-spectrum
         boxlength = 1.0,           # Size of the box (sets the units of k in pk)
-        seed = 42                # Set a seed to ensure the box looks the same every time (optional)
+        seed = 0,
+        ensure_physical=True
+        # Set a seed to ensure the box looks the same every time (optional)
     )
 
     end_time = time.perf_counter()
     elapsed_time = end_time - start_time
 
     print("Elapsed time: ", elapsed_time)
-    y = lnpb.delta_x()
-    cax1 = ax[i%3,i//3].imshow(lnpb.delta_x(), extent = (-.5,.5, -.5, .5), vmin = -1, vmax = 8.99385236638655)
+    y = lnpb.delta_x() - np.mean(lnpb.delta_x())
+    cax1 = ax[i%3,i//3].imshow(y, extent = (-.5,.5, -.5, .5), vmin = -1, vmax = 8.99385236638655)
     ax[i % 3, i // 3].set_title("Cluster Coefficient: " + str(round(coeff,2)))
     ax[i % 3, i // 3].set_xticklabels([])
     ax[i % 3, i // 3].set_yticklabels([])

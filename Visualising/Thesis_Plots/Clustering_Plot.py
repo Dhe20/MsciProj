@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import matplotlib.cm as cm
+from Tests.AverageLocVol import calc_centroid_volume
+
+path = '/Users/daneverett/PycharmProjects/MSciProject/Sampling/WriteUpSamples/Centroid_Universes/'
 
 def expected(data, sig):
     sig = np.array(sig)
@@ -10,11 +13,17 @@ def expected(data, sig):
     data = np.array(data)
     return np.sum(data/(sig**2))/S, np.sqrt(1/S)
 
+loc_volumes = [214834, 3985608, 37758203]
+
+
+
 title = 'Centroid'
 
 investigated_characteristic = "CentroidSigma"
 N_centroids = [10,15,20,25]#,20,25
 investigated_values = [0.01, 0.02, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24]
+investigated_value_volumes = [calc_centroid_volume(value, gen_size=625) for value in investigated_values]
+
 # investigated_values = [0.04, 0.08, 0.12, 0.16, 0.2, 0.24, 0.28, 0.32, 0.36, 0.40]
 # max_numbers = ["0","0","0","0","0", "2", "0", "0", "0", "0", "2"]
 max_numbers = ["0"]*len(investigated_values)
@@ -23,12 +32,14 @@ event_count_max_numbers = ["0"]*len(investigated_values)
 spectral_map = cm.get_cmap('winter', len(N_centroids))
 colors = spectral_map(np.linspace(0, 1, len(N_centroids)))
 
-fig, (ax) = plt.subplots(2, 3, sharex=True)
+fig, (ax) = plt.subplots(2, 1, sharex=True)
 fig.subplots_adjust(hspace=0)
+
+markers = ['o', 'v', 's']
 
 for axis_third, investigated_characteristic in enumerate(["CentroidSigma", "15LocVol_CentroidSigma","LargeLocVol_CentroidSigma"]):
     if axis_third==1:
-        N_centroids = [20,10]  # ,20,25
+        N_centroids = [20,10,15]  # ,20,25
     else:
         N_centroids = [10, 15, 20, 25]  # ,20,25
     for j, N_gal in enumerate(N_centroids):
@@ -43,14 +54,13 @@ for axis_third, investigated_characteristic in enumerate(["CentroidSigma", "15Lo
         alphass = []
         pos = []
         df_N = pd.DataFrame()
-
         for i in range(len(investigated_values)):
             # print(i)
-            filename = "SampleUniverse_" + str(investigated_characteristic) + "_" + str(N_gal)+ "_" +str(investigated_values[i]) + "_" + \
+            filename = path + "SampleUniverse_" + str(investigated_characteristic) + "_" + str(N_gal)+ "_" +str(investigated_values[i]) + "_" + \
                        max_numbers[i] + ".csv"
             df = pd.read_csv(filename, index_col=0)
             df.dropna(inplace=True, axis=1)
-            filename = "EventCount_SampleUniverse_" + str(investigated_characteristic) + "_" + str(N_gal)+ "_" +str(investigated_values[i]) + "_" + \
+            filename = path + "EventCount_SampleUniverse_" + str(investigated_characteristic) + "_" + str(N_gal)+ "_" +str(investigated_values[i]) + "_" + \
                        event_count_max_numbers[i] + ".csv"
             df_event_count = pd.read_csv(filename, index_col=0)
             df_event_count.dropna(inplace=True, axis=1)
@@ -94,18 +104,26 @@ for axis_third, investigated_characteristic in enumerate(["CentroidSigma", "15Lo
 
         stdss = [list(np.array(stds)/70) for stds in stdss]
 
-        ax[0, axis_third].plot(investigated_values, [np.mean(alphas) for alphas in alphass] ,"--x", color = colors[j], label = r'$N_c = {}$'.format(str(N_gal)))
-        ax[1,axis_third].plot(investigated_values, [np.mean(stds) for stds in stdss] ,"--x", color = colors[j])
+        investigated_values_x = np.array(investigated_value_volumes)/loc_volumes[axis_third]
 
-ax[0,0].set_ylabel(r"$\alpha_{\sigma_{H_0}}$", fontsize = 20)
-ax[0,1].set_ylabel(r"$\alpha_{\sigma_{H_0}}$", fontsize = 20)
+        if axis_third == 0:
+            ax[0].plot(investigated_values_x, [np.mean(alphas) for alphas in alphass] ,"--"+markers[axis_third], color = colors[j], label = r'$N_c = {}$'.format(str(N_gal)))
+            ax[1].plot(investigated_values_x, [np.mean(stds) for stds in stdss] ,"--"+markers[axis_third], color = colors[j])
 
-ax[1,0].set_xlabel(r"$\frac{\sigma_g}{s} (Mpc^{-1}) $", fontsize = 20)
-ax[1,1].set_xlabel(r"$\frac{\sigma_g}{s} (Mpc^{-1}) $", fontsize = 20)
+        else:
+            ax[0].plot(investigated_values_x, [np.mean(alphas) for alphas in alphass], "--" + markers[axis_third],
+                       color=colors[j])
+            ax[1].plot(investigated_values_x, [np.mean(stds) for stds in stdss], "--" + markers[axis_third],
+                       color=colors[j])
 
-ax[1,0].set_ylabel(r"$\frac{\sigma_{\hat{H}_0}}{H_0}$", fontsize = 20)
-ax[1,1].set_ylabel(r"$\frac{\sigma_{\hat{H}_0}}{H_0}$", fontsize = 20)
+ax[0].set_ylabel(r"$\alpha_{\sigma_{H_0}}$", fontsize = 20)
 
-ax[0,0].legend(fontsize = 20)
+ax[1].set_xlabel(r"$\frac{\sigma_g}{s} (Mpc^{-1}) $", fontsize = 20)
+ax[1].set_ylabel(r"$\frac{\sigma_{\hat{H}_0}}{H_0}$", fontsize = 20)
+
+ax[0].legend(fontsize = 20)
+
+ax[0].set_xscale("log")
+ax[1].set_xscale("log")
 
 plt.show()
