@@ -41,7 +41,8 @@ def C_I_samp(x):
 #%%
 
 investigated_characteristic = 'redshift_uncertainty_corrected_approx'
-#investigated_characteristic = 'redshift_uncertainty_incorrect'
+investigated_characteristic = 'redshift_uncertainty_incorrect'
+
 investigated_values = [0.005]
 #investigated_values = [0.01]
 max_numbers = ["0" for i in range(len(investigated_values))]
@@ -93,8 +94,8 @@ for i in range(len(investigated_values)):
     #print(i)
     filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\PosteriorData\SampleUniverse_"+str(investigated_characteristic)+"_"+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
     df1 = pd.read_csv(filename, index_col = 0)
-    df = pd.concat([df1, DF], axis=1)
-    #df = df1 
+    #df = pd.concat([df1, DF], axis=1)
+    df = df1 
     means = []
     stds = []
     inc = df.index[1]-df.index[0]
@@ -142,6 +143,7 @@ plt.show()
 
 investigated_characteristic = 'better_corrected_redshift_multiprocessing'
 investigated_values = [0.01]
+
 max_numbers = ["0" for i in range(len(investigated_values))]
 
 filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\WriteUpSamples\RedshiftUncertainty\Z_Samples\SampleUniverse_"+str(investigated_characteristic)+'0'+"_"+str(investigated_values[0])+"_"+max_numbers[0]+".csv"
@@ -153,6 +155,36 @@ for i in range(1,40):
     df[str(i)] = df_d['0']
 
 #%%
+    
+investigated_characteristic = 'Dan_hopefully_better_corrected_redshift_multiprocessing'
+investigated_values = [0.005]
+
+max_numbers = ["0" for i in range(len(investigated_values))]
+
+filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\WriteUpSamples\RedshiftUncertainty\Dan_z\SampleUniverse_"+str(investigated_characteristic)+'0'+"_"+str(investigated_values[0])+"_"+max_numbers[0]+".csv"
+df = pd.read_csv(filename, index_col = 0, encoding='unicode_escape')
+for i in range(1,50):
+#    if i !=43:
+    filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\WriteUpSamples\RedshiftUncertainty\Dan_z\SampleUniverse_"+str(investigated_characteristic)+str(i)+"_"+str(investigated_values[0])+"_"+max_numbers[0]+".csv"
+    df_d = pd.read_csv(filename, index_col = 0, encoding='unicode_escape')
+    df[str(i)] = df_d['0']
+
+#%%
+    
+investigated_characteristic = 'Manuel_hopefully_better_corrected_redshift_multiprocessing'
+investigated_values = [0.01]
+
+filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\WriteUpSamples\RedshiftUncertainty\Z_Samples\SampleUniverse_"+str(investigated_characteristic)+'0'+"_"+str(investigated_values[0])+"_"+max_numbers[0]+".csv"
+df = pd.read_csv(filename, index_col = 0, encoding='unicode_escape')
+for i in range(1,100):
+#    if i !=43:
+    filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\WriteUpSamples\RedshiftUncertainty\Z_Samples\SampleUniverse_"+str(investigated_characteristic)+str(i)+"_"+str(investigated_values[0])+"_"+max_numbers[0]+".csv"
+    df_d = pd.read_csv(filename, index_col = 0, encoding='unicode_escape')
+    df[str(i)] = df_d['0']
+
+#%%
+    
+
 def is_unique(s):
     a = s.to_numpy() # s.values (pandas<0.24)
     return (a[0] == a).all()

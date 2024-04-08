@@ -17,8 +17,8 @@ import time
 
 
 class Inference(SurveyAndEventData):
-    def __init__(self, SurveyAndEventData, gamma = True, vectorised = True, event_distribution_inf='Proportional', lum_function_inf = 'Full-Schechter', gauss=False, p_det=True, poster=False,
-                 survey_type ='perfect', resolution_H_0=100, H_0_Min = 50, H_0_Max = 100, gamma_known = False, gauss_type = "Cartesian", flux_threshold = 0):
+    def __init__(self, SurveyAndEventData, gamma = True, vectorised = True, event_distribution_inf='Proportional', lum_function_inf = 'Full-Schechter', hubble_law_inf='linear', gauss=False, p_det=True, poster=False,
+                 survey_type ='perfect', resolution_H_0=100, H_0_Min = 50, H_0_Max = 100, resolution_q_0=50, q_0_Min = -1.99, q_0_Max = 0.99, gamma_known = False, gauss_type = "Cartesian", flux_threshold = 0):
 
         self.SurveyAndEventData = SurveyAndEventData
         self.c = self.SurveyAndEventData.c
@@ -30,9 +30,15 @@ class Inference(SurveyAndEventData):
         self.distribution_calculated = False
         self.H_0_Min = H_0_Min
         self.H_0_Max = H_0_Max
+
+        self.q_0_Min = q_0_Min
+        self.q_0_Max = q_0_Max
+
         self.survey_type = survey_type
         self.event_distribution_inf = event_distribution_inf
         self.lum_function_inf = lum_function_inf
+        self.hubble_law_inf = hubble_law_inf
+
         self.gamma = gamma
         self.gauss = gauss
         self.gauss_type = gauss_type
@@ -44,6 +50,12 @@ class Inference(SurveyAndEventData):
         self.H_0_pdf = np.zeros(self.resolution_H_0)
         self.H_0_range = np.linspace(self.H_0_Min, self.H_0_Max, self.resolution_H_0)
         self.H_0_increment = self.H_0_range[1] - self.H_0_range[0]
+
+        self.resolution_q_0 = resolution_q_0
+        self.q_0_pdf = np.zeros(self.resolution_q_0)
+        self.q_0_range = np.linspace(self.q_0_Min, self.q_0_Max, self.resolution_q_0)
+        self.q_0_increment = self.q_0_range[1] - self.q_0_range[0]
+
         self.H_0_pdf_single_event = np.zeros(shape = (len(self.SurveyAndEventData.BH_detected_coords), self.resolution_H_0))
         self.event_selection = self.SurveyAndEventData.event_distribution
 
@@ -53,6 +65,7 @@ class Inference(SurveyAndEventData):
                                 # "imperfect3d": self.H_0_inference_3d_imperfect_survey,
                                 "perfectvectorised2d": self.H_0_inference_2d_perfect_survey_vectorised,
                                 "perfectvectorised3d": self.H_0_inference_3d_perfect_survey_vectorised,
+                                "perfectvectorised3dquadratic": self.H_0_inference_3d_perfect_survey_vectorised_quadratic,
                                 "perfectvectorised3dincomplete": self.H_0_inference_3d_perfect_survey_vectorised_incomplete,
                                 "perfectvectorised2dGaussRadial": self.H_0_inference_2d_perfect_survey_vectorised_gaussian_radius,
                                 "perfectvectorised3dGaussRadial": self.H_0_inference_3d_perfect_survey_vectorised_gaussian_radius,
@@ -114,6 +127,9 @@ class Inference(SurveyAndEventData):
         if self.poster:
             self.inference_method_name+='poster'
         
+        if self.hubble_law_inf == 'quadratic':
+            self.inference_method_name+='quadratic'
+
         self.g_H_0 = dict()
 
         self.countour = dict({"gauss": self.gauss_p_hat_g_true,
@@ -128,6 +144,8 @@ class Inference(SurveyAndEventData):
             return self.H_0_pdf
         else:
             self.H_0_pdf = self.inference_method[self.inference_method_name]()
+        
+        
         if self.gamma: #This step is unvectorised but still only takes ~1/4 of the time of first inference stage
             gamma_method_name = str(self.SurveyAndEventData.dimension)+"d"
             if self.gauss:
@@ -244,10 +262,15 @@ class Inference(SurveyAndEventData):
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
         return self.H_0_pdf
 
-    def get_lum_term_proportional(self, redshifts):
-        return np.square(redshifts) * self.SurveyAndEventData.fluxes
+    def get_lum_term_proportional(self, redshifts, initial=0, final=0):
+        if self.hubble_law_inf == 'linear':
+            term = np.square(redshifts) * self.SurveyAndEventData.fluxes
+        elif self.hubble_law_inf == 'quadratic':
+            q_0 = np.tile(self.q_0_range[initial:final], (self.resolution_H_0,1))
+            term = np.square((redshifts) * (1 + 0.5*redshifts*(1-q_0[:,:,np.newaxis]))) * self.SurveyAndEventData.fluxes
+        return term
 
-    def get_lum_term_random(self, Ds):
+    def get_lum_term_random(self, Ds, initial=0, final=0):
         return 1
     
     def get_lum_term_proportional_x(self, x):
@@ -336,6 +359,57 @@ class Inference(SurveyAndEventData):
         self.H_0_pdf_single_event /= np.sum(self.H_0_pdf_single_event, axis=1)[:, np.newaxis] * (self.H_0_increment)
 
         return self.H_0_pdf
+
+
+    def H_0_inference_3d_perfect_survey_vectorised_quadratic(self):
+        h_0_recip = np.reciprocal(self.H_0_range)
+        H_0_recip = np.tile(h_0_recip, (self.resolution_q_0,1)).T
+        q_0 = np.tile(self.q_0_range, (self.resolution_H_0,1))
+
+        redshifts = np.tile(self.SurveyAndEventData.detected_redshifts, (self.resolution_H_0, self.resolution_q_0, 1))
+
+        Ds = redshifts * self.c * ( 1 + 0.5 * redshifts * (1-q_0[:,:,np.newaxis] )) * H_0_recip[:,:,np.newaxis]
+
+        burr_full = self.get_vectorised_burr_quadratic(Ds)
+
+        vmf = self.get_vectorised_vmf()
+
+        luminosity_term = self.lum_term[self.event_distribution_inf](redshifts)
+
+        full_expression = burr_full * vmf[:,:,np.newaxis,:] * luminosity_term
+        
+        self.H_0_pdf_single_event = np.sum(full_expression, axis=3)
+        #self.H_0_pdf = np.product(self.H_0_pdf_single_event, axis=0)
+        '''
+        if self.p_det:
+            p_det_vec = luminosity_term * self.get_p_det_vec(Ds)
+            P_det_total = np.sum(p_det_vec, axis=1)
+            self.P_det_total = P_det_total
+            P_det_total_power = np.power(P_det_total, self.SurveyAndEventData.detected_event_count)
+            self.H_0_pdf = self.H_0_pdf/P_det_total_power
+        '''
+        if self.p_det:
+            p_det_vec = self.get_p_det_vec(Ds) * luminosity_term
+            P_det_total = np.sum(p_det_vec, axis=2)
+            self.P_det_total = P_det_total
+            self.H_0_pdf_single_event = self.H_0_pdf_single_event / P_det_total
+
+        f = np.vectorize(math.frexp)
+        split = f(self.H_0_pdf_single_event)
+        flo = split[0]
+        ex = split[1]
+        p_flo = np.prod(flo, axis=0)
+        p_ex = np.sum(ex, axis=0)
+        scaled_ex = p_ex - np.max(p_ex)
+        scaled_flo = p_ex / p_flo.flatten()[np.argmax(p_ex)]
+        self.H_0_pdf = scaled_flo * (0.5 ** (-1 * scaled_ex))
+
+        self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment) * (self.q_0_increment)
+
+        #self.H_0_pdf_single_event /= np.sum(self.H_0_pdf_single_event, axis=1)[:, np.newaxis] * (self.H_0_increment)
+
+        return self.H_0_pdf
+
 
     def poster_H_0_inference_3d_perfect_survey_vectorised(self):
         H_0_recip = np.reciprocal(self.H_0_range)[:, np.newaxis]
@@ -726,6 +800,27 @@ class Inference(SurveyAndEventData):
 
         burr_full = self.SurveyAndEventData.BVM_k * self.SurveyAndEventData.BVM_c * recip_Ds_tile * burr_term1 * burr_term2
         return burr_full
+    
+    def get_vectorised_burr_quadratic(self, Ds):
+        #Ds_tile = np.tile(Ds, (self.SurveyAndEventData.detected_event_count, 1, 1, 1))
+
+        #recip_Ds_tile = np.reciprocal(Ds_tile)
+        recip_Ds_tile = np.reciprocal(np.tile(Ds, (self.SurveyAndEventData.detected_event_count, 1, 1, 1)))
+        u_r = np.sqrt(np.einsum('ij,ij->i', self.SurveyAndEventData.BH_detected_coords,
+                                self.SurveyAndEventData.BH_detected_coords))[:, np.newaxis, np.newaxis, np.newaxis]
+
+        # u_r = np.sqrt(np.sum(np.square(self.SurveyAndEventData.BH_detected_coords), axis=1))[:, np.newaxis, np.newaxis]
+
+        #omegas = recip_Ds_tile * u_r
+
+        #burr_term1 = np.power(omegas, self.SurveyAndEventData.BVM_c - 1)
+        #burr_term2 = np.power(1 + np.power(omegas, self.SurveyAndEventData.BVM_c), - self.SurveyAndEventData.BVM_k - 1)
+
+        #burr_full = self.SurveyAndEventData.BVM_k * self.SurveyAndEventData.BVM_c * recip_Ds_tile * burr_term1 * burr_term2
+        
+        burr_full = self.SurveyAndEventData.BVM_k * self.SurveyAndEventData.BVM_c * recip_Ds_tile * np.power(recip_Ds_tile * u_r, self.SurveyAndEventData.BVM_c - 1) * np.power(1 + np.power(recip_Ds_tile * u_r, self.SurveyAndEventData.BVM_c), - self.SurveyAndEventData.BVM_k - 1)
+        
+        return burr_full
 
     def get_vectorised_gaussian_rads(self, Ds):
 
@@ -987,8 +1082,8 @@ class Inference(SurveyAndEventData):
         # In Survey Terms (above Fth)
 
         upper_integrand_func_G = self.upper_integrand_p_G[self.comp_integrand_name]
-        integral_1 = self.vectorised_integrate_on_grid_1_arg(upper_integrand_func_G, 0, np.inf)
-        integral_2 = self.vectorised_integrate_on_grid_1_arg(self.denominator_integrand, 0, np.inf)   
+        integral_1 = self.vectorised_integrate_on_grid_1_arg(upper_integrand_func_G, 0, 10)
+        integral_2 = self.vectorised_integrate_on_grid_1_arg(self.denominator_integrand, 0, 10)   
         P_G = integral_1(self.H_0_range)/integral_2(self.H_0_range)
         # or P_G = integral_1(70)/integral_2(70)
         # or interpolate
@@ -1001,7 +1096,7 @@ class Inference(SurveyAndEventData):
 
         #Collapse the Cube
         P_GWdata_given_G = np.sum(burr_full * vmf * luminosity_term, axis=2) 
-        P_GWdata_given_G = P_GWdata_given_G * P_G
+        #P_GWdata_given_G = P_GWdata_given_G * P_G
 
         if self.p_det:
             p_det_vec_given_G = luminosity_term * self.get_p_det_vec(Ds)  # Change the final term
@@ -1009,8 +1104,12 @@ class Inference(SurveyAndEventData):
             # Note it is the same for all galaxies - collapse the cube first
             P_GWdata_given_G = np.divide(P_GWdata_given_G, P_det_total_given_G)
 
-        # Out of Survey Terms (below Fth)
+        self.P_GWdata_given_G_before = P_GWdata_given_G
+        
+        P_GWdata_given_G = P_GWdata_given_G * P_G
 
+        # Out of Survey Terms (below Fth)
+    
         P_Gbar = 1 - P_G
 
         # This should be dealt with after the galaxy side of the cube is collapsed
@@ -1028,7 +1127,8 @@ class Inference(SurveyAndEventData):
 
         # if not really dependent on H_0 this should be
         # P_GWdata_given_Gbar = integral_3(u_r, 70) / integral_4(70) 
-
+        self.P_GWdata_given_Gbar_before = P_GWdata_given_Gbar
+        
         P_GWdata_given_Gbar = P_GWdata_given_Gbar * P_Gbar
 
         # for now it's easier if this isn't an option since the integration expressions have terms i did not incluse since they cancelled with p_det
@@ -1041,6 +1141,10 @@ class Inference(SurveyAndEventData):
         '''
 
         # likelihood_expression = P_GWdata_given_G + P_GWdata_given_Gbar
+        
+        self.P_G = P_G
+        self.P_GWdata_given_G = P_GWdata_given_G
+        self.P_GWdata_given_Gbar = P_GWdata_given_Gbar
 
         self.H_0_pdf_single_event = P_GWdata_given_G + P_GWdata_given_Gbar
 
@@ -1067,8 +1171,12 @@ class Inference(SurveyAndEventData):
     def schecher_lum_prop(self, z, H_0):
         return z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * gammaincc(self.SurveyAndEventData.alpha + 1, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2)) )
 
+    #def BB1_lum_uni(self, z, H_0):
+    #    return (1/(1 - (1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-1-self.SurveyAndEventData.beta))) * z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * ( gammaincc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2))) - ((4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)))**(1 + self.SurveyAndEventData.beta)) * np.exp(-4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)))/gamma_function(self.SurveyAndEventData.beta + 2) - ((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-1-self.SurveyAndEventData.beta)) * ( gammaincc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) - ((4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2))))**(1 + self.SurveyAndEventData.beta)) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) / gamma_function(2 + self.SurveyAndEventData.beta) ))
+
     def BB1_lum_uni(self, z, H_0):
-        return (1/(1 - (1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-1-self.SurveyAndEventData.beta))) * z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * ( gammaincc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2))) - ((4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)))**(1 + self.SurveyAndEventData.beta)) * np.exp(-4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)))/gamma_function(self.SurveyAndEventData.beta + 2) - ((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-1-self.SurveyAndEventData.beta)) * ( gammaincc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) - ((4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2))))**(1 + self.SurveyAndEventData.beta)) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) / gamma_function(2 + self.SurveyAndEventData.beta) ))
+        return (1/(1 - (1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-1-self.SurveyAndEventData.beta))) * z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * ( gammaincc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2))) - ((4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)))**(1 + self.SurveyAndEventData.beta)) * np.exp(-4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)))*(1 - np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) )/gamma_function(self.SurveyAndEventData.beta + 2) - ((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-1-self.SurveyAndEventData.beta)) * ( gammaincc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) ))
+
 
     #def BB1_lum_prop(self, z, H_0):
     #    return (1/(1 - (1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-2-self.SurveyAndEventData.beta))) * z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * ( gammaincc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star) - ((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-2-self.SurveyAndEventData.beta)) * gammaincc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum)) )
@@ -1096,17 +1204,24 @@ class Inference(SurveyAndEventData):
     def gw_numerator_schecher_lum_prop(self, z, x_GW, H_0):
         return z**2 * self.burr_pdf(x_GW, self.c * z / H_0) * gammainc(self.SurveyAndEventData.alpha + 1, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2)) )
 
-    def gw_denominator_BB1_lum_uni(self, z, H_0):
-        return z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * ( (gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2)) ) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2)) )**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2)) )/gamma_function(2 + self.SurveyAndEventData.beta)) - (1/((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(2 + self.SurveyAndEventData.beta))) * ( gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2))))**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) / gamma_function(2 + self.SurveyAndEventData.beta) ))
-
-    def gw_numerator_BB1_lum_uni(self, z, x_GW, H_0):
-        return z**2 * self.burr_pdf(x_GW, self.c * z / H_0) * ( (gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2))) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2)))**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2)))/gamma_function(2 + self.SurveyAndEventData.beta)) - (1/((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(2 + self.SurveyAndEventData.beta))) * ( gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2))))**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) / gamma_function(2 + self.SurveyAndEventData.beta) ))
-
-
     #def gw_denominator_BB1_lum_uni(self, z, H_0):
-    #    return z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * ( (gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star)**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star)/gamma_function(2 + self.SurveyAndEventData.beta)) - (1/((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(2 + self.SurveyAndEventData.beta))) * ( gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum)) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum))**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum)) / gamma_function(2 + self.SurveyAndEventData.beta) ))
+    #    return z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * ( (gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2)) ) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2)) )**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2)) )/gamma_function(2 + self.SurveyAndEventData.beta)) - (1/((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(2 + self.SurveyAndEventData.beta))) * ( gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2))))**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) / gamma_function(2 + self.SurveyAndEventData.beta) ))
 
     #def gw_numerator_BB1_lum_uni(self, z, x_GW, H_0):
+    #    return z**2 * self.burr_pdf(x_GW, self.c * z / H_0) * ( (gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2))) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2)))**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2)))/gamma_function(2 + self.SurveyAndEventData.beta)) - (1/((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(2 + self.SurveyAndEventData.beta))) * ( gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2))))**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) / gamma_function(2 + self.SurveyAndEventData.beta) ))
+
+    def gw_denominator_BB1_lum_uni(self, z, H_0):
+        return z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * ( gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2))) + 
+                ((4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)))**(1 + self.SurveyAndEventData.beta)) * np.exp(-4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)))*(1 - np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) )/gamma_function(self.SurveyAndEventData.beta + 2) - ((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-1-self.SurveyAndEventData.beta)) * ( gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) ))
+    
+    def gw_numerator_BB1_lum_uni(self, z, x_GW, H_0):
+        return z**2 * self.burr_pdf(x_GW, self.c * z / H_0) * ( gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / (self.SurveyAndEventData.L_star * (H_0/70)**(-2))) + 
+                ((4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)))**(1 + self.SurveyAndEventData.beta)) * np.exp(-4 * np.pi * self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)))*(1 - np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) )/gamma_function(self.SurveyAndEventData.beta + 2) - ((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(-1-self.SurveyAndEventData.beta)) * ( gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *(1/(self.SurveyAndEventData.L_star * (H_0/70)**(-2)) + 1/(self.SurveyAndEventData.min_lum * (H_0/70)**(-2)))) ))
+
+    #####def gw_denominator_BB1_lum_uni(self, z, H_0):
+    #    return z**2 * self.burr_cdf_x(self.SurveyAndEventData.max_D, self.c * z / H_0) * ( (gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star)**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star)/gamma_function(2 + self.SurveyAndEventData.beta)) - (1/((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(2 + self.SurveyAndEventData.beta))) * ( gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum)) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum))**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum)) / gamma_function(2 + self.SurveyAndEventData.beta) ))
+
+    #####def gw_numerator_BB1_lum_uni(self, z, x_GW, H_0):
     #    return z**2 * self.burr_pdf(x_GW, self.c * z / H_0) * ( (gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star)**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 / self.SurveyAndEventData.L_star)/gamma_function(2 + self.SurveyAndEventData.beta)) - (1/((1 + self.SurveyAndEventData.L_star/self.SurveyAndEventData.min_lum)**(2 + self.SurveyAndEventData.beta))) * ( gammainc(self.SurveyAndEventData.beta + 2, 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum)) + (4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum))**(1 + self.SurveyAndEventData.beta) * np.exp(- 4*np.pi*self.SurveyAndEventData.min_flux * (self.c * z / H_0)**2 *( 1/self.SurveyAndEventData.L_star + 1/self.SurveyAndEventData.min_lum)) / gamma_function(2 + self.SurveyAndEventData.beta) ))
 
 

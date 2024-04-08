@@ -51,10 +51,12 @@ universe_number = 50
 #investigated_characteristic = 'redshift_multiprocessing'
 #investigated_characteristic = 'corrected_redshift_multiprocessing'
 #investigated_characteristic = 'better_corrected_redshift_multiprocessing'
-investigated_characteristic = 'Dan_hopefully_better_corrected_redshift_multiprocessing'
+#investigated_characteristic = 'Dan_hopefully_better_corrected_redshift_multiprocessing'
+investigated_characteristic = 'Manuel_hopefully_better_corrected_redshift_multiprocessing'
 
 
-investigated_values = [0.005]
+
+#investigated_values = [0.005]
 #investigated_values = [0.01]
 max_numbers = []
 #b = []
@@ -73,18 +75,25 @@ def sample_redshift(x):
     max_numbers.append(Investigation.max_num)
 '''
 
-wanted_gal_n = 2000
+#wanted_gal_n = 2000
+#wanted_det_events = 10
+#d_ratio = 0.6
+#beta = -1.3
+
+investigated_values = [0.01]
+wanted_gal_n = 3000
 wanted_det_events = 10
-d_ratio = 0.6
+d_ratio = 0.7
 beta = -1.3
 
+
 def sample_redshift(x):
-    print('JOB JOB JOB {}'.format(x))
-    name = investigated_characteristic + str(x)
+    print('JOB JOB JOB {}'.format(50 + x))
+    name = investigated_characteristic + str(50 + x)
     Investigation = Sampler(universe_count = 1, beta = beta, survey_type='imperfect', d_ratio = d_ratio, redshift_noise_sigma=investigated_values[0], resolution_H_0=100, H_0_Max=80, H_0_Min=60 , p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=500/3,
                                 specify_gal_number=True, wanted_gal_n=wanted_gal_n, wanted_det_events = wanted_det_events, specify_event_number = True, 
                                 noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = name, investigated_value = investigated_values[0],
-                                start_seed = x, save_normally=2)
+                                start_seed = 50 + x, save_normally=2)
     Investigation.Sample()
     max_numbers.append(Investigation.max_num)
 

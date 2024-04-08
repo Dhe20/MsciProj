@@ -1,6 +1,7 @@
 #%%
 
 import sys
+import pickle
 import pandas as pd
 import numpy as np
 from scipy.integrate import quad
@@ -22,12 +23,12 @@ from tqdm import tqdm
 
 
 class Sampler():
-    def __init__(self, dimension=3, cube=True, size=625, d_ratio=0.4, event_rate = 1540.0, sample_time = 0.00019378,# 0.00029066,
+    def __init__(self, dimension=3, cube=True, size=625, hubble_law='linear', d_ratio=0.4, event_rate = 1540.0, sample_time = 0.00019378,# 0.00029066,
                 wanted_det_events = 50, specify_event_number = False, wanted_gal_n = 1000, specify_gal_number = False, luminosity_gen_type="Full-Schechter", coord_gen_type="Random",
                 cluster_coeff=0, characteristic_luminosity=1, lower_lim=0.1, total_luminosity=3333.333,
                 BVM_c = 15, BVM_k = 2, BVM_kappa = 200, event_distribution="Proportional", noise_distribution="BVMF_eff", redshift_noise_sigma=0, noise_sigma=5,
                 resolution=10, plot_contours=False, alpha = 0.3, beta=-1.5, min_flux=0, survey_incompleteness=0, completeness_type='cut_lim', DD = 0, resolution_H_0 = 200, 
-                H_0_Min = 50, H_0_Max = 100, universe_count = 200, survey_type = "perfect", gamma=True, gauss=False, p_det=False, event_distribution_inf='Proportioanl', lum_function_inf = 'Full-Schechter', poster=False, flux_threshold=0,
+                H_0_Min = 50, H_0_Max = 100, resolution_q_0 = 50, q_0_Min = -1.99, q_0_Max = 0.99, universe_count = 200, survey_type = "perfect", gamma=True, gauss=False, p_det=True, event_distribution_inf='Proportioanl', lum_function_inf = 'Full-Schechter', hubble_law_inf='linear', poster=False, flux_threshold=0,
                 investigated_characteristic='0', investigated_value=0, save_normally = 1, start_seed = 0, centroid_n = 10, centroid_sigma = 0.1, log_event_count = True
                  ):
 
@@ -35,6 +36,7 @@ class Sampler():
         self.dimension = dimension
         self.cube = cube
         self.size = size
+        self.hubble_law = hubble_law
         self.d_ratio = d_ratio
         self.event_rate = event_rate
         self.sample_time = sample_time
@@ -69,6 +71,11 @@ class Sampler():
         self.H_0_Min = H_0_Min
         self.H_0_Max = H_0_Max
         self.resolution_H_0 = resolution_H_0
+
+        self.q_0_Min = q_0_Min
+        self.q_0_Max = q_0_Max
+        self.resolution_q_0 = resolution_q_0
+
         self.survey_type = survey_type
         self.gamma = gamma
         self.gauss = gauss
@@ -78,6 +85,7 @@ class Sampler():
 
         self.event_distribution_inf = event_distribution_inf
         self.lum_function_inf = lum_function_inf
+        self.hubble_law_inf = hubble_law_inf
 
         self.min_flux = min_flux
         self.survey_incompleteness = survey_incompleteness
@@ -129,7 +137,7 @@ class Sampler():
         det_event_counts = []
         self.survey_percentage = []
         for Universe in tqdm(range(self.universe_count)):
-            Gen = EventGenerator(dimension=self.dimension, cube=self.cube, size=self.size, event_rate = self.event_rate, sample_time = self.sample_time,
+            Gen = EventGenerator(dimension=self.dimension, cube=self.cube, size=self.size, d_ratio=self.d_ratio, hubble_law = self.hubble_law, event_rate = self.event_rate, sample_time = self.sample_time,
                                 luminosity_gen_type=self.luminosity_gen_type, coord_gen_type=self.coord_gen_type,
                                 cluster_coeff=self.cluster_coeff, characteristic_luminosity=self.characteristic_luminosity, lower_lim=self.lower_lim, total_luminosity=self.total_luminosity,
                                 event_distribution=self.event_distribution, noise_distribution=self.noise_distribution, redshift_noise_sigma=self.redshift_noise_sigma, noise_std=self.noise_sigma,
@@ -143,7 +151,7 @@ class Sampler():
             Data = Gen.GetSurveyAndEventData(min_flux = self.min_flux, survey_incompleteness = self.survey_incompleteness, completeness_type = self.completeness_type)
             percentage = len(Data.detected_galaxy_indices)/len(Gen.detected_luminosities)
             self.survey_percentage.append(percentage)
-            I = Inference(Data, H_0_Min = self.H_0_Min, H_0_Max = self.H_0_Max, resolution_H_0 = self.resolution_H_0, survey_type = self.survey_type, gamma = self.gamma, 
+            I = Inference(Data, H_0_Min = self.H_0_Min, H_0_Max = self.H_0_Max, resolution_H_0 = self.resolution_H_0, q_0_Min = self.q_0_Min, q_0_Max = self.q_0_Max, resolution_q_0 = self.resolution_q_0, survey_type = self.survey_type, gamma = self.gamma, 
                           event_distribution_inf = self.event_distribution_inf, lum_function_inf = self.lum_function_inf, gauss = self.gauss, p_det = self.p_det, 
                           poster = self.poster, flux_threshold = self.flux_threshold)
             H_0_sample = I.H_0_Prob()

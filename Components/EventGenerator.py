@@ -16,11 +16,11 @@ from Components.SurveyAndEventData import SurveyAndEventData
 class EventGenerator(Universe):
     def __init__(self, dimension = 2, luminosity_gen_type = "Fixed",
                  coord_gen_type = "Clustered",
-                 cluster_coeff = 2, total_luminosity = 1000, size = 1,
+                 cluster_coeff = 2, total_luminosity = 1000, size = 1, d_ratio = 0.4,
                  alpha = .3, beta=-1.5, characteristic_luminosity = 1, min_lum = 0,
-                 max_lum = 1, lower_lim=1, event_rate = 1, sample_time = .01 ,event_distribution = "Random",
+                 max_lum = 1, lower_lim=0.1, event_rate = 1, sample_time = .01 ,event_distribution = "Random",
                  noise_distribution = "BVMF_eff", contour_type = "BVM",
-                 noise_std = 3, resolution = 400, BVM_c = 15, H_0 = 70,
+                 noise_std = 3, resolution = 400, BVM_c = 15, H_0 = 70, q_0 = -0.53, hubble_law = 'linear',
                  BVM_k = 2, BVM_kappa = 200, redshift_noise_sigma = 0,
                  centroid_n=6, centroid_sigma=0.1,
                  plot_contours = True, cube=True, seed = None, event_count_type = "Poisson"):
@@ -28,12 +28,12 @@ class EventGenerator(Universe):
         super().__init__(dimension = dimension, luminosity_gen_type = luminosity_gen_type,
                          coord_gen_type = coord_gen_type,
                          cluster_coeff = cluster_coeff, total_luminosity = total_luminosity,
-                         size = size, alpha = alpha, beta = beta, characteristic_luminosity = characteristic_luminosity,
+                         size = size, d_ratio = d_ratio, alpha = alpha, beta = beta, characteristic_luminosity = characteristic_luminosity,
                          min_lum = min_lum, max_lum = max_lum, lower_lim = lower_lim, redshift_noise_sigma = redshift_noise_sigma,
-                         seed = seed, H_0 = H_0, cube = cube,
-                         centroid_n=centroid_n, centroid_sigma=centroid_sigma,
+                         seed = seed, H_0 = H_0, q_0 = q_0, hubble_law = hubble_law, cube = cube,
+                         centroid_n=centroid_n, centroid_sigma=centroid_sigma
                          )
-
+        
         self.BVM_k = BVM_k
         self.BVM_c = BVM_c
         self.BVM_kappa = BVM_kappa
@@ -104,10 +104,18 @@ class EventGenerator(Universe):
         event_count = 0
         detected_event_count = 0
         detected_event_indices = []
+
+        self.all_BH_true_coords = np.zeros((self.event_count, self.dimension))
+        self.all_BH_detected_coords = np.zeros((self.event_count, self.dimension))
+
         while event_count < self.event_count:
             selected = self.event_generator[event_distribution]()
             mu = self.true_coords[selected]
             noise = self.coord_noise_generator[noise_distribution](mu)
+            
+            self.all_BH_true_coords[event_count] = self.true_coords[selected]
+            self.all_BH_detected_coords[event_count] = self.true_coords[selected] + noise
+
             if np.sqrt(np.sum(np.square(self.true_coords[selected] + noise))) > self.max_D:
                 event_count += 1
                 continue
