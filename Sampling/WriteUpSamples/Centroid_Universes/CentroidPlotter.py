@@ -1,11 +1,9 @@
-#%%
-
 import pandas as pd
 import numpy as np
-from scipy.special import iv
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import matplotlib.cm as cm
+from scipy.special import iv
 import matplotlib
 
 matplotlib.rcParams['mathtext.fontset'] = 'cm'
@@ -36,17 +34,10 @@ def expected(data, sig):
 title = 'Centroid'
 
 investigated_characteristic = "CentroidSigma"
-#investigated_characteristic = "CentroidSigma_sigma_D_30%"
 N_centroids = [10,15,20,25]#,20,25
-# investigated_values = [0.01, 0.02, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24]
-investigated_values = [0.04, 0.08]
+investigated_values = [0.01, 0.02, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24]
 # investigated_values = [0.04, 0.08, 0.12, 0.16, 0.2, 0.24, 0.28, 0.32, 0.36, 0.40]
 # max_numbers = ["0","0","0","0","0", "2", "0", "0", "0", "0", "2"]
-
-investigated_characteristic = "20LocVol_CentroidSigma"
-investigated_values = [0.02, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24, 0.28, 0.36, 0.48, 0.64, 1.0, 2.0]
-N_centroids = [10, 15, 20, 25]
-
 max_numbers = ["0"]*len(investigated_values)
 event_count_max_numbers = ["0"]*len(investigated_values)
 
@@ -55,8 +46,6 @@ colors = spectral_map(np.linspace(0, 1, len(N_centroids)))
 
 fig, (ax) = plt.subplots(2, 3, sharex=True)
 fig.subplots_adjust(hspace=0)
-
-scale = 'vol'
 
 for axis_third, investigated_characteristic in enumerate(["CentroidSigma", "15LocVol_CentroidSigma","LargeLocVol_CentroidSigma"]):
     if axis_third==1:
@@ -123,7 +112,6 @@ for axis_third, investigated_characteristic in enumerate(["CentroidSigma", "15Lo
 
         # print(len(meanss))
 
-    # print(len(meanss))
 
         stdss = [list(np.array(stds)/70) for stds in stdss]
 
@@ -142,4 +130,3 @@ ax[1,1].set_ylabel(r"$\frac{\sigma_{\hat{H}_0}}{H_0}$", fontsize = 20)
 ax[0,0].legend(fontsize = 20)
 
 plt.show()
-# %%
