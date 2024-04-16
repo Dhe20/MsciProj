@@ -27,7 +27,7 @@ class Sampler():
                 wanted_det_events = 50, specify_event_number = False, wanted_gal_n = 1000, specify_gal_number = False, luminosity_gen_type="Full-Schechter", coord_gen_type="Random",
                 cluster_coeff=0, characteristic_luminosity=1, lower_lim=0.1, total_luminosity=3333.333,
                 BVM_c = 15, BVM_k = 2, BVM_kappa = 200, event_distribution="Proportional", noise_distribution="BVMF_eff", redshift_noise_sigma=0, noise_sigma=5,
-                resolution=10, plot_contours=False, alpha = 0.3, beta=-1.5, min_flux=0, survey_incompleteness=0, completeness_type='cut_lim', DD = 0, resolution_H_0 = 200, 
+                resolution=10, plot_contours=False, alpha = 0.3, beta=-1.3, min_flux=0, survey_incompleteness=0, completeness_type='cut_lim', DD = 0, resolution_H_0 = 200, 
                 H_0_Min = 50, H_0_Max = 100, resolution_q_0 = 50, q_0_Min = -1.99, q_0_Max = 0.99, universe_count = 200, survey_type = "perfect", gamma=True, gauss=False, p_det=True, event_distribution_inf='Proportioanl', lum_function_inf = 'Full-Schechter', hubble_law_inf='linear', poster=False, flux_threshold=0,
                 investigated_characteristic='0', investigated_value=0, save_normally = 1, start_seed = 0, centroid_n = 10, centroid_sigma = 0.1, log_event_count = True
                  ):
@@ -145,7 +145,7 @@ class Sampler():
                                 centroid_n = self.centroid_n, centroid_sigma = self.centroid_sigma)
 
             det_event_counts.append(Gen.detected_event_count)
-            # print("# of detected events: " + str(Gen.detected_event_count))
+            #print("# of detected events: " + str(Gen.detected_event_count))
             #if Universe<10:
             #    print("# of galaxies: " + str(len(Gen.detected_luminosities)))
             Data = Gen.GetSurveyAndEventData(min_flux = self.min_flux, survey_incompleteness = self.survey_incompleteness, completeness_type = self.completeness_type)

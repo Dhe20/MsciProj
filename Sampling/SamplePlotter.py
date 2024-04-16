@@ -30,6 +30,11 @@ df = pd.read_csv("PosteriorData\\SampleUniverse_delta_D_5_average_events_3.409_0
 
 df = pd.read_csv('PosteriorData/SampleUniverse_bvmf_proportional_p_det_many_True_0.csv', index_col=0)
 
+#df = pd.read_csv('PosteriorData/SampleUniverse_selection_effects_standard_3_True_0.csv', index_col=0)
+
+df = pd.read_csv('PosteriorData/SampleUniverse_sel_eff_standard_01_True_0.csv', index_col=0)
+
+df = pd.read_csv('PosteriorData/SampleUniverse_'+b)
 df.dropna(inplace=True, axis=1)
 
 spec = gridspec.GridSpec(ncols=1, nrows=3,
@@ -102,14 +107,15 @@ ax3.tick_params(axis='both', which='minor', direction='in', labelsize=35, size=2
 ax2.hist(means, bins = 15, density=True, histtype='step', edgecolor='b', linewidth=4, facecolor='lightblue', hatch='/', fill=True)
 ax2.vlines(x=bias_0, ymin=0, ymax=0.5, lw=4, color='magenta', label=r'$\langle \hat{{H}}_0\rangle={:.2f}\pm{:.2f}$'.format(bias_0, bias_err_0))
 ax3.hist(stds, bins = 15, density=True, histtype='step', linewidth=4, edgecolor='b', facecolor='lightblue', hatch='/',  fill=True)
-ax3.vlines(x=std_u, ymin=0, ymax=3.5, lw=4, color='magenta', label=r'$\hat{{\sigma}}_{{H_0}}={:.2f}\pm{:.2f}$'.format(std_u, std_std))
+ax3.vlines(x=std_u, ymin=0, ymax=4.5, lw=4, color='magenta', label=r'$\hat{{\sigma}}_{{H_0}}={:.2f}\pm{:.2f}$'.format(std_u, std_std))
 
 ax2.legend(fontsize=30, loc='upper right', framealpha=1)
 ax3.legend(fontsize=30, loc='upper right', framealpha=1)
 ax1.set_xlim(60,80)
 ax1.set_ylim(0,0.52)
 ax2.set_ylim(0,0.42)
-ax3.set_ylim(0,3.2)
+#ax3.set_ylim(0,3.2)
+ax3.set_ylim(0,4.3)
 ax3.set_xlim(0.5,2.2)
 
 ax1.set_xlabel(r'$ H_0$ (km s$^{-1}$ Mpc$^{-1}$)',fontsize=40, labelpad=15)

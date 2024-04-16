@@ -285,6 +285,22 @@ for i in tqdm(range(len(investigated_values))):
 
 #%%
 
+investigated_characteristic = 'sel_eff_standard_01'
+investigated_values = [False, True]
+max_numbers = []
+#b = [
+#f = []
+
+for i in range(len(investigated_values)):
+    Investigation = Sampler(universe_count = 1000, p_det=investigated_values[i], beta=-1.3, lower_lim=0.1, gamma = False, event_distribution='Proportional', specify_gal_number=True, wanted_gal_n=5000, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+
 investigated_characteristic = 'selection_effects'
 investigated_values = [False, True]
 max_numbers = []
@@ -301,6 +317,75 @@ for i in tqdm(range(len(investigated_values))):
 
 #%%
 
+
+investigated_characteristic = 'selection_effects_standard'
+investigated_values = [False, True]
+max_numbers = []
+#b = []
+#f = []
+
+for i in range(len(investigated_values)):
+    Investigation = Sampler(universe_count = 1000, p_det=investigated_values[i], gamma = False, event_distribution='Proportional', total_luminosity=1000/3, specify_gal_number=True, wanted_gal_n=5000, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+
+#%%
+
+investigated_characteristic = 'selection_effects_standard_2'
+investigated_values = [False, True]
+max_numbers = []
+#b = []
+#f = []
+
+for i in range(len(investigated_values)):
+    Investigation = Sampler(universe_count = 1000, beta=-1.5, p_det=investigated_values[i], gamma = False, event_distribution='Proportional', total_luminosity=1000/3, specify_gal_number=True, wanted_gal_n=5000, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+
+investigated_characteristic = 'selection_effects_standard_3'
+investigated_values = [False, True]
+max_numbers = []
+#b = []
+#f = []
+
+for i in range(len(investigated_values)):
+    Investigation = Sampler(universe_count = 1000, beta=-1.3, lower_lim=0.1, p_det=investigated_values[i], gamma = False, event_distribution='Proportional', total_luminosity=1000/3, specify_gal_number=True, wanted_gal_n=5000, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+
+
+#%%
+
+# IGNORE
+investigated_characteristic = 'YOYOYO'
+investigated_values = [False, True]
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 50, p_det=investigated_values[i], gamma = False, event_distribution='Proportional', total_luminosity=1000/3, characteristic_luminosity=100, wanted_det_events = 20, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+
 investigated_characteristic = 'redshift_uncertainty'
 investigated_values = [0.0001,0.003,0.01]
 max_numbers = []
@@ -309,6 +394,23 @@ max_numbers = []
 
 for i in tqdm(range(len(investigated_values))):
     Investigation = Sampler(universe_count = 1000, redshift_noise_sigma=investigated_values[i] , p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=1000/3, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+
+#%%
+
+investigated_characteristic = 'redshift_uncertainty_standard_good'
+investigated_values = [0.001,0.005,0.01]
+max_numbers = []
+#b = []
+#f = []
+
+for i in tqdm(range(len(investigated_values))):
+    Investigation = Sampler(universe_count = 1000, redshift_noise_sigma=investigated_values[i] , p_det=True, gamma = False, event_distribution='Proportional', beta=-1.3,lower_lim=0.1, specify_gal_number=True, wanted_gal_n=5000, total_luminosity=1000/3, wanted_det_events = 50, specify_event_number = True, 
                             noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
     Investigation.Sample()
     #b.append(Investigation.burr_i)
@@ -408,6 +510,28 @@ for i in tqdm(range(len(investigated_values))):
                             noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
     Investigation.Sample()
     percentage.append(Investigation.survey_percentage)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+
+investigated_characteristic = 'survey_incompleteness_standard_good'
+#investigated_values = [25,75,95]
+#investigated_values = np.array([0.01,0.1,0.5])
+investigated_values = np.array([0.3])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+#max_numbers = []
+#percentage = []
+#b = []
+#f = []
+new_pecentage = percentage[:2]
+
+for i in range(len(investigated_values)):
+    Investigation = Sampler(universe_count = 1000, min_flux=investigated_values[i], beta=-1.3, lower_lim=0.1, completeness_type='cut_lim', p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=2000/3, specify_gal_number=True, wanted_gal_n=5000, wanted_det_events = 50, specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    new_pecentage.append(Investigation.survey_percentage)
     #b.append(Investigation.burr_i)
     #f.append(Investigation.full)
     max_numbers.append(Investigation.max_num)
@@ -1013,6 +1137,8 @@ for i in range(len(investigated_values)):
     p_i_s.append(bias_dist(df))
     c_i_s.append(C_I_samp(df))
     for column in df.columns:
+        if int(column)>999:
+            continue
         if is_unique(df[column]):
             print('Gotcha')
             continue
@@ -1093,7 +1219,7 @@ plt.show()
     
 fig = plt.figure(figsize = (12,8))
 ax = fig.add_subplot()
-B = 10
+B = 15
 bins = np.linspace(0,1,B+1)
 NN = len(p_i_s[0])
 u_p = 0.995
@@ -1234,11 +1360,11 @@ ax2.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8
 
 for i in ax:
     i.set_ylim(0,0.49)
-    i.set_xlim(66,75)
+    i.set_xlim(65,80)
 
 plt.subplots_adjust(wspace=0, hspace=0)
 
-b = 20
+b = np.linspace(65,80,21)
 
 
 #bias_0 = np.mean(meanss[0])-70
@@ -1262,17 +1388,17 @@ ax2.vlines(x=70, ymin=0, ymax=0.49, color='r', ls='dashed', lw=3)
 
 #ax1.grid(axis='x', ls='dashed', alpha=0.5)
 #ax2.grid(axis='x', ls='dashed', alpha=0.5)
-ax1.legend(fontsize=25, framealpha=1)
-ax2.legend(fontsize=25,framealpha=1)
+ax1.legend(fontsize=25, framealpha=1, loc='upper left')
+ax2.legend(fontsize=25, framealpha=1, loc='upper left')
 ax1.set_xticklabels([])
 
 incl = ['Not modelled', 'Modelled']
 #ax2.set_ylabel('Included', fontsize=35, labelpad=15)
 #ax1.set_ylabel('Not Included', fontsize=35, labelpad=15)
 ax2.set_xlabel(r'$\hat H_0$ (km s$^{-1}$ Mpc$^{-1}$)',fontsize=35, labelpad=15)
-po = 66.7
+po = 74.5
 ax1.annotate('{}'.format(incl[0]), xy=(po,0.3),xytext=(po,0.35), fontsize=35)
-ax2.annotate('{}'.format(incl[1]), xy=(po,0.3),xytext=(po,0.35), fontsize=35)
+ax2.annotate('{}'.format(incl[1]), xy=(po,0.3),xytext=(po+0.7,0.35), fontsize=35)
 
 
 fig.supylabel(r'$P\,(\hat H_0|\mathrm{samples})$', fontsize=40, x=-0.018)
@@ -1912,11 +2038,11 @@ ax2.set_xticklabels([])
 ax2.set_yticks([0.0,0.15,0.30])
 ax3.set_yticks([0.0,0.08,0.16])
 
-'''
+
 per = []
 for i in range(len(percentage)):
     per.append(100*(np.mean(percentage[i])))
-'''
+
 
 ax1.annotate(r'$F_{{\mathrm{{lim}}}}/F_* = {}$'.format(l_lim[0]), xy=(53,0.3),xytext=(52.5,0.3), fontsize=35)
 ax2.annotate(r'$F_{{\mathrm{{lim}}}}/F_* = {}$'.format(l_lim[1]), xy=(53,0.4*0.3/0.49),xytext=(52.5,0.4*0.3/0.49), fontsize=35)

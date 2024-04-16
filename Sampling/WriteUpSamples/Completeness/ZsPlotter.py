@@ -57,9 +57,32 @@ investigated_characteristic = 'redshift_uncertainty'
 investigated_values = [0.0005 ,0.001, 0.002, 0.005, 0.01, 0.02, 0.05]
 max_numbers = ["0" for i in range(len(investigated_values))]
 
+#%%
+
+investigated_characteristic = 'redshift_uncertainty_more_5000_standard'
+investigated_values = [0.0005 ,0.001, 0.002, 0.004, 0.006, 0.01]
+max_numbers = ["0" for i in range(len(investigated_values))]
 
 #%%
 
+investigated_characteristic = 'redshift_uncertainty_more_2500_standard'
+investigated_values = [0.0005 ,0.001, 0.002, 0.004, 0.006, 0.01]
+max_numbers = ["0" for i in range(len(investigated_values))]
+
+#%%
+
+investigated_characteristic = 'redshift_uncertainty_more_5000_standard_good'
+investigated_values = [0.0005 ,0.001, 0.002, 0.004, 0.006, 0.01]
+max_numbers = ["0" for i in range(len(investigated_values))]
+
+#%%
+
+investigated_characteristic = 'redshift_uncertainty_more_2000_standard_good'
+investigated_values = [0.0005 ,0.001, 0.002, 0.004, 0.006, 0.01]
+max_numbers = ["0" for i in range(len(investigated_values))]
+
+
+#%%
 
 
 fig = plt.figure(figsize = (12,8))
@@ -226,7 +249,7 @@ ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
 ax.legend(fontsize = 28, framealpha=1)
-ax.set_ylabel(r'$\langle\hat{H_0} - H_0\rangle$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
+ax.set_ylabel(r'$\langle\hat{H}_0 - H_0\rangle$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
 ax.set_xlabel(r'$\sigma_z$', fontsize=35, labelpad=15)
 #ax.set_ylim(-0.01,0.2)
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
@@ -244,16 +267,16 @@ for i in range(len(investigated_values)):
 fig = plt.figure(figsize = (12,8))
 ax = fig.add_subplot()
 
-ax.scatter(investigated_values[:-2], np.array(sigmas[:-2])/70, marker='^', s=100, c='b', zorder=2)
-ax.plot(investigated_values[:-2], np.array(sigmas[:-2])/70, marker='^', c='dodgerblue', zorder=1)
-ax.errorbar(investigated_values[:-2], np.array(sigmas[:-2])/70, yerr=np.array(sigmas_unc[:-2])/70, capsize=5, c='dodgerblue', fmt='None', zorder=0)
+ax.scatter(investigated_values[:], np.array(sigmas[:])/70, marker='^', s=100, c='b', zorder=2)
+ax.plot(investigated_values[:], np.array(sigmas[:])/70, marker='^', c='dodgerblue', zorder=1)
+ax.errorbar(investigated_values[:], np.array(sigmas[:])/70, yerr=np.array(sigmas_unc[:])/70, capsize=5, c='dodgerblue', fmt='None', zorder=0)
 ax.grid(ls='dashed', c='lightblue', alpha=0.8)
 #ax.set_xlim(50,100)
 #ax.set_ylim(0,ymax)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
 #ax.legend(fontsize = 28, framealpha=1)
-ax.set_ylabel(r'$\sigma_{H_0}/H_0$', fontsize=35, labelpad=15)
+ax.set_ylabel(r'$\hat{\sigma}_{H_0}/H_0$', fontsize=35, labelpad=15)
 ax.set_xlabel(r'$\sigma_z$', fontsize=35, labelpad=15)
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
 plt.show()

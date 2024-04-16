@@ -37,9 +37,32 @@ for i in range(len(investigated_values)):
     #f.append(Investigation.full)
     max_numbers.append(Investigation.max_num)
 
+#%%
+
+investigated_characteristic = 'event_num_log_powerpoint_standard'
+investigated_values = [5, 10, 20, 40, 80, 160]
+investigated_values = [2, 4, 8, 16, 32, 64, 128, 256]
+max_numbers = []
+#b = []
+#f = []
+
+for i in range(len(investigated_values)):
+    Investigation = Sampler(universe_count = 200, p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=1000/3, wanted_gal_n = 5000, specify_gal_number = True, wanted_det_events = investigated_values[i], specify_event_number = True, 
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
 
 # %%
 
+investigated_characteristic = 'event_num_log_powerpoint_standard'
+investigated_values = [5, 10, 20, 40, 80, 160]
+investigated_values = [2, 4, 8, 16, 32, 64, 128, 256]
+max_numbers = ['0']*len(investigated_values)
+
+#%%
 
 def bias_dist(x, H=70):
     ps = []
@@ -241,7 +264,11 @@ ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
 ax.legend(fontsize = 28, framealpha=1)
 ax.set_ylabel(r'$\langle\hat{H_0} - H_0\rangle$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
-ax.set_xlabel(r'$\sigma_z$', fontsize=35, labelpad=15)
+ax.set_xlabel(r'$\bar{N}$', fontsize=35, labelpad=15)
+ax.set_xscale('log')
+ax.set_xticks(investigated_values)
+ax.set_xticklabels([r'$2^1$',r'$2^2$',r'$2^3$',r'$2^4$',r'$2^5$', r'$2^6$', r'$2^7$', r'$2^8$'])
+       
 #ax.set_ylim(-0.01,0.2)
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
 plt.show()
@@ -270,11 +297,12 @@ popt, pcov = curve_fit(func, investigated_values, sigmas/70, sigma=sigmas_unc/70
 fig = plt.figure(figsize = (12,8))
 ax = fig.add_subplot()
 
-ax.plot(x, func(x, *popt), ls='dashed', dashes=(5,5), lw=3, c='magenta', label=r'$\hat{{\sigma}}_{{H_0}}/H_0 = \alpha/\sqrt{{\bar{{N}}}}$ fit, $\alpha={:.1f}\%\pm{:.1f}\%$'.format(100*popt[0]/70, 100*pcov[0,0]**0.5/70))
-
 ax.scatter(investigated_values, sigmas/70, marker='^', s=100, c='b', label='Data', zorder=2)
 ax.plot(investigated_values, sigmas/70, marker='^', c='dodgerblue', zorder=1)
 ax.errorbar(investigated_values, sigmas/70, yerr=sigmas_unc/70, capsize=5, c='dodgerblue', fmt='None', zorder=0)
+
+ax.plot(x, func(x, *popt), ls='dashed', dashes=(5,5), lw=3, c='magenta', label=r'$\frac{{\hat{{\sigma}}_{{H_0}}}}{{H_0}} = \frac{{\alpha}}{{\sqrt{{\bar{{N}}}}}}$ fit, $\alpha={:.1f}\%\pm{:.1f}\%$'.format(100*popt[0]/70, 100*pcov[0,0]**0.5/70))
+
 
 #ax.plot(x,y,ls='dashed', c='r', label=r'$\propto \bar N\,^{-1/2}$')
 
@@ -299,8 +327,195 @@ ax.tick_params(axis='y', which='minor', direction='in', labelsize=35, size=4, wi
 ax.set_xticks(investigated_values)
 ax.set_xticklabels([r'$2^1$',r'$2^2$',r'$2^3$',r'$2^4$',r'$2^5$', r'$2^6$', r'$2^7$', r'$2^8$'])
                 
-ax.legend(fontsize=25, loc='lower left')          
+ax.legend(fontsize=27, loc='upper right')          
 plt.show()
 
 
+
+
+
+
+
+
+
+
+
+# %%
+
+
+
+
+
+
+
+
+#%%
+
+title = 'Posterior Asymptotic Normality & Constraining Power'
+
+means = []
+stds = []
+#for column in df.columns:
+post_avg = []
+N = np.array(investigated_values)
+meanss = []
+stdss = []
+pos = []
+df_N = pd.DataFrame()
+
+for i in range(len(investigated_values)):
+    #print(i)
+    filename = "PosteriorData/SampleUniverse_"+str(investigated_characteristic)+"_"+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
+    df = pd.read_csv(filename, index_col = 0)
+    df.dropna(inplace=True, axis=1)
+    means = []
+    stds = []
+    for column in df.columns:
+        pdf_single = df[column]/df[column].sum() #* (df.index[1] - df.index[0])
+        #pdf_single.dropna(inplace=True)
+        vals = np.array(pdf_single.index)
+        mean = sum(pdf_single*vals)
+        # means or modes
+        #mean = vals[np.argmax(pdf_single*vals)]
+        if mean==0:
+            continue
+        means.append(mean)
+        stds.append(np.sqrt(sum((pdf_single*pdf_single.index**2))-mean**2))
+    df_N[str(investigated_values[i])] = df.mean(axis=1)
+    df_N[str(investigated_values[i])] = df_N[str(investigated_values[i])] / df_N[str(investigated_values[i])].sum()
+    meanss.append(means)
+    stdss.append(stds)
+    pos.append(i+1)
+
+
+#%%
+
+import random
+
+fig = plt.figure(figsize = (12,8))
+ax = fig.add_subplot()
+
+# if linear
+dist = 10
+dist=0
+cap = 5
+h_space = N[1]-N[0]-dist
+
+outer_x_min = 60
+outer_x_max = 82.5
+#outer_x_min = 67
+#outer_x_max = 73
+plot_lim_min = 10
+plot_lim_max = 320
+plot_lim_min = 1.7
+rate = N[-1]/N[-2]
+plot_lim_max = rate*N[-1] + 1
+
+ax.set_ylim(outer_x_min,outer_x_max)
+ax.set_xlim(plot_lim_min, plot_lim_max)
+
+mus = []
+sigs = []
+maxs = []
+argmaxs = []
+
+space = N.tolist()
+space.append(N[-1]*2)
+
+def is_unique(s):
+    a = s.to_numpy() # s.values (pandas<0.24)
+    return (a[0] == a).all()
+
+axs = []
+for i in range(len(df_N.columns)):
+    ax1 = ax.inset_axes(
+        [N[i], outer_x_min, (space[i+1]-space[i])/1.5, (outer_x_max-outer_x_min)], transform=ax.transData, zorder=1)
+    axs.append(ax1)
+for i in range(len(df_N.columns)):
+  
+    filename = "PosteriorData/SampleUniverse_"+str(investigated_characteristic)+"_"+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
+    df = pd.read_csv(filename, index_col = 0)
+    df.dropna(inplace=True, axis=1)
+    pdf_single = df[column]/df[column].sum() #* (df.index[1] - df.index[0])
+    pdf_single.dropna(inplace=True)
+    #vals = np.array(pdf_single.index)
+    #mean = sum(pdf_single*vals)
+    axs[i].spines[['right', 'top', 'bottom','left']].set_visible(False)   
+    n = random.choice(df.columns)
+    axs[i].plot(df[n], df.index, c='blue', lw=3.5)
+    
+    #axs[i].plot(df_N[df_N.columns[i]], df_N.index, c='turquoise', lw=3.5)
+    
+    #axs[i].plot(df_N[df_N.columns[i]], df_N.index, c='turquoise', lw=3.5)
+    
+    pdf = df_N[df_N.columns[i]]
+    vals = np.array(pdf_single.index)
+    max_p = np.max(pdf)
+    argmax_p = vals[np.argmax(pdf)]
+    mu = sum(pdf*vals)
+    sig = np.sqrt(sum((pdf*vals**2))-mu**2)
+    
+    mu,_ = expected(meanss[i], stdss[i])
+    sig = np.mean(stdss[i])
+    
+    mus.append(mu)
+    sigs.append(sig)
+    maxs.append(max_p)
+    argmaxs.append(argmax_p)
+    adj = 1/(df_N.index[1] - df_N.index[0])
+    #h = np.exp(-0.5)/(adj*np.sqrt(2*np.pi)*sig)
+    #axs[i].vlines(x=h, ymax= mu+sig, ymin = mu-sig)
+    #axs[i].hlines(y = [mu-sig,mu, mu+sig], xmax=h+h/2, xmin=h-h/2)
+    #ax.vlines(x=N[i], ymax= mu+sig, ymin = mu-sig, lw=2, color='black')
+    #ax.hlines(y = [mu-sig,mu, mu+sig], xmax=N[i]+(space[i+1]-space[i])/8, xmin=N[i], lw=2, color='black')
+    axs[i].set_ylim(outer_x_min,outer_x_max)
+    axs[i].set_yticklabels([])
+    axs[i].set_xticklabels([])
+    axs[i].set_yticks([])
+    axs[i].set_xticks([])
+    #axs[i].set_xlim(0,120)
+
+x = N
+y = sigs
+x_cont = np.linspace(N[0]/rate,N[-1]*rate,1000)
+
+#def func(x,a):
+#    return a/np.sqrt(x)
+
+#popt, pcov = curve_fit(func, x, y)
+
+ax.plot(x_cont, 70 + 70*func(x_cont, *popt), ls='dashed', dashes=(5,5), lw=3, c='r', label=r'$\pm 1\,\sigma = H_0\,\alpha/\sqrt{N}$')#, label=r'$\sigma_{{H_0}} = \frac{{\alpha}}{{\sqrt{{N}}}}$ fit, $\alpha={:.1f}\%\pm{:.1f}\%$'.format(100*popt[0]/70, 100*pcov[0,0]**0.5/70))
+ax.plot(x_cont, 70 - 70*func(x_cont, *popt), ls='dashed', dashes=(5,5), lw=3, c='r')
+ax.plot([], [], c='blue', label='Posterior examples')
+#ax.plot([], [], c='white', label=r'$\mu\pm 1\sigma$')
+
+ax.hlines(y=70, xmin=plot_lim_min, xmax=plot_lim_max, color='magenta', ls='dashed', lw=3)
+
+ax.set_xscale('log')
+N_labels = [str(i) for i in N]
+ax.set_xticks(N)
+ax.set_xticklabels(N_labels)
+ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 12)
+
+ax.grid(axis='y', ls='dashed', alpha=0.7)
+ax.set_xlabel('Average number of detected mergers', fontsize=45, labelpad=15)
+ax.set_xlabel(r'$\bar{N}$', fontsize=45, labelpad=15)
+
+ax.set_ylabel(r'$H_0$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
+#ax.set_title(title, x=0.46, fontsize=35, pad=30)
+#ax.legend(fontsize=28, framealpha=1, loc=(0.357,0.705))
+ax.legend(fontsize=27, framealpha=1)#, loc=(0.342,0.715))
+ax.set_xticks(investigated_values)
+ax.set_xticklabels([r'$2^1$',r'$2^2$',r'$2^3$',r'$2^4$',r'$2^5$', r'$2^6$', r'$2^7$', r'$2^8$'], fontsize=40)
+   
+
+for axis in ['top','bottom','left','right']:
+    ax.spines[axis].set_linewidth(3)
+
+image_format = 'svg' # e.g .png, .svg, etc.
+image_name = 'Plots//asymptotic_normality.svg'
+
+#plt.savefig(image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=1200)
+
+plt.show()
 # %%
