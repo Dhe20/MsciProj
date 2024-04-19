@@ -56,8 +56,6 @@ cbar.ax.tick_params(labelsize=20)
 
 # image_format = 'pdf' # e.g .png, .svg, etc.
 # image_name = 'Clustered_Universe_Plot' + "." +image_format
-
-
 # plt.savefig("HighRes/"+image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=1200)
 # plt.savefig("LowRes/"+image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=120)
 #
