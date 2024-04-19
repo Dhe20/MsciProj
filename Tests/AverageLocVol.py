@@ -59,17 +59,17 @@ def calc_localisation_volume(BVM_c, BVM_k, BVM_kappa, total_events_required = 10
             Lengths.append(((3 / 4) * total_volume) ** (1 / 3))
         total_events_considered += Gen.detected_event_count
 
-    print("Avg Total volume percentage occupied:", np.mean(PctVolumes), "%")
-    print("Avg Total volume occupied:", np.mean(Volumes), r"$Mpc^{3}$")
-    print("Avg Length Scale:", np.mean(Lengths), r"$Mpc$")
-    print("Total Events Used", total_events_considered)
+    # print("Avg Total volume percentage occupied:", np.mean(PctVolumes), "%")
+    # print("Avg Total volume occupied:", np.mean(Volumes), r"$Mpc^{3}$")
+    # print("Avg Length Scale:", np.mean(Lengths), r"$Mpc$")
+    # print("Total Events Used", total_events_considered)
 
     return np.mean(Volumes)
 
 def calc_centroid_volume(centroid_sigma, gen_size):
     r = 1.645*(centroid_sigma*gen_size)
     V = (4/3) * np.pi * r**3
-    print("Centroid 90% Volume occupied:", V, r"$Mpc^{3}$")
+    # print("Centroid 90% Volume occupied:", V, r"$Mpc^{3}$")
     return V
 
 total_events_required = 200
