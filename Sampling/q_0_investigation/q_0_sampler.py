@@ -90,19 +90,25 @@ max_numbers.append(Investigation.max_num)
 #%%
 
 size = 10*625
+size = 5*625
 probs = 'Proportional'
+probs = 'Random'
+time_obs = 0.000487
 
 R = 100
 splits = 20
-seed = 12
+seed = 18
 
 #%%
 
 
-Gen = EventGenerator(dimension=3, cube=True, size=size, d_ratio = 0.5, event_rate = 1540.0, sample_time = 0.0005978, luminosity_gen_type="Full-Schechter", hubble_law='quadratic', coord_gen_type="Random", cluster_coeff=0, characteristic_luminosity=1, lower_lim=0.1, total_luminosity=1500,
+Gen = EventGenerator(dimension=3, cube=True, size=size, d_ratio = 0.5, event_rate = 1540.0, sample_time = time_obs, luminosity_gen_type="Full-Schechter", hubble_law='quadratic', coord_gen_type="Random", cluster_coeff=0, characteristic_luminosity=1, lower_lim=0.1, total_luminosity=1500,
 BVM_c = 15, BVM_k = 2, BVM_kappa = 200, beta=-1.3, event_distribution=probs, noise_distribution="BVMF_eff", redshift_noise_sigma=0., noise_std=0, plot_contours=False, seed=seed)
 
 Data = Gen.GetSurveyAndEventData()
+#I1 = Inference(Data, H_0_Min=55, H_0_Max=85, resolution_H_0=100, resolution_q_0=R, survey_type = 'perfect', gamma = False, event_distribution_inf = probs, flux_threshold=0)
+#I1.H_0_Prob()
+#plt.plot(I1.H_0_range,I1.H_0_pdf)
 I = Inference(Data, H_0_Min=55, H_0_Max=85, resolution_H_0=100, resolution_q_0=R, survey_type = 'perfect', hubble_law_inf = 'quadratic', gamma = False, event_distribution_inf = probs, flux_threshold=0)
 
 self = I
@@ -235,27 +241,67 @@ print(np.sum(self.q_0_range*q*self.q_0_increment))
 
 #%%
 
-prior = sp.stats.norm.pdf(self.q_0_range, loc=-0.53, scale=0.5)
+import matplotlib
+matplotlib.rcParams['mathtext.fontset'] = 'cm'
+matplotlib.rcParams['font.family'] = 'Arial'
+matplotlib.rcParams['figure.constrained_layout.use'] = True
 
-pdf = self.H_0_pdf*prior
+fig = plt.figure(figsize = (12,16), layout='constrained')
+# create grid for different subplots
+spec = gridspec.GridSpec(ncols=2, nrows=3,
+                        wspace=0.,
+                         hspace=0.)
+
+
+ax2 = fig.add_subplot(spec[1,0])
+ax1 = fig.add_subplot(spec[0,0])#, sharex=ax2)
+ax3 = fig.add_subplot(spec[1,1])#, sharey=ax2)
+#ax4 = fig.add_subplot(spec[0,1])#, sharey=ax2)
+
+
+im = ax2.contourf(self.H_0_range, self.q_0_range, self.H_0_pdf.T, 5, cmap='magma_r')
+cbaxes = fig.add_axes([0.56, 0.7, 0.3, 0.05])
+cbar = plt.colorbar(im, cax = cbaxes, orientation="horizontal")
+cbar.ax.tick_params(labelsize=20) 
+cbar.ax.set_title(r'$P\,(H_0,q_0\,|\,\mathrm{data})$', fontsize=30, pad=20)
+ax2.set_xlabel(r'$H_0$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=30, labelpad=10)
+ax2.set_ylabel(r'$q_0$',  fontsize=30, labelpad=10)
+
+ax3.plot(q,self.q_0_range, c='b', lw=2)
+#q2 = np.sum(self.H_0_pdf*prior, axis=0)
+#q2 /= np.sum(q2)*self.q_0_increment
+#ax3.plot(q2,self.q_0_range, c='b', lw=2)
+#ax3.plot(prior, self.q_0_range, c='tomato', lw=2, ls='dashed')
+ax3.grid(ls='dashed', c='gray', alpha=0.8, axis='y')
+ax3.set_yticklabels([])
+ax3.set_xticklabels([])
+
+#h /= np.sum(h)*self.H_0_increment
+ax1.plot(self.H_0_range, h, c='b', lw=2)
+ax1.grid(ls='dashed', c='gray', alpha=0.8, axis='x')
+
+ax1.set_xticklabels([])
+ax1.set_yticklabels([])
+
+ax2.tick_params(axis='both', which='major', direction='in', labelsize=18, size=4, width=1, pad = 12)
+ax1.tick_params(axis='both', which='major', direction='in', labelsize=18, size=4, width=1, pad = 12)
+ax3.tick_params(axis='both', which='major', direction='in', labelsize=18, size=4, width=1, pad = 12)
+
+
+ax2.set_xlim(58,80)
+ax1.set_xlim(58,80)
+
+ax2.set_ylim(-1.8,1)
+ax3.set_ylim(-1.8,1)
+
+plt.show()
 
 #%%
 
-fig = plt.figure(figsize = (12,8))
-ax = fig.add_subplot()
+prior = sp.stats.norm.pdf(self.q_0_range, loc=-0.53, scale=0.5)
 
-im = ax.imshow(self.H_0_pdf*prior , cmap = 'magma')
-fig.colorbar(im, orientation='vertical')
-
-fig = plt.figure(figsize = (12,8))
-ax = fig.add_subplot()
-h = np.sum(self.H_0_pdf*prior, axis=1)
-ax.plot(self.H_0_range, h)
-
-fig = plt.figure(figsize = (12,8))
-ax = fig.add_subplot()
-q = np.sum(self.H_0_pdf*prior, axis=0)
-ax.plot(self.q_0_range, q)
+pdf = self.H_0_pdf*prior
+#pdf = self.H_0_pdf
 
 
 #%%
@@ -279,7 +325,7 @@ ax3 = fig.add_subplot(spec[1,1])#, sharey=ax2)
 #ax4 = fig.add_subplot(spec[0,1])#, sharey=ax2)
 
 
-im = ax2.contourf(self.H_0_range, self.q_0_range, pdf.T, 5, cmap='afmhot_r')
+im = ax2.contourf(self.H_0_range, self.q_0_range, pdf.T, 5, cmap='magma_r')
 cbaxes = fig.add_axes([0.56, 0.7, 0.3, 0.05])
 cbar = plt.colorbar(im, cax = cbaxes, orientation="horizontal")
 cbar.ax.tick_params(labelsize=20) 
@@ -287,10 +333,11 @@ cbar.ax.set_title(r'$P\,(H_0,q_0\,|\,\mathrm{data})$', fontsize=30, pad=20)
 ax2.set_xlabel(r'$H_0$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=30, labelpad=10)
 ax2.set_ylabel(r'$q_0$',  fontsize=30, labelpad=10)
 
-q = np.sum(self.H_0_pdf*prior, axis=0)
-q /= np.sum(q)*self.q_0_increment
-ax3.plot(q,self.q_0_range, c='b', lw=2)
-ax3.plot(prior, self.q_0_range, c='tomato', lw=2, ls='dashed')
+ax3.plot(q,self.q_0_range, c='magenta', lw=2, label='Uniform prior')
+q2 = np.sum(self.H_0_pdf*prior, axis=0) * (self.H_0_increment)
+q2 /= np.sum(q2)*self.q_0_increment
+ax3.plot(q2,self.q_0_range, c='b', lw=2, label='Normal prior')
+#ax3.plot(prior, self.q_0_range, c='tomato', lw=2, ls='dashed')
 ax3.grid(ls='dashed', c='gray', alpha=0.8, axis='y')
 ax3.set_yticklabels([])
 ax3.set_xticklabels([])
@@ -309,12 +356,39 @@ ax1.tick_params(axis='both', which='major', direction='in', labelsize=18, size=4
 ax3.tick_params(axis='both', which='major', direction='in', labelsize=18, size=4, width=1, pad = 12)
 
 
-ax2.set_xlim(67,82)
-ax1.set_xlim(67,82)
+ax2.set_xlim(60,80)
+ax1.set_xlim(60,80)
 
-ax2.set_ylim(-1.8,-0.2)
-ax3.set_ylim(-1.8,-0.2)
+ax2.set_ylim(-1.8,0.8)
+ax3.set_ylim(-1.8,0.8)
+ax3.legend(fontsize=20)
 
 plt.show()
+
+# %%
+
+fig = plt.figure(figsize = (12,8))
+ax = fig.add_subplot()
+
+im = ax.imshow(self.H_0_pdf*prior , cmap = 'magma')
+fig.colorbar(im, orientation='vertical')
+
+fig = plt.figure(figsize = (12,8))
+ax = fig.add_subplot()
+h = np.sum(self.H_0_pdf*prior, axis=1)
+ax.plot(self.H_0_range, h)
+
+fig = plt.figure(figsize = (12,8))
+ax = fig.add_subplot()
+q = np.sum(self.H_0_pdf*prior, axis=0)
+ax.plot(self.q_0_range, q)
+
+
+#%%
+
+np.save('dist.npy', self.H_0_pdf)
+np.save('h_range.npy', self.H_0_range)
+np.save('q_range.npy', self.q_0_range)
+
 
 # %%

@@ -1272,6 +1272,10 @@ lower_band = sps.binom.ppf(d_p, NN, 1/B)
 
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 12)
 
+ax.set_yticks([100,200,300,400,500])
+ax.set_yticklabels(['100','200','300','400','500'])
+ax.set_ylim(0,500)
+
 ax.hlines(y = [upper_band, lower_band], xmin=0, xmax=1, color='gray', ls='dashed', lw=2)
 ax.fill_between(bins, [lower_band]*(B+1), [upper_band]*(B+1), color='gray', alpha=0.5, label=r'${:.0f}\%$ confidence band'.format(100*(u_p-d_p)))
 #ax.set_title('{} Average Events'.format(selection_accounted[j]))
@@ -1295,7 +1299,7 @@ c = ['b', 'r', 'magenta']
 color = iter(cm.winter_r(np.linspace(0, 1, 3)))
 for i in range(len(investigated_values)):
     c = next(color)
-    ax.hist(p_i_s[i], bins=bins, density=0, linewidth=5, histtype='step',edgecolor=c, lw=4, label=r'$f_{{\mathrm{{det}}}} = {} \%$'.format(per[i]))
+    ax.hist(p_i_s[i], bins=bins, density=0, linewidth=5, histtype='step',edgecolor=c, lw=4, label=r'$f_{{\mathrm{{det}}}} = {:.1f} \%$'.format(per[i]))
 
 for axis in ['top','bottom','left','right']:
     ax.spines[axis].set_linewidth(2.5)
@@ -1305,6 +1309,9 @@ lower_band = sps.binom.ppf(d_p, NN, 1/B)
 
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 12)
 
+ax.set_yticks([50,100,150,200,250])
+ax.set_yticklabels(['50','100','150','200','250'])
+ax.set_ylim(0,250)
 ax.hlines(y = [upper_band, lower_band], xmin=0, xmax=1, color='gray', ls='dashed', lw=2)
 ax.fill_between(bins, [lower_band]*(B+1), [upper_band]*(B+1), color='gray', alpha=0.5, label=r'${:.0f}\%$ confidence band'.format(100*(u_p-d_p)))
 #ax.set_title('{} Average Events'.format(selection_accounted[j]))
@@ -1890,16 +1897,18 @@ ax1.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8
 ax2.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 12)
 ax3.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 12)
 
-ax1.set_ylim(0,0.49)
+ax1.set_ylim(0,0.35)
 ax1.set_xlim(50,90)
-ax2.set_ylim(0,0.3)
+ax2.set_ylim(0,0.2)
 ax2.set_xlim(50,90)
-ax3.set_ylim(0,0.08)
+ax3.set_ylim(0,0.1)
 ax3.set_xlim(50,90)
 
 plt.subplots_adjust(wspace=0, hspace=0)
 
-b = 20
+b = np.linspace(50,90,35)
+b=16
+
 bias_0 = np.mean(meanss[0])-70
 bias_1 = np.mean(meanss[1])-70
 bias_2 = np.mean(meanss[2])-70
@@ -1937,13 +1946,21 @@ ax2.legend(fontsize=20)
 ax3.legend(fontsize=20)
 ax1.set_xticklabels([])
 ax2.set_xticklabels([])
-ax2.set_yticks([0.0,0.1,0.2])
-ax3.set_yticks([0.0,0.03,0.06])
+ax1.set_yticks([0.0,0.1,0.2, 0.3])
+ax2.set_yticks([0.0, 0.07,0.14])
+ax3.set_yticks([0.0,0.04,0.08])
 
 
-ax1.annotate(r'$\sigma_z = {}$'.format(investigated_values[0]), xy=(55,0.3),xytext=(52.5,0.3), fontsize=35)
-ax2.annotate(r'$\sigma_z = {}$'.format(investigated_values[1]), xy=(55,0.3*0.3/0.49),xytext=(52.5,0.3*0.3/0.49), fontsize=35)
-ax3.annotate(r'$\sigma_z = {}$'.format(investigated_values[2]), xy=(55,0.08 *0.3/0.49),xytext=(52.5,0.08*0.3/0.49), fontsize=35)
+#ax1.annotate(r'$\sigma_z = {}$'.format(investigated_values[0]), xy=(55,0.3),xytext=(52.5,0.3), fontsize=35)
+#ax2.annotate(r'$\sigma_z = {}$'.format(investigated_values[1]), xy=(55,0.3*0.3/0.49),xytext=(52.5,0.3*0.3/0.49), fontsize=35)
+#ax3.annotate(r'$\sigma_z = {}$'.format(investigated_values[2]), xy=(55,0.08 *0.3/0.49),xytext=(52.5,0.08*0.3/0.49), fontsize=35)
+
+
+ax1.annotate(r'$\sigma_z = {}$'.format(investigated_values[0]), xy=(55,0.3),xytext=(52.5,0.2), fontsize=35)
+ax2.annotate(r'$\sigma_z = {}$'.format(investigated_values[1]), xy=(55,0.3*0.3/0.49),xytext=(52.5,0.1), fontsize=35)
+ax3.annotate(r'$\sigma_z = {}$'.format(investigated_values[2]), xy=(55,0.08 *0.3/0.49),xytext=(52.5,0.05), fontsize=35)
+
+
 ax3.set_xlabel(r'$\hat H_0$ (km s$^{-1}$ Mpc$^{-1}$)',fontsize=35, labelpad=15)
 
 #ax1.set_title('Redshift uncertainty', fontsize=40, pad=30)
@@ -1990,15 +2007,15 @@ ax2.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8
 ax3.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 12)
 
 ax1.set_ylim(0,0.49)
-ax1.set_xlim(50,90)
+ax1.set_xlim(62.6,77.4)
 ax2.set_ylim(0,0.4)
-ax2.set_xlim(50,90)
-ax3.set_ylim(0,0.2)
-ax3.set_xlim(50,90)
+ax2.set_xlim(62.6,77.4)
+ax3.set_ylim(0,0.4)
+ax3.set_xlim(62.6,77.4)
 
 plt.subplots_adjust(wspace=0, hspace=0)
 
-b = 22
+b = 15
 bias_0 = np.mean(meanss[0])-70
 bias_1 = np.mean(meanss[1])-70
 bias_2 = np.mean(meanss[2])-70
@@ -2036,14 +2053,14 @@ ax3.legend(fontsize=20)
 ax1.set_xticklabels([])
 ax2.set_xticklabels([])
 ax2.set_yticks([0.0,0.15,0.30])
-ax3.set_yticks([0.0,0.08,0.16])
+ax3.set_yticks([0.0,0.15,0.30])
 
 
-per = []
-for i in range(len(percentage)):
-    per.append(100*(np.mean(percentage[i])))
+#per = []
+#for i in range(len(percentage)):
+#    per.append(100*(np.mean(percentage[i])))
 
-
+'''
 ax1.annotate(r'$F_{{\mathrm{{lim}}}}/F_* = {}$'.format(l_lim[0]), xy=(53,0.3),xytext=(52.5,0.3), fontsize=35)
 ax2.annotate(r'$F_{{\mathrm{{lim}}}}/F_* = {}$'.format(l_lim[1]), xy=(53,0.4*0.3/0.49),xytext=(52.5,0.4*0.3/0.49), fontsize=35)
 ax3.annotate(r'$F_{{\mathrm{{lim}}}}/F_* = {}$'.format(l_lim[2]), xy=(53,0.08 *0.3/0.49),xytext=(52.5,0.2*0.3/0.49), fontsize=35)
@@ -2051,6 +2068,15 @@ ax3.annotate(r'$F_{{\mathrm{{lim}}}}/F_* = {}$'.format(l_lim[2]), xy=(53,0.08 *0
 ax1.annotate(r'$f_{{\mathrm{{det}}}} = {:.0f}\%$'.format(per[0]), xy=(53,0.3),xytext=(52.5,0.17), fontsize=35)
 ax2.annotate(r'$f_{{\mathrm{{det}}}} = {:.0f}\%$'.format(per[1]), xy=(53,0.4*0.3/0.49),xytext=(52.5,0.4*0.17/0.49), fontsize=35)
 ax3.annotate(r'$f_{{\mathrm{{det}}}} = {:.0f}\%$'.format(per[2]), xy=(53,0.08 *0.3/0.49),xytext=(52.5,0.2*0.17/0.49), fontsize=35)
+'''
+
+ax1.annotate(r'$F_{{\mathrm{{lim}}}}/F_* = {}$'.format(l_lim[0]), xy=(63,0.3),xytext=(63.5,0.3), fontsize=35)
+ax2.annotate(r'$F_{{\mathrm{{lim}}}}/F_* = {}$'.format(l_lim[1]), xy=(63,0.4*0.3/0.49),xytext=(63.5,0.4*0.3/0.49), fontsize=35)
+ax3.annotate(r'$F_{{\mathrm{{lim}}}}/F_* = {}$'.format(l_lim[2]), xy=(63,0.08 *0.3/0.49),xytext=(63.5,0.4*0.3/0.49), fontsize=35)
+
+ax1.annotate(r'$f_{{\mathrm{{det}}}} = {:.0f}\%$'.format(per[0]), xy=(63,0.3),xytext=(63.5,0.17), fontsize=35)
+ax2.annotate(r'$f_{{\mathrm{{det}}}} = {:.0f}\%$'.format(per[1]), xy=(63,0.4*0.3/0.49),xytext=(63.5,0.4*0.17/0.49), fontsize=35)
+ax3.annotate(r'$f_{{\mathrm{{det}}}} = {:.0f}\%$'.format(per[2]), xy=(63,0.08 *0.3/0.49),xytext=(63.5,0.4*0.17/0.49), fontsize=35)
 
 
 ax3.set_xlabel(r'$\hat H_0$ (km s$^{-1}$ Mpc$^{-1}$)',fontsize=35, labelpad=15)

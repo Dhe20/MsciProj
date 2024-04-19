@@ -290,6 +290,44 @@ ax.set_xlabel(r'$1-f$', fontsize=35, labelpad=15)
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
 plt.show()
 
+#%%
+
+fig = plt.figure(figsize = (12,8))
+ax = fig.add_subplot()
+
+ax2 = ax.twiny()
+color = iter(cm.winter_r(np.linspace(0, 1, len(dist))))
+for j in range(len(dist)):
+    c = next(color)
+    edgecolor='white'
+    ax.scatter(rel_f, np.array(biases_s[j])-70, marker='^', s=100, c=c, label=r'Weighting = {}'.format(str(dist[j])), zorder=3)
+    c[3] = 0.7
+    ax.plot(rel_f, np.array(biases_s[j])-70, c=c, zorder=2)
+    ax.errorbar(rel_f, np.array(biases_s[j])-70, yerr=np.array(biases_err_s[j]), capsize=5, c=c, fmt='None', zorder=1)
+    #ax2.scatter(1-np.array(percentages_s[j]), np.array(biases_s[j])-70, color='white', label='Transformed Data')
+a = 1-np.array(percentages_s[0])
+c = rel_f
+ax.set_xlim(-0.01,0.32)
+ax2.set_xlim(-0.01,0.32)
+ax2.set_xticks(np.delete(c,1))
+ax2.set_xticklabels([str(round(b,2)) for b in a if b!=a[1]])
+ax2.set_xlabel(r'$1-f$', fontsize=35, labelpad=15)
+#ax2.tick_params(axis='y')
+ax2.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
+
+ax.grid(ls='dashed', c='cadetblue', alpha=0.7, zorder=0)
+#ax.set_xlim(50,100)
+#ax.set_ylim(0,ymax)
+#ax.grid(axis='both', ls='dashed', alpha=0.5)
+ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
+ax.legend(fontsize = 30, framealpha=1)
+ax.set_ylabel(r'$\langle\hat{H}_0 - H_0\rangle$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
+ax.set_xlabel(r'$F_{\mathrm{lim}}/F_* $', fontsize=35, labelpad=15)
+#ax.set_ylim(-0.01,0.2)
+#ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
+plt.show()
+
+
 
 #%%
 

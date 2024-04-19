@@ -88,7 +88,7 @@ event_rate = 1540.0
 d_ratio = 0.4
 BVM_c = 15
 BVM_k = 2
-wanted_det_events = 50
+wanted_det_events = 3
 
 #total_luminosity = 5000/3
 sample_time = factor()
@@ -103,7 +103,7 @@ Data1 = Gen.GetSurveyAndEventData(min_flux=0.01/(4*np.pi*(0.4*625)**2))
 Data2 = Gen.GetSurveyAndEventData(min_flux=0.1/(4*np.pi*(0.4*625)**2))
 Data3 = Gen.GetSurveyAndEventData(min_flux=0.5/(4*np.pi*(0.4*625)**2))
 
-f = [0.01, 0.1, 0.5]
+f = [0.01, 0.1, 0.3]
 
 #f = [0.01, 0.05, 0.25]
 Data1 = Gen.GetSurveyAndEventData(min_flux=f[0]/(4*np.pi*(0.4*625)**2))
@@ -138,7 +138,68 @@ ax.plot(x,c1, c=c[0], lw=4, label=r'$F_{{\mathrm{{min}}}}/F_* = {}$'.format(f[0]
 ax.plot(x,c2, c=c[1], lw=4, label=r'$F_{{\mathrm{{min}}}}/F_* = {}$'.format(f[1]))
 ax.plot(x,c3, c=c[2], lw=4, label=r'$F_{{\mathrm{{min}}}}/F_* = {}$'.format(f[2]))
 ax.legend(fontsize=30)
-ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
+ax.grid(ls='dashed', c='cadetblue', alpha=0.7, zorder=0)
+ax.set_ylabel('Completeness fraction', fontsize=35, labelpad=15)
+ax.set_xlabel(r'$D$ (Mpc)', fontsize=35, labelpad=15)
+
+for axis in ['top','bottom','left','right']:
+    ax.spines[axis].set_linewidth(3)
+
+plt.show()
+
+# %%
+
+# Mean completeness
+
+x = np.linspace(50, (3*625**2)**0.5, 500)
+universe_count = 100
+
+cc1 = 0
+cc2 = 0
+cc2 = 0
+for i in range(universe_count):
+    print(i)
+    Gen = EventGenerator(dimension=3, cube=True, size=625, event_rate = event_rate, sample_time = sample_time, beta=beta, luminosity_gen_type="Full-Schechter", coord_gen_type="Random", cluster_coeff=0, characteristic_luminosity=1, lower_lim=0.1, total_luminosity=total_luminosity,
+    BVM_c = 15, BVM_k = 2, BVM_kappa = 200, event_distribution="Proportional", noise_distribution="BVMF_eff", redshift_noise_sigma=0, noise_std=0, plot_contours=False, seed=i)
+
+    Data1 = Gen.GetSurveyAndEventData(min_flux=f[0]/(4*np.pi*(0.4*625)**2))
+    Data2 = Gen.GetSurveyAndEventData(min_flux=f[1]/(4*np.pi*(0.4*625)**2))
+    Data3 = Gen.GetSurveyAndEventData(min_flux=f[2]/(4*np.pi*(0.4*625)**2))
+
+    c1 = np.array(comp_f(np.linalg.norm(Data1.detected_coords, axis=1), x, np.linalg.norm(Gen.detected_coords, axis=1)))
+    c2 = np.array(comp_f(np.linalg.norm(Data2.detected_coords, axis=1), x, np.linalg.norm(Gen.detected_coords, axis=1)))
+    c3 = np.array(comp_f(np.linalg.norm(Data3.detected_coords, axis=1), x, np.linalg.norm(Gen.detected_coords, axis=1)))
+
+    if i==0:
+        cc1 = c1
+        cc2 = c2
+        cc2 = c3
+    else:
+        cc1 += c1
+        cc2 += c2
+        cc2 += c3
+
+cc1 /= universe_count
+cc2 /= universe_count
+cc2 /= universe_count
+
+#%%
+
+fig = plt.figure(figsize = (12,8))
+ax = fig.add_subplot()
+
+c = []
+color = iter(cm.winter_r(np.linspace(0, 1, 3)))
+for i in range(3):
+    c.append(next(color))
+
+ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
+
+ax.plot(x,c1, c=c[0], lw=4, label=r'$F_{{\mathrm{{min}}}}/F_* = {}$'.format(f[0]))
+ax.plot(x,c2, c=c[1], lw=4, label=r'$F_{{\mathrm{{min}}}}/F_* = {}$'.format(f[1]))
+ax.plot(x,c3, c=c[2], lw=4, label=r'$F_{{\mathrm{{min}}}}/F_* = {}$'.format(f[2]))
+ax.legend(fontsize=30)
+ax.grid(ls='dashed', c='cadetblue', alpha=0.7, zorder=0)
 ax.set_ylabel('Completeness fraction', fontsize=35, labelpad=15)
 ax.set_xlabel(r'$D$ (Mpc)', fontsize=35, labelpad=15)
 

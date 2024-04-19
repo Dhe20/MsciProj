@@ -1,3 +1,5 @@
+#%%
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,6 +8,8 @@ import matplotlib.cm as cm
 from Tests.AverageLocVol import calc_centroid_volume
 
 path = '/Users/daneverett/PycharmProjects/MSciProject/Sampling/WriteUpSamples/Centroid_Universes/'
+path = 'c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling/WriteUpSamples/Centroid_Universes/'
+
 
 def expected(data, sig):
     sig = np.array(sig)
@@ -22,6 +26,7 @@ title = 'Centroid'
 investigated_characteristic = "CentroidSigma"
 N_centroids = [10,15,20,25]#,20,25
 investigated_values = [0.01, 0.02, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24]
+investigated_values = [0.04, 0.08, 0.12, 0.16, 0.2, 0.24]
 investigated_value_volumes = [calc_centroid_volume(value, gen_size=625) for value in investigated_values]
 
 # investigated_values = [0.04, 0.08, 0.12, 0.16, 0.2, 0.24, 0.28, 0.32, 0.36, 0.40]
@@ -127,3 +132,4 @@ ax[0].set_xscale("log")
 ax[1].set_xscale("log")
 
 plt.show()
+# %%
