@@ -359,6 +359,8 @@ def r2_burr_sampling(random_seed, c, k, l, n_samp):
 
 
 
+#%%
+
 '''
 import matplotlib.pyplot as plt
 
@@ -374,10 +376,9 @@ plt.plot(x,y,c='r',ls='dashed', label='PDF')
 plt.grid(c='gray', alpha=0.2)
 plt.legend()
 plt.show()
-'''
 
-'''
-#%%
+
+
 
 def bb1_lower(x,b,u,l):
     b = b-2
@@ -396,27 +397,35 @@ def bb1_mid(x,b,u,l):
     return (C/u)*((x/u)**b)#*np.exp(-x/u)
 
 
-# %%
+
 
 N = 100000
 x=np.linspace(1/N,10,N)
-y = p(x,0.7,1,0.001)
+y = p(x,0.7,1,0.01)
 
 s = random.Random(1)
-samp = Complete_BB1_rej(s,-1.3,1,0.001,100000)
+samp = Complete_BB1_rej(s,-1.3,1,0.01,100000)
 
-#%%
+
 
 s2 = np.random.default_rng(seed = 1)
 samp2 = s2.gamma(0.7, scale=1, size=100000)
 y2 = ss.gamma.pdf(x,0.7)
 
-#%%
+
+
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rcParams['mathtext.fontset'] = 'cm'
+matplotlib.rcParams['font.family'] = 'Arial'
+matplotlib.rcParams['figure.constrained_layout.use'] = True
+
+
 beta = -1.3
-x_l = np.linspace(1/N, 10*0.001, 10000)
-x_m = np.linspace(0.001*0.1, 10*1, 10000)
-y_l = bb1_lower(x_l,0.7,1,0.001)
-y_m = bb1_mid(x_m,0.7,1,0.001)
+x_l = np.linspace(1/N, 10*0.01, 10000)
+x_m = np.linspace(0.01*0.1, 10*1, 10000)
+y_l = bb1_lower(x_l,0.7,1,0.01)
+y_m = bb1_mid(x_m,0.7,1,0.01)
 
 fig = plt.figure(figsize = (12,8))
 ax = fig.add_subplot()
@@ -428,7 +437,7 @@ ax.plot(x_m,y_m,ls='dashed',lw=4, c='magenta', label=r'Middle range $\sim L^{\be
 
 #ax.plot(x,y2,ls='dashed',lw=4, c='b', label='Theoretical Schechter')
 
-ax.hist(samp, density = True, bins=np.logspace(-5,3,25), color='tomato', alpha=0.5, label='BB1 samples')
+ax.hist(samp, density = True, bins=np.logspace(-5,3,35), color='coral', alpha=0.5, label='BB1 samples')
 #ax.hist(samp2, density = True, bins=np.logspace(-5,3,30), color='b', alpha=0.5, label='Schechter samples')
 
 
@@ -437,14 +446,13 @@ ax.legend(fontsize = 23, loc='lower left', framealpha=1)
 ax.set_ylabel(r'$\Phi(L)/n_*$', fontsize=45, labelpad=15)
 ax.set_xlabel(r'$L/L_*$', fontsize=45, labelpad=15)
 #ax.set_ylim(0.003,0.15)
-ax.set_xlim(1/10**5,20)
+ax.set_xlim(1/10**4,20)
 ax.set_yscale('log')
 ax.set_xscale('log')
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
 plt.show()
 
+
 '''
 
-
 # %%
-

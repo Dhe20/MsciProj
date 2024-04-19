@@ -53,6 +53,38 @@ max_numbers = ["0" for i in range(len(investigated_values))]
 
 #%%
 
+investigated_characteristic = 'sel_eff_sigma_D'
+investigated_values = [3.409, 4.035, 4.953, 6.382, 8.827, 13.804, 28.878, 49.003]
+selection_accounted = [False]
+r_or_w = ['']
+max_numbers = ["1" for i in range(len(investigated_values))]
+
+
+#%%
+
+investigated_characteristic = 'sel_eff_sigma_D'
+investigated_values = [3.409, 4.035, 4.953, 6.382, 8.827, 13.804, 28.878, 49.003]
+investigated_values.sort(reverse=True)
+#selection_accounted = [True, False]
+rel = [3, 5, 10, 15, 20, 25, 30, 35]
+selection_accounted = [False]
+r_or_w = ['']
+max_numbers = ["1" for i in range(len(investigated_values))]
+
+#%%
+
+investigated_characteristic = 'sel_eff_sigma_D_biased_standard_140'
+investigated_values = [3.409, 4.035, 4.953, 6.382, 8.827, 13.804, 28.878, 49.003]
+investigated_values.sort(reverse=True)
+#selection_accounted = [True, False]
+rel = [3, 5, 10, 15, 20, 25, 30, 35]
+selection_accounted = [False]
+r_or_w = ['']
+max_numbers = ["0" for i in range(len(investigated_values))]
+
+
+#%%
+
 
 def axis_namer(s):
     index = s.find('_')
@@ -238,6 +270,31 @@ ax.set_xlabel(r'$D_{\max}/S$', fontsize=35, labelpad=15)
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
 plt.show()
 
+#%%
+
+fig = plt.figure(figsize = (12,8))
+ax = fig.add_subplot()
+
+color = iter(cm.winter(np.linspace(0, 1, len(selection_accounted))))
+for j in range(len(selection_accounted)):
+    c = next(color)
+    edgecolor='white'
+    ax.scatter(np.array(rel), np.array(biases_s[j])-70, marker='^', s=100, c=c, label=r'Modelled = {}'.format(str(selection_accounted[j])), zorder=3)
+    c[3] = 0.7
+    ax.plot(np.array(rel), np.array(biases_s[j])-70, c=c, zorder=2)
+    ax.errorbar(np.array(rel), np.array(biases_s[j])-70, yerr=np.array(biases_err_s[j]), capsize=5, c=c, fmt='None', zorder=1)
+
+ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
+#ax.set_xlim(50,100)
+#ax.set_ylim(0,ymax)
+#ax.grid(axis='both', ls='dashed', alpha=0.5)
+ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
+#ax.legend(fontsize = 28, framealpha=1)
+ax.set_ylabel(r'$\langle\hat{H_0} - H_0\rangle$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
+ax.set_xlabel(r'$\sigma_D/D$ (%)', fontsize=35, labelpad=15)
+#ax.set_ylim(-0.01,0.2)
+#ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
+plt.show()
 
 #%%
 
@@ -326,6 +383,21 @@ Ns = [2,4,8,16,32,64,128]
 
 #%%
 
+investigated_characteristic = 'lum_weighting_001'
+investigated_values = ['Proportional', 'Proportional', 'Random']
+investigated_values_inference = ['Proportional', 'Proportional', 'Random']
+betas = [-1.05,-1.95,-1.95]
+max_numbers = ["0" for i in range(len(investigated_values))]
+
+#b = []
+#f = []
+    
+Ns = [2,4,6,8,12,16,24,32,64,128]
+event_count_max_numbers =  ["1"]*len(investigated_values)
+
+
+#%%
+
 meanss_s = []
 stdss_s = []
 pos_s = []
@@ -334,7 +406,8 @@ p_i_s_s = []
 c_i_s_s = []
 
 for j in Ns:
-    investigated_characteristic = 'lum_weighting' + '_' + str(j) + '_' + 'average_events'
+    #investigated_characteristic = 'lum_weighting' + '_' + str(j) + '_' + 'average_events'
+    investigated_characteristic = 'lum_weighting_001'+'_'+str(-1*betas[i])+'beta' + '_' + str(j) + '_' + 'average_events'
 
     fig = plt.figure(figsize = (12,8))
     # create grid for different subplots
@@ -392,6 +465,103 @@ for j in Ns:
     p_i_s_s.append(p_i_s)
     c_i_s_s.append(c_i_s)
     
+
+    ax1.tick_params(axis='both', which='major', labelsize=20)
+    ax2.tick_params(axis='both', which='major', labelsize=20)
+    #'''
+    ax1.violinplot(meanss, bw_method=0.4, vert=False, showmeans=True)
+    ax1.set_yticks(pos)
+    ax1.set_yticklabels(investigated_values, fontsize=20)
+    ax1.set_title('Means', fontsize = 25)
+    ax1.grid(axis='x')
+
+    ax2.violinplot(stdss, vert=False, showmeans=True)
+    ax2.set_yticks(pos)
+    ax2.set_yticklabels(investigated_values, fontsize=20)
+    ax2.set_title('Standard deviations', fontsize = 25)
+    fig.supylabel(axis_namer(investigated_characteristic), fontsize=20)
+    ax2.grid(axis='x')
+
+    plt.show()
+
+#%%
+
+meanss_s = []
+stdss_s = []
+pos_s = []
+
+Ns_meanss = []
+
+p_i_s_s = []
+c_i_s_s = []
+
+for j in Ns:
+    #investigated_characteristic = 'lum_weighting' + '_' + str(j) + '_' + 'average_events'
+
+    fig = plt.figure(figsize = (12,8))
+    # create grid for different subplots
+    spec = gridspec.GridSpec(ncols=1, nrows=2,
+                            wspace=0.2,
+                            hspace=0.3)
+
+    ax1 = fig.add_subplot(spec[0])
+    ax2 = fig.add_subplot(spec[1])
+
+    meanss = []
+    stdss = []
+    pos = []
+    Ns_means = []
+
+    p_i_s = []
+    c_i_s = []
+
+    for i in range(len(investigated_values)):
+        investigated_characteristic = 'lum_weighting_001'+'_'+str(-1*betas[i])+'beta' + '_' + str(j) + '_' + 'average_events'
+
+        #print(i)
+        filename = "SampleUniverse_"+str(investigated_characteristic)+'_'+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
+        df = pd.read_csv(filename, index_col = 0)
+        df.dropna(inplace=True, axis=1)
+        filename = "EventCount_SampleUniverse_" + str(investigated_characteristic) + "_" +str(investigated_values[i]) + "_" + \
+                   event_count_max_numbers[i] + ".csv"
+        df_event_count = pd.read_csv(filename, index_col=0)
+        df_event_count.dropna(inplace=True, axis=1)
+        
+        means = []
+        stds = []
+        Ns_no_zero = []
+
+        inc = df.index[1]-df.index[0]
+        p_i_s.append(bias_dist(df))
+        c_i_s.append(C_I_samp(df))
+        for column in df.columns:
+            if is_unique(df[column]):
+                print('Gotcha')
+                continue
+            
+            Ns_no_zero.append(df_event_count[column])
+            pdf_single = df[column]/(inc * df[column].sum())
+            #print(df[column].sum())
+            pdf_single.dropna(inplace=True)
+            vals = np.array(pdf_single.index)
+            mean = sum(inc * pdf_single*vals)
+            # means or modes
+            #mean = vals[np.argmax(pdf_single*vals)]
+            if mean==0:
+                continue
+            means.append(mean)
+            stds.append(np.sqrt(sum((inc*pdf_single*pdf_single.index**2))-mean**2))
+        meanss.append(means)
+        stdss.append(stds)
+        pos.append(i+1)
+        Ns_means.append(np.mean(Ns_no_zero))
+
+    meanss_s.append(meanss)
+    stdss_s.append(stdss)
+    pos_s.append(pos)
+    p_i_s_s.append(p_i_s)
+    c_i_s_s.append(c_i_s)
+    Ns_meanss.append(Ns_means)
 
     ax1.tick_params(axis='both', which='major', labelsize=20)
     ax2.tick_params(axis='both', which='major', labelsize=20)
@@ -579,6 +749,109 @@ plt.show()
 
 
 
+
+
+
+
+
+
+#%%
+
+#%%
+
+fig = plt.figure(figsize = (12,8))
+ax = fig.add_subplot()
+
+color = iter(cm.winter_r(np.linspace(0, 1, len(investigated_values))))
+for j in range(len(investigated_values)):
+    c = next(color)
+    edgecolor='white'
+    ax.scatter(np.array(Ns_meanss)[:,j], np.array(biases_s)[:,j]-70, marker='^', s=100, c=c, label=r'{}, $\beta={}$'.format(investigated_values[j],betas[j]), zorder=3)
+    c[3] = 0.7
+    ax.plot(np.array(Ns_meanss)[:,j], np.array(biases_s)[:,j]-70, c=c, zorder=2)
+    ax.errorbar(np.array(Ns_meanss)[:,j], np.array(biases_s)[:,j]-70, yerr=np.array(biases_err_s)[:,j], capsize=5, c=c, fmt='None', zorder=1)
+
+ax.grid(ls='dashed', c='lightblue', alpha=0.99, which='both', zorder=0)
+#ax.set_xlim(50,100)
+#ax.set_ylim(0,ymax)
+#ax.grid(axis='both', ls='dashed', alpha=0.5)
+ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
+ax.legend(fontsize = 28, framealpha=1)
+ax.set_ylabel(r'$\langle\hat{H_0} - H_0\rangle$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
+ax.set_xlabel(r'$\bar N$', fontsize=35, labelpad=15)
+ax.set_xscale('log')
+#ax.set_ylim(-0.01,0.2)
+#ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
+plt.show()
+
+
+#%%
+
+sigmas_s = []
+sigmas_unc_s = []
+
+for j in range(len(Ns)):        
+    sigmas = []
+    sigmas_unc = []
+    for i in range(len(investigated_values)):
+        sigmas.append(np.mean(stdss_s[j][i]))
+        sigmas_unc.append(np.std(stdss_s[j][i])/np.sqrt(len(stdss_s[j][i])))
+        print(len(stdss_s[j][i]))
+    sigmas_s.append(sigmas)
+    sigmas_unc_s.append(sigmas_unc)
+
+
+# %%
+
+x = np.linspace(4.5,210,1000)
+x = np.linspace(1.5,210,1000)
+y = 4.5/(70*np.sqrt(x))
+y = 5.5/(70*np.sqrt(x))
+
+fig = plt.figure(figsize = (12,8))
+ax = fig.add_subplot()
+
+color = iter(cm.winter_r(np.linspace(0, 1, len(investigated_values))))
+for j in range(len(investigated_values)):
+    c = next(color)
+    edgecolor='white'
+    ax.scatter(np.array(Ns_meanss)[:,j], np.array(sigmas_s)[:,j]/70, marker='^', s=100, c=c, label=r'{}, $\beta={}$'.format(investigated_values[j], betas[j]), zorder=3)
+    c[3] = 0.7
+    ax.plot(np.array(Ns_meanss)[:,j], np.array(sigmas_s)[:,j]/70, c=c, zorder=2)
+    ax.errorbar(np.array(Ns_meanss)[:,j], np.array(sigmas_s)[:,j]/70, yerr=np.array(sigmas_unc_s)[:,j]/70, capsize=5, c=c, fmt='None', zorder=1)
+
+ax.plot(x,y,ls='dashed', c='r', label=r'$\propto \bar N\,^{-1/2}$')
+ax.grid(ls='dashed', c='lightblue', which='both', alpha=0.99, zorder=0)
+#ax.set_xlim(50,100)
+#ax.set_ylim(0,ymax)
+#ax.grid(axis='both', ls='dashed', alpha=0.5)
+ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
+ax.legend(fontsize = 23, loc='lower left', framealpha=1)
+ax.set_ylabel(r'$\hat \sigma_{H_0}/H_0$', fontsize=35, labelpad=15)
+ax.set_xlabel(r'$\bar N$', fontsize=35, labelpad=15)
+ax.set_ylim(0.004,0.15)
+
+#ax.set_xlim(4,1100)
+ax.set_yscale('log')
+ax.set_xscale('log')
+#ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # %%
 
 #investigated_values = [2.964, 3.409, 4.953, 8.827] + [4.035, 6.382, 13.804, 28.878] + [2.637, 2.3902]
@@ -654,5 +927,14 @@ ax.set_xlabel(r'$D$ (Mpc)', fontsize=35, labelpad=15)
 plt.show()
 
 
+
+# %%
+
+fig = plt.figure(figsize = (28,12))
+ax = fig.add_subplot()
+plt.scatter([],[], label=r'$\mathcal{L}(\hat{d}_n^i|H_0^j,d_g^k)$')
+plt.legend(fontsize=180)
+
+plt.show()
 
 # %%

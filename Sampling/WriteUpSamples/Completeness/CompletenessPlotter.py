@@ -61,6 +61,23 @@ with open("percentages", "rb") as fp:   # Unpickling
 
 #%%
 
+investigated_characteristic = 'survey_completeness'
+investigated_values = np.array([0.005,0.01,0.05,0.1,0.2,0.3])#,0.5])
+investigated_values /= (4*np.pi*(0.4*625)**2)
+dist = ['Proportional', 'Random']
+#percentage_s = 
+max_numbers = ["2" for i in range(len(investigated_values))]
+
+import pickle
+
+with open("percentages_2", "rb") as fp:   # Unpickling
+    percentages_s = pickle.load(fp)
+
+percentages_s = [percentages_s[0][:-1],percentages_s[1][:-1]]
+
+
+#%%
+
 
 def axis_namer(s):
     index = s.find('_')
@@ -240,7 +257,7 @@ ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
 ax.legend(fontsize = 28, framealpha=1)
-ax.set_ylabel(r'$\langle\hat{H_0} - H_0\rangle$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
+ax.set_ylabel(r'$\langle\hat{H}_0 - H_0\rangle$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
 ax.set_xlabel(r'$F_t \times 10^{-7}$', fontsize=35, labelpad=15)
 #ax.set_ylim(-0.01,0.2)
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
@@ -267,7 +284,7 @@ ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
 ax.legend(fontsize = 28, framealpha=1)
-ax.set_ylabel(r'$\langle\hat{H_0} - H_0\rangle$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
+ax.set_ylabel(r'$\langle\hat{H}_0 - H_0\rangle$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
 ax.set_xlabel(r'$1-f$', fontsize=35, labelpad=15)
 #ax.set_ylim(-0.01,0.2)
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
@@ -308,7 +325,7 @@ ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
 ax.legend(fontsize = 28, framealpha=1)
-ax.set_ylabel(r'$\sigma_{H_0}/H_0$', fontsize=35, labelpad=15)
+ax.set_ylabel(r'$\hat{\sigma}_{H_0}/H_0$', fontsize=35, labelpad=15)
 ax.set_xlabel(r'$F_t$', fontsize=35, labelpad=15)
 #ax.set_ylim(-0.01,0.2)
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
@@ -335,7 +352,7 @@ ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
 ax.legend(fontsize = 28, framealpha=1)
-ax.set_ylabel(r'$\sigma_{H_0}/H_0$', fontsize=35, labelpad=15)
+ax.set_ylabel(r'$\hat{\sigma}_{H_0}/H_0$', fontsize=35, labelpad=15)
 ax.set_xlabel(r'$1-f$', fontsize=35, labelpad=15)
 #ax.set_ylim(-0.01,0.2)
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)

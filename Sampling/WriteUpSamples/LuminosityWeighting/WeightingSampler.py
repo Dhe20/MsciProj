@@ -63,6 +63,48 @@ for j in Ns:
         #f.append(Investigation.full)
         max_numbers.append(Investigation.max_num)
 
+#%%
+
+investigated_characteristic = 'lum_weighting_001'
+investigated_values = ['Proportional', 'Proportional', 'Random']
+investigated_values_inference = ['Proportional', 'Proportional', 'Random']
+betas = [-1.05,-1.95,-1.95]
+max_numbers = []
+
+investigated_characteristic = 'lum_weighting_01'
+investigated_values = ['Proportional', 'Proportional', 'Random']
+investigated_values_inference = ['Proportional', 'Proportional', 'Random']
+betas = [-1.05,-1.95,-1.95]
+max_numbers = []
+
+#b = []
+#f = []
+    
+Ns = [2,4,6,8,10,12,16,24,32,64,128]
+#Ns = [24,32,64,128]
+
+
+true_Ns = []
+
+for j in Ns:
+    #investigated_characteristic = 'lum_weighting' + '_' + str(j) + '_' + 'average_events'
+    for i in range(len(investigated_values)):
+        investigated_characteristic = 'lum_weighting_001'+'_'+str(-1*betas[i])+'beta' + '_' + str(j) + '_' + 'average_events'
+        print(investigated_characteristic)
+        #if investigated_values[i] == investigated_values_inference[i]:
+        #    r_or_w = 'right'
+        #else:
+        #    r_or_w = 'wrong'
+        Investigation = Sampler(universe_count = 100, beta=betas[i], lower_lim=0.1, characteristic_luminosity=1, p_det=True, gamma = False, event_distribution=investigated_values[i], total_luminosity=1000/3, wanted_det_events = j, specify_event_number = True,
+                                wanted_gal_n = 7500, specify_gal_number = True,
+                                noise_distribution='BVMF_eff', event_distribution_inf=investigated_values_inference[i], 
+                                save_normally=0, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+        Investigation.Sample()
+        true_Ns.append(Investigation.det_event_count_for_analysis)
+        #b.append(Investigation.burr_i)
+        #f.append(Investigation.full)
+        max_numbers.append(Investigation.max_num)
+
 
 #%%
         
@@ -106,5 +148,57 @@ for i in range(len(investigated_values)):
         #b.append(Investigation.burr_i)
         #f.append(Investigation.full)
         max_numbers.append(Investigation.max_num)
+
+# %%
+
+
+# Selection Effects
+        
+investigated_characteristic = 'sel_eff_sigma_D'
+investigated_values = [3.409, 4.035, 4.953, 6.382, 8.827, 13.804, 28.878, 49.003]
+investigated_values.sort(reverse=True)
+#selection_accounted = [True, False]
+rel = [3, 5, 10, 15, 20, 25, 30, 35]
+max_numbers = []
+#b = []
+#f = []
+
+true_Ns = []
+
+for i in range(len(investigated_values)):
+    Investigation = Sampler(universe_count = 100, BVM_c = investigated_values[i], beta=-1.3, p_det=True, gamma = False, event_distribution='Proportional', total_luminosity=1000/3, wanted_det_events = 50, specify_event_number = True,
+                            wanted_gal_n = 5000, specify_gal_number = True,
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', 
+                            save_normally=0, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    true_Ns.append(Investigation.det_event_count_for_analysis)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
+
+#%%
+
+investigated_characteristic = 'sel_eff_sigma_D_biased_standard_140'
+investigated_values = [3.409, 4.035, 4.953, 6.382, 8.827, 13.804, 28.878, 49.003]
+investigated_values.sort(reverse=True)
+#selection_accounted = [True, False]
+rel = [3, 5, 10, 15, 20, 25, 30, 35]
+max_numbers = []
+#b = []
+#f = []
+
+true_Ns = []
+
+for i in range(len(investigated_values)):
+    print(investigated_characteristic)
+    Investigation = Sampler(universe_count = 100, H_0_Max=140, BVM_c = investigated_values[i], beta=-1.3, lower_lim=0.1, p_det=False, gamma = False, event_distribution='Proportional', total_luminosity=1000/3, wanted_det_events = 50, specify_event_number = True,
+                            wanted_gal_n = 5000, specify_gal_number = True,
+                            noise_distribution='BVMF_eff', event_distribution_inf='Proportional', 
+                            save_normally=0, investigated_characteristic = investigated_characteristic, investigated_value = investigated_values[i])
+    Investigation.Sample()
+    true_Ns.append(Investigation.det_event_count_for_analysis)
+    #b.append(Investigation.burr_i)
+    #f.append(Investigation.full)
+    max_numbers.append(Investigation.max_num)
 
 # %%

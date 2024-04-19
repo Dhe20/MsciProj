@@ -17,7 +17,7 @@ from Components.EventGenerator import EventGenerator
 
 #%%
 
-wanted_gal_n = 10000
+wanted_gal_n = 5000
 beta = -1.3
 event_rate = 1540.0
 d_ratio = 0.4
@@ -83,19 +83,20 @@ plt.show()
 # %%
 
 #wanted_gal_n = 10000
-beta = -1.5
+beta = -1.3
 event_rate = 1540.0
 d_ratio = 0.4
 BVM_c = 15
 BVM_k = 2
 wanted_det_events = 50
 
-total_luminosity = 2000/3
+#total_luminosity = 5000/3
 sample_time = factor()
 
 Gen = EventGenerator(dimension=3, cube=True, size=625, event_rate = event_rate, sample_time = sample_time, beta=beta, luminosity_gen_type="Full-Schechter", coord_gen_type="Random", cluster_coeff=0, characteristic_luminosity=1, lower_lim=0.1, total_luminosity=total_luminosity,
     BVM_c = 15, BVM_k = 2, BVM_kappa = 200, event_distribution="Proportional", noise_distribution="BVMF_eff", redshift_noise_sigma=0, noise_std=0, plot_contours=False, seed=5)
 
+print(len(Gen.true_luminosities))
 
 
 Data1 = Gen.GetSurveyAndEventData(min_flux=0.01/(4*np.pi*(0.4*625)**2))
@@ -104,13 +105,19 @@ Data3 = Gen.GetSurveyAndEventData(min_flux=0.5/(4*np.pi*(0.4*625)**2))
 
 f = [0.01, 0.1, 0.5]
 
+#f = [0.01, 0.05, 0.25]
+Data1 = Gen.GetSurveyAndEventData(min_flux=f[0]/(4*np.pi*(0.4*625)**2))
+Data2 = Gen.GetSurveyAndEventData(min_flux=f[1]/(4*np.pi*(0.4*625)**2))
+Data3 = Gen.GetSurveyAndEventData(min_flux=f[2]/(4*np.pi*(0.4*625)**2))
+
+
 def comp_f(distances, x, y):
     comp_f = []
     for i in x:
         comp_f.append(sum(distances<i)/sum(y<i))
     return comp_f
 
-x = np.linspace(50, 1000, 200)
+x = np.linspace(50, (3*625**2)**0.5, 500)
 c1 = comp_f(np.linalg.norm(Data1.detected_coords, axis=1), x, np.linalg.norm(Gen.detected_coords, axis=1))
 c2 = comp_f(np.linalg.norm(Data2.detected_coords, axis=1), x, np.linalg.norm(Gen.detected_coords, axis=1))
 c3 = comp_f(np.linalg.norm(Data3.detected_coords, axis=1), x, np.linalg.norm(Gen.detected_coords, axis=1))

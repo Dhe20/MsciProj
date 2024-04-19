@@ -3,6 +3,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import matplotlib.cm as cm
+from scipy.special import iv
+import matplotlib
+
+matplotlib.rcParams['mathtext.fontset'] = 'cm'
+matplotlib.rcParams['font.family'] = 'Arial'
+matplotlib.rcParams['figure.constrained_layout.use'] = True
+
+#%%
+
+#def V_loc(kappa, s_D_D, D_max):
+#    s_kappa = np.sqrt(1-iv(1,kappa)/iv(0,kappa))
+#    return ((16*3*2)/(7*np.pi))*s_kappa*s_kappa*s_D_D*D_max**3
+
+def V_loc(kappa, s_D_D, D_max):
+    s_kappa = np.sqrt(1-iv(1,kappa)/iv(0,kappa))
+    return ((16*8)/(np.pi))*s_kappa*s_kappa*s_D_D*D_max**3
+
+def V_centroid(s_g, S):
+    return (4*np.pi/3)*(s_g*S)**3
+
+#%%
 
 def expected(data, sig):
     sig = np.array(sig)

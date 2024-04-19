@@ -23,8 +23,8 @@ true_Ns = []
 for k in range(len(dist)):
     percentage = []
     for i in range(len(investigated_values)):
-        Investigation = Sampler(universe_count = 100, beta=-1.3, p_det=True, gamma = False, event_distribution=dist[k], total_luminosity=1000/3, wanted_det_events = 50, specify_event_number = True,
-                                wanted_gal_n = 2000, specify_gal_number = True, min_flux=investigated_values[i], completeness_type='cut_lim',
+        Investigation = Sampler(universe_count = 100, beta=-1.3, lower_lim=0.1, p_det=True, gamma = False, event_distribution=dist[k], total_luminosity=1000/3, wanted_det_events = 50, specify_event_number = True,
+                                wanted_gal_n = 5000, specify_gal_number = True, min_flux=investigated_values[i], completeness_type='cut_lim',
                                 noise_distribution='BVMF_eff', event_distribution_inf=dist[k], flux_threshold=0,
                                 save_normally=0, investigated_characteristic = investigated_characteristic+ '_' + dist[k], investigated_value = investigated_values[i])
         Investigation.Sample()
@@ -55,10 +55,10 @@ print(b)
 
 import pickle
 
-with open("percentages", "wb") as fp:   #Pickling
+with open("percentages_2", "wb") as fp:   #Pickling
     pickle.dump(percentage_s, fp)
 
-with open("percentages", "rb") as fp:   # Unpickling
+with open("percentages_2", "rb") as fp:   # Unpickling
     b = pickle.load(fp)
 
 # %%

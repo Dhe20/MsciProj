@@ -133,7 +133,8 @@ class Universe:
 
     def fixed_luminosity(self):
         self.n = round(self.L_0/self.L_star)
-        return [self.L_star]*self.n
+        self.gal_lum = [self.L_star]*self.n
+        return self.gal_lum
 
     def schechter_luminosity(self):
         N_0 = self.L_0 / (self.L_star * (self.alpha))
@@ -300,12 +301,12 @@ class Universe:
             plt.show()
         return fig, ax
 #
-Gen = Universe(size = 625, dimension = 2,
-               luminosity_gen_type = "Full-Schechter", coord_gen_type = "Centroids",
-               cluster_coeff=0, characteristic_luminosity=.1, total_luminosity=500/3
-               ,lower_lim=0.05, min_lum=0.05, seed = 10, centroid_sigma=.2, centroid_n = 20)
+#Gen = Universe(size = 625, dimension = 2,
+#               luminosity_gen_type = "Full-Schechter", coord_gen_type = "Centroids",
+#               cluster_coeff=0, characteristic_luminosity=.1, total_luminosity=500/3
+#               ,lower_lim=0.05, min_lum=0.05, seed = 10, centroid_sigma=.1, centroid_n = 10)
 
-Gen.plot_universe()
+#Gen.plot_universe()
 #
 
 # %%
