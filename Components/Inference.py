@@ -344,15 +344,18 @@ class Inference(SurveyAndEventData):
             self.P_det_total = P_det_total
             self.H_0_pdf_single_event = self.H_0_pdf_single_event / P_det_total
 
-        f = np.vectorize(math.frexp)
-        split = f(self.H_0_pdf_single_event)
-        flo = split[0]
-        ex = split[1]
-        p_flo = np.prod(flo, axis=0)
-        p_ex = np.sum(ex, axis=0)
-        scaled_ex = p_ex - np.max(p_ex)
-        scaled_flo = p_ex / p_flo[np.argmax(p_ex)]
-        self.H_0_pdf = scaled_flo * (0.5 ** (-1 * scaled_ex))
+        # f = np.vectorize(math.frexp)
+        # split = f(self.H_0_pdf_single_event)
+        # flo = split[0]
+        # ex = split[1]
+        # p_flo = np.prod(flo, axis=0)
+        # p_ex = np.sum(ex, axis=0)
+        # scaled_ex = p_ex - np.max(p_ex)
+        # scaled_flo = p_ex / p_flo[np.argmax(p_ex)]
+        # self.H_0_pdf = scaled_flo * (0.5 ** (-1 * scaled_ex))
+
+        self.log_H_0_pdf = np.sum(np.log(self.H_0_pdf_single_event), axis=0)
+        self.H_0_pdf = np.exp(self.log_H_0_pdf - np.min(self.log_H_0_pdf[np.isfinite(self.log_H_0_pdf)]))
 
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
 

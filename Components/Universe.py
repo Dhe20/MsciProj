@@ -195,7 +195,7 @@ class Universe:
 
     def clustered_coords(self):
 
-        power = lambda k: self.cluster_coeff * k ** -3
+        power = lambda k: self.cluster_coeff * k ** -1.2
 
         if self.dimension==2:
             N=512

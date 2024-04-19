@@ -235,13 +235,13 @@ class InferenceGUI:
 
         # Create a `matplotlib.widgets.Button` to reset the sliders to initial values.
 
-        self.ax2.legend(fontsize=8)
-        self.fig2.savefig("/Users/daneverett/PycharmProjects/MSciProject/Visualising/HTMLPlot/images/range-slider/new_bottom_" + str(self.H_0_str) + ".jpg", dpi=100)
-        plt.close(self.fig2)
+        # self.ax2.legend(fontsize=8)
+        # self.fig2.savefig("/Users/daneverett/PycharmProjects/MSciProject/Visualising/HTMLPlot/images/range-slider/new_bottom_" + str(self.H_0_str) + ".jpg", dpi=100)
+        # plt.close(self.fig2)
         # self.button.on_clicked(self.reset_H_0)
 
 
-        # plt.show()
+        plt.show()
 
 
     # def update_events(self, val):

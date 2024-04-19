@@ -21,9 +21,9 @@ size = 625
 centroid_n = 25
 
 investigated_characteristic = "15LocVol_CentroidSigma"
-investigated_values = [0.01, 0.02, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24]
+# investigated_values = [0.01, 0.02, 0.04, 0.08, 0.12, 0.16, 0.2, 0.24]
 # investigated_values = [0.02]
-# investigated_values = [0.12, 0.16, 0.2, 0.24, 0.28, 0.32, 0.36, 0.40]
+investigated_values = [0.6, 0.72, 0.8]
 
 for centroid_n in [20,10,15,25]:
     for i in range(0,len(investigated_values)):
