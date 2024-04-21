@@ -1,3 +1,5 @@
+#%%
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,6 +10,7 @@ plt.style.use("default")
 
 
 path = '/Users/daneverett/PycharmProjects/MSciProject/Sampling/WriteUpSamples/Centroid_Universes/'
+#path = 'c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling/WriteUpSamples/Centroid_Universes/'
 
 loc_volumes = [37758203, 3985608, 214834 ]
 
@@ -141,3 +144,4 @@ plt.savefig("HighRes/"+image_name, format=image_format,  bbox_inches='tight', pa
 plt.savefig("LowRes/"+image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=120)
 
 plt.show()
+# %%

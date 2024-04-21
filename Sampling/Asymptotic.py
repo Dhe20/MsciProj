@@ -15,7 +15,6 @@ import matplotlib
 matplotlib.rcParams['mathtext.fontset'] = 'cm'
 matplotlib.rcParams['font.family'] = 'Arial'
 matplotlib.rcParams['figure.constrained_layout.use'] = True
-plt.style.use('default')
 
 f = 4*np.pi/375
 c = 1.5*32*np.pi/3000
@@ -62,6 +61,7 @@ investigated_characteristic = 'event_num_log_powerpoint_standard'
 investigated_values = [5, 10, 20, 40, 80, 160]
 investigated_values = [2, 4, 8, 16, 32, 64, 128, 256]
 max_numbers = ['0']*len(investigated_values)
+event_count_max_numbers = ['0']*len(investigated_values)
 
 #%%
 
@@ -99,6 +99,7 @@ def axis_namer(s):
 #%%
 
 
+
 fig = plt.figure(figsize = (12,8))
 # create grid for different subplots
 spec = gridspec.GridSpec(ncols=1, nrows=2,
@@ -115,17 +116,25 @@ pos = []
 p_i_s = []
 c_i_s = []
 
-# /Users/daneverett/PycharmProjects/MSciProject/Sampling/PosteriorData/SampleUniverse_event_num_log_powerpoint_standard_2_0.csv
+Ns_meanss = []
 
 for i in range(len(investigated_values)):
     #print(i)
-    filename = "/SamplingPosteriorData/SampleUniverse_"+str(investigated_characteristic)+"_"+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
+    filename = "PosteriorData/SampleUniverse_"+str(investigated_characteristic)+"_"+str(investigated_values[i])+"_"+max_numbers[i]+".csv"   
+    
     df = pd.read_csv(filename, index_col = 0)
     means = []
     stds = []
     inc = df.index[1]-df.index[0]
     p_i_s.append(bias_dist(df))
     c_i_s.append(C_I_samp(df))
+    
+    filename = "EventCount_SampleUniverse_" + str(investigated_characteristic) + "_" +str(investigated_values[i]) + "_" + \
+                   event_count_max_numbers[i] + ".csv"
+    df_event_count = pd.read_csv(filename, index_col=0)
+    df_event_count.dropna(inplace=True, axis=1)
+     
+    Ns_means_no_zero = []
     for column in df.columns:
         if is_unique(df[column]):
             print('Gotcha')
@@ -137,10 +146,15 @@ for i in range(len(investigated_values)):
         mean = sum(inc * pdf_single*vals)
         # means or modes
         #mean = vals[np.argmax(pdf_single*vals)]
+        
+        Ns_means_no_zero.append(df_event_count[column])
         if mean==0:
             continue
         means.append(mean)
         stds.append(np.sqrt(sum((inc*pdf_single*pdf_single.index**2))-mean**2))
+    
+    Ns_meanss.append(np.mean(Ns_means_no_zero))
+
     meanss.append(means)
     stdss.append(stds)
     pos.append(i+1)
@@ -285,7 +299,7 @@ sigmas = []
 sigmas_unc = []
 for i in range(len(investigated_values)):
     sigmas.append(np.mean(stdss[i]))
-    sigmas_unc.append(np.std(stdss[i]))
+    sigmas_unc.append(np.std(stdss[i])/np.sqrt(len(stdss[i])))
 
 sigmas = np.array(sigmas)
 sigmas_unc = np.array(sigmas_unc)
@@ -333,16 +347,108 @@ ax.legend(fontsize=27, loc='upper right')
 plt.show()
 
 
+#%%
+
+fig = plt.figure(figsize = (12,8))
+ax = fig.add_subplot()
 
 
+c = np.array([0,0,1,1])
+edgecolor='white'
+ax.scatter(np.array(Ns_meanss), np.array(biases)-70, marker='^', s=100, c=c, zorder=3)
+c = 'dodgerblue'
+ax.plot(np.array(Ns_meanss), np.array(biases)-70, c=c, zorder=2)
+ax.errorbar(np.array(Ns_meanss), np.array(biases)-70, yerr=np.array(biases_err), capsize=5, c=c, fmt='None', zorder=1)
+
+ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
+#ax.set_xlim(50,100)
+#ax.set_ylim(0,ymax)
+#ax.grid(axis='both', ls='dashed', alpha=0.5)
+ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
+ax.legend(fontsize = 28, framealpha=1)
+ax.set_ylabel(r'$\langle\hat{H_0} - H_0\rangle$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
+ax.set_xlabel(r'$\bar{N}$', fontsize=35, labelpad=15)
+ax.set_xscale('log')
+ax.set_xticks(investigated_values)
+ax.set_xticklabels([r'$2^1$',r'$2^2$',r'$2^3$',r'$2^4$',r'$2^5$', r'$2^6$', r'$2^7$', r'$2^8$'])
+       
+#ax.set_ylim(-0.01,0.2)
+#ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
+plt.show()
+
+#%%
+
+x = np.linspace(1.5,390,1000)
+y = 4.5/(70*np.sqrt(x))
+
+sigmas = []
+sigmas_unc = []
+for i in range(len(investigated_values)):
+    sigmas.append(np.mean(stdss[i]))
+    sigmas_unc.append(np.std(stdss[i]))#/np.sqrt(len(stdss[i])))
+
+sigmas = np.array(sigmas)
+sigmas_unc = np.array(sigmas_unc)
 
 
+def func(x,a):
+    return a/(70*np.sqrt(x))
+
+popt, pcov = curve_fit(func, Ns_meanss, sigmas/70, sigma=sigmas_unc/70)
+
+fig = plt.figure(figsize = (12,8))
+ax = fig.add_subplot()
+
+ax.scatter(Ns_meanss, sigmas/70, marker='^', s=130, c='b', label='Data', zorder=2)
+ax.plot(Ns_meanss, sigmas/70, marker='^', c='dodgerblue', lw=2, zorder=1)
+ax.errorbar(Ns_meanss, sigmas/70, yerr=sigmas_unc/70, capsize=5, c='dodgerblue', fmt='None', lw=2, zorder=0)
+
+ax.plot(x, func(x, *popt), ls='dashed', dashes=(5,5), lw=3, zorder=0, c='magenta', label=r'$\frac{{\hat{{\sigma}}_{{H_0}}}}{{H_0}} = \frac{{\alpha}}{{\sqrt{{\bar{{N}}}}}}$ fit, $\alpha={:.1f}\%\pm{:.1f}\%$'.format(100*popt[0]/70, 100*pcov[0,0]**0.5/70))
 
 
+#ax.plot(x,y,ls='dashed', c='r', label=r'$\propto \bar N\,^{-1/2}$')
+
+ax.grid(ls='dashed', c='cadetblue', axis='y', which='both', alpha=0.7)
+ax.grid(ls='dashed', c='cadetblue', axis='x', which='major', alpha=0.7)
+
+#ax.set_xlim(50,100)
+#ax.set_ylim(0,ymax)
+#ax.grid(axis='both', ls='dashed', alpha=0.5)
+ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
+#ax.legend(fontsize = 28, framealpha=1)
+ax.set_ylabel(r'$\hat{{\sigma}}_{H_0}/H_0$', fontsize=45, labelpad=15)
+ax.set_xlabel(r'$\bar{N}$', fontsize=45, labelpad=15)
+ax.set_xscale('log')
+ax.set_yscale('log')
+for axis in ['top','bottom','left','right']:
+    ax.spines[axis].set_linewidth(2.5)
+#ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
+ax.tick_params(axis='both', top=True, right=True, which='major', direction='in', labelsize=42, size=9, width=3, pad = 15)
+ax.tick_params(axis='y', which='minor', direction='in', labelsize=35, size=4, width=3, pad = 15)
+
+ax.set_xticks(investigated_values)
+ax.set_xticklabels([r'$2^1$',r'$2^2$',r'$2^3$',r'$2^4$',r'$2^5$', r'$2^6$', r'$2^7$', r'$2^8$'])
+
+ax.set_ylim(0.005,0.2)    
+ax.set_xlim(1.2,256*2)        
+ax.legend(fontsize=27, loc='upper right')          
+plt.show()
 
 
 
 # %%
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -42,6 +42,14 @@ def is_unique(s):
     a = s.to_numpy() # s.values (pandas<0.24)
     return (a[0] == a).all()
 
+def axis_namer(s):
+    index = s.find('_')
+    if index != -1:
+        title = s[0].upper()+s[1:index]+' '+s[index+1].upper()+s[index+2:]
+    else:
+        title = s[0].upper()+s[1:]
+    return title
+
 
 #%%
 
@@ -81,6 +89,50 @@ rel = [3, 5, 10, 15, 20, 25, 30, 35]
 selection_accounted = [False]
 r_or_w = ['']
 max_numbers = ["0" for i in range(len(investigated_values))]
+
+#%%
+
+investigated_characteristic = 'sel_eff_sigma_D_standard'
+investigated_values = [6.382, 8.827, 13.804, 28.878, 49.033] + [7.423, 10.81, 18.817]
+investigated_values.sort(reverse=True)
+#selection_accounted = [True, False]
+rel = [7.5, 12.5, 17.5] + [3, 5, 10, 15, 20]
+rel.sort()
+max_numbers = ["0" for i in range(len(investigated_values))]
+selection_accounted = [False]
+r_or_w = ['']
+
+#%%
+
+investigated_characteristic = 'sel_eff_sigma_D_standard_unaccounted'
+investigated_values = [6.382, 8.827, 13.804, 28.878, 49.033] + [7.423, 10.81, 18.817]
+investigated_values.sort(reverse=True)
+#selection_accounted = [True, False]
+rel = [7.5, 12.5, 17.5] + [3, 5, 10, 15, 20]
+rel.sort()
+max_numbers = ["0" for i in range(len(investigated_values))]
+selection_accounted = [False]
+r_or_w = ['']
+
+#%%
+
+investigated_values = [8.827, 13.804, 28.878, 49.033] + [10.81, 18.817] + [9.533]
+investigated_values.sort(reverse=True)
+#selection_accounted = [True, False]
+rel = [7.5, 12.5] + [3, 5, 10, 15] + [14]
+rel.sort()
+
+#%%
+
+investigated_characteristic = 'sel_eff_sigma_D_standard_unaccounted_120'
+investigated_values = [6.382, 8.827, 13.804, 28.878, 49.033] + [7.423, 10.81, 18.817] + [5.582] + [4.953]
+investigated_values.sort(reverse=True)
+#selection_accounted = [True, False]
+rel = [7.5, 12.5, 17.5] + [3, 5, 10, 15, 20] + [22.5] + [25]
+rel.sort()
+max_numbers = ["0" for i in range(len(investigated_values))]
+print(rel)
+print(investigated_values)
 
 
 #%%
@@ -275,17 +327,31 @@ plt.show()
 fig = plt.figure(figsize = (12,8))
 ax = fig.add_subplot()
 
+x = np.linspace(2.5,15, 1000)/100
+
 color = iter(cm.winter(np.linspace(0, 1, len(selection_accounted))))
 for j in range(len(selection_accounted)):
     c = next(color)
     edgecolor='white'
-    ax.scatter(np.array(rel), np.array(biases_s[j])-70, marker='^', s=100, c=c, label=r'Modelled = {}'.format(str(selection_accounted[j])), zorder=3)
+    ax.scatter(np.array(rel)/100, np.array(biases_s[j])-70, marker='^', s=100, c=c, label=r'Modelled = {}'.format(str(selection_accounted[j])), zorder=3)
     c[3] = 0.7
-    ax.plot(np.array(rel), np.array(biases_s[j])-70, c=c, zorder=2)
-    ax.errorbar(np.array(rel), np.array(biases_s[j])-70, yerr=np.array(biases_err_s[j]), capsize=5, c=c, fmt='None', zorder=1)
+    ax.plot(np.array(rel)/100, np.array(biases_s[j])-70, c=c, zorder=2)
+    ax.errorbar(np.array(rel)/100, np.array(biases_s[j])-70, yerr=np.array(biases_err_s[j]), capsize=5, c=c, fmt='None', zorder=1)
+
+def func(x,a):
+    return a*x**2 #+ b*x
+
+#def func(x,a):
+#    return 70*a*(1/(1+2*x))*x**3 #+ b*x
+
+from scipy.optimize import curve_fit
+
+popt, pcov = curve_fit(func, np.array(rel)[:-2]/100, np.array(biases_s[j][:-2])-70, p0=[10])
+ax.plot(x, func(x, *popt), ls='dashed', dashes=(5,5), lw=3, c='r', label=r'bias$\,\propto (\sigma_D/D)^2$ fit')
+
 
 ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
-#ax.set_xlim(50,100)
+ax.set_xlim(0.02,0.16)
 #ax.set_ylim(0,ymax)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
@@ -295,6 +361,9 @@ ax.set_xlabel(r'$\sigma_D/D$ (%)', fontsize=35, labelpad=15)
 #ax.set_ylim(-0.01,0.2)
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
 plt.show()
+
+
+
 
 #%%
 
@@ -387,13 +456,24 @@ investigated_characteristic = 'lum_weighting_001'
 investigated_values = ['Proportional', 'Proportional', 'Random']
 investigated_values_inference = ['Proportional', 'Proportional', 'Random']
 betas = [-1.05,-1.95,-1.95]
-max_numbers = ["0" for i in range(len(investigated_values))]
+max_numbers = ["1" for i in range(len(investigated_values))]
 
 #b = []
 #f = []
     
 Ns = [2,4,6,8,12,16,24,32,64,128]
 event_count_max_numbers =  ["1"]*len(investigated_values)
+
+#%%
+
+investigated_characteristic = 'lum_weighting_standard_nice'
+investigated_values = ['Proportional', 'Proportional', 'Random']
+investigated_values_inference = ['Proportional', 'Proportional', 'Random']
+betas = [-1.05,-1.95,-1.95]
+max_numbers = ["0" for i in range(len(investigated_values))]
+
+Ns = [2,4,6,8,10,12,16,24,32,64,128]
+event_count_max_numbers =  ["0"]*len(investigated_values)
 
 
 #%%
@@ -516,8 +596,10 @@ for j in Ns:
     c_i_s = []
 
     for i in range(len(investigated_values)):
-        investigated_characteristic = 'lum_weighting_001'+'_'+str(-1*betas[i])+'beta' + '_' + str(j) + '_' + 'average_events'
-
+        #investigated_characteristic = 'lum_weighting_001'+'_'+str(-1*betas[i])+'beta' + '_' + str(j) + '_' + 'average_events'
+        
+        investigated_characteristic = 'lum_weighting_standard_nice'+'_'+str(-1*betas[i])+'beta' + '_' + str(j) + '_' + 'average_events'
+        
         #print(i)
         filename = "SampleUniverse_"+str(investigated_characteristic)+'_'+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
         df = pd.read_csv(filename, index_col = 0)
@@ -771,7 +853,7 @@ for j in range(len(investigated_values)):
     ax.plot(np.array(Ns_meanss)[:,j], np.array(biases_s)[:,j]-70, c=c, zorder=2)
     ax.errorbar(np.array(Ns_meanss)[:,j], np.array(biases_s)[:,j]-70, yerr=np.array(biases_err_s)[:,j], capsize=5, c=c, fmt='None', zorder=1)
 
-ax.grid(ls='dashed', c='lightblue', alpha=0.99, which='both', zorder=0)
+ax.grid(ls='dashed', c='cadetblue', alpha=0.7, which='both', zorder=0)
 #ax.set_xlim(50,100)
 #ax.set_ylim(0,ymax)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
@@ -804,32 +886,46 @@ for j in range(len(Ns)):
 # %%
 
 x = np.linspace(4.5,210,1000)
-x = np.linspace(1.5,210,1000)
+x = np.linspace(1.7,180,1000)
 y = 4.5/(70*np.sqrt(x))
-y = 5.5/(70*np.sqrt(x))
+y = 6.5/(70*np.sqrt(x))
 
 fig = plt.figure(figsize = (12,8))
 ax = fig.add_subplot()
 
+def func(x,a):
+    return a/(np.sqrt(x))
+
+alphas = []
+alphas_std = []
 color = iter(cm.winter_r(np.linspace(0, 1, len(investigated_values))))
 for j in range(len(investigated_values)):
+    
+    popt, pcov = curve_fit(func, np.array(Ns_meanss)[:,j], np.array(sigmas_s)[:,j]/70, sigma=np.array(sigmas_unc_s)[:,j]/70)
+    alphas.append(popt[0])
+    alphas_std.append(np.sqrt(pcov[0,0]))
+    #if j==1:
+    #ax.plot(x, func(x, *popt), ls='dashed', dashes=(5,5), lw=3, c='r', alpha=0.5)#, label=r'$\frac{{\hat{{\sigma}}_{{H_0}}}}{{H_0}} = \frac{{\alpha}}{{\sqrt{{\bar{{N}}}}}}$ fit, $\alpha={:.1f}\%\pm{:.1f}\%$'.format(100*popt[0]/70, 100*pcov[0,0]**0.5/70))
+
     c = next(color)
     edgecolor='white'
-    ax.scatter(np.array(Ns_meanss)[:,j], np.array(sigmas_s)[:,j]/70, marker='^', s=100, c=c, label=r'{}, $\beta={}$'.format(investigated_values[j], betas[j]), zorder=3)
+    ax.scatter(np.array(Ns_meanss)[:,j], np.array(sigmas_s)[:,j]/70, marker='^', s=130, c=c, label=r'{}, $\beta={}$'.format(investigated_values[j], betas[j]), zorder=3)
     c[3] = 0.7
-    ax.plot(np.array(Ns_meanss)[:,j], np.array(sigmas_s)[:,j]/70, c=c, zorder=2)
+    ax.plot(np.array(Ns_meanss)[:,j], np.array(sigmas_s)[:,j]/70, c=c, lw=2, zorder=2)
     ax.errorbar(np.array(Ns_meanss)[:,j], np.array(sigmas_s)[:,j]/70, yerr=np.array(sigmas_unc_s)[:,j]/70, capsize=5, c=c, fmt='None', zorder=1)
 
+print(alphas)
+print(alphas_std)
 ax.plot(x,y,ls='dashed', c='r', label=r'$\propto \bar N\,^{-1/2}$')
-ax.grid(ls='dashed', c='lightblue', which='both', alpha=0.99, zorder=0)
+ax.grid(ls='dashed', c='cadetblue', which='both', alpha=0.7, zorder=0)
 #ax.set_xlim(50,100)
 #ax.set_ylim(0,ymax)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
-ax.legend(fontsize = 23, loc='lower left', framealpha=1)
+ax.legend(fontsize = 25, loc='lower left', framealpha=1)
 ax.set_ylabel(r'$\hat \sigma_{H_0}/H_0$', fontsize=35, labelpad=15)
 ax.set_xlabel(r'$\bar N$', fontsize=35, labelpad=15)
-ax.set_ylim(0.004,0.15)
+ax.set_ylim(0.006,0.15)
 
 #ax.set_xlim(4,1100)
 ax.set_yscale('log')
@@ -870,24 +966,28 @@ unc = [5, 10, 20, 30]
 x = np.linspace(0,0.15,10000)
 
 
-color = iter(cm.cool(np.linspace(0, 1, len(investigated_values))))
+color = iter(cm.cool(np.linspace(0, 1, len(cs))))
 for i in range(len(cs)):
     y = sel_eff(x, 250, cs[i], 2)
     c = next(color)
-    ax.plot(x,y,ls='dashed', lw=5, c=c, label=r'$\sigma_D/D = {}\%$'.format(unc[i]))
+    ax.plot(x,y, lw=5, c=c, label=r'$\sigma_D/D = {}\%$'.format(unc[i]))
+
+
+ax.vlines(x=250*70/300000, ymin=-0.05,ymax=1.05, color='r', ls='dashed', lw=4)
+
 
 for axis in ['top','bottom','left','right']:
     ax.spines[axis].set_linewidth(2.5)
 
-#ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
+ax.grid(ls='dashed', c='cadetblue', alpha=0.7, zorder=0)
 #ax.set_xlim(50,100)
 #ax.set_ylim(0,ymax)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
-ax.legend(fontsize = 28, loc='upper right', framealpha=1)
+ax.legend(fontsize = 30, loc='upper right', framealpha=1)
 ax.set_ylabel(r'$P_{\mathrm{det}}(D_{\mathrm{GW}}|z,H_0)$', fontsize=45, labelpad=15)
 ax.set_xlabel(r'$z$', fontsize=45, labelpad=15)
-#ax.set_ylim(0.003,0.15)
+ax.set_ylim(-0.05,1.05)
 #ax.set_xlim(4,1100)
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
 plt.show()
@@ -913,12 +1013,12 @@ for axis in ['top','bottom','left','right']:
     ax.spines[axis].set_linewidth(2.5)
 
 ax.vlines(x=100, ymin=-0.005,ymax=0.1, color='r', ls='dashed', lw=4)
-ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
+ax.grid(ls='dashed', c='cadetblue', alpha=0.7, zorder=0)
 ax.set_ylim(-0.0005,0.1)
 ax.set_xlim(0,200)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
-ax.legend(fontsize = 28, loc='upper right', framealpha=1)
+ax.legend(fontsize = 30, loc='upper right', framealpha=1)
 ax.set_ylabel(r'$P\,(\hat{D}|D)$', fontsize=35, labelpad=15)
 ax.set_xlabel(r'$D$ (Mpc)', fontsize=35, labelpad=15)
 #ax.set_ylim(0.003,0.15)

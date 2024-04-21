@@ -81,6 +81,25 @@ investigated_characteristic = 'redshift_uncertainty_more_2000_standard_good'
 investigated_values = [0.0005 ,0.001, 0.002, 0.004, 0.006, 0.01]
 max_numbers = ["0" for i in range(len(investigated_values))]
 
+#%%
+
+investigated_characteristic = 'redshift_uncertainty_more_2500_standard_good'
+investigated_values = [0.0005 ,0.001, 0.002, 0.004, 0.006, 0.01]
+
+
+#%%
+
+investigated_characteristic = 'redshift_uncertainty_more_2500_standard_good_random'
+investigated_values = [0.0005 ,0.001, 0.002, 0.004, 0.006, 0.01]
+
+#%%
+
+investigated_characteristic = 'redshift_uncertainty_more_5000_standard_good_random'
+investigated_values = [0.0005 ,0.001, 0.002, 0.004, 0.006, 0.01]
+
+#%%
+
+max_numbers = ["0" for i in range(len(investigated_values))]
 
 #%%
 
@@ -243,7 +262,7 @@ c = 'dodgerblue'
 ax.plot(np.array(investigated_values), np.array(biases)-70, c=c, zorder=2)
 ax.errorbar(np.array(investigated_values), np.array(biases)-70, yerr=np.array(biases_err), capsize=5, c=c, fmt='None', zorder=1)
 
-ax.grid(ls='dashed', c='lightblue', alpha=0.8, zorder=0)
+ax.grid(ls='dashed', c='cadetblue', alpha=0.7, zorder=0)
 #ax.set_xlim(50,100)
 #ax.set_ylim(0,ymax)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
