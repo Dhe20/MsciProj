@@ -15,6 +15,7 @@ import matplotlib
 matplotlib.rcParams['mathtext.fontset'] = 'cm'
 matplotlib.rcParams['font.family'] = 'Arial'
 matplotlib.rcParams['figure.constrained_layout.use'] = True
+plt.style.use('default')
 
 f = 4*np.pi/375
 c = 1.5*32*np.pi/3000
@@ -98,7 +99,6 @@ def axis_namer(s):
 #%%
 
 
-
 fig = plt.figure(figsize = (12,8))
 # create grid for different subplots
 spec = gridspec.GridSpec(ncols=1, nrows=2,
@@ -115,9 +115,11 @@ pos = []
 p_i_s = []
 c_i_s = []
 
+# /Users/daneverett/PycharmProjects/MSciProject/Sampling/PosteriorData/SampleUniverse_event_num_log_powerpoint_standard_2_0.csv
+
 for i in range(len(investigated_values)):
     #print(i)
-    filename = "PosteriorData/SampleUniverse_"+str(investigated_characteristic)+"_"+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
+    filename = "/SamplingPosteriorData/SampleUniverse_"+str(investigated_characteristic)+"_"+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
     df = pd.read_csv(filename, index_col = 0)
     means = []
     stds = []

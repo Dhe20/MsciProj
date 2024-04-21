@@ -4,6 +4,7 @@ import pandas as pd
 from matplotlib import gridspec
 import matplotlib.patches as mpatches
 plt.style.use("default")
+from scipy.interpolate import interp1d
 from matplotlib.pyplot import cm
 
 
@@ -50,9 +51,9 @@ def is_unique(s):
     a = s.to_numpy() # s.values (pandas<0.24)
     return (a[0] == a).all()
 
-fig = plt.figure(figsize = (12,8))
+fig = plt.figure(figsize = (8,12))
 # create grid for different subplots
-spec = gridspec.GridSpec(ncols=1, nrows=2,
+spec = gridspec.GridSpec(ncols=1, nrows=3,
                         wspace=0.2,
                          hspace=0.3)
 
@@ -102,22 +103,24 @@ for i in range(len(investigated_values)):
     print(s)
 
 
-fig = plt.figure(figsize = (12,9.5), layout="constrained")
+fig = plt.figure(figsize = (15,6))
 # create grid for different subplots
-spec = gridspec.GridSpec(ncols=1, nrows=2,
-                         wspace=0.2,
+spec = gridspec.GridSpec(ncols=3, nrows=1,
+                         wspace=0.5,
                          hspace=0.)
 
 ax1 = fig.add_subplot(spec[0])
 ax2 = fig.add_subplot(spec[1])
+ax3 = fig.add_subplot(spec[2])
 ax = [ax1,ax2]
 
 ax1.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
 ax2.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
+ax3.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
 
 for i in ax:
     i.set_ylim(0,0.49)
-    i.set_xlim(66,75)
+    i.set_xlim(65,75)
 
 plt.subplots_adjust(wspace=0, hspace=0)
 
@@ -135,7 +138,7 @@ bias_1, bias_err_1 = expected(meanss[1], stdss[1])
 bias_0 -= 70
 bias_1 -= 70
 
-color = iter(cm.autumn(np.linspace(0, 1, 20)))
+color = iter(cm.winter(np.linspace(0, 1, 20)))
 
 for i in range(len(investigated_values)):
         filename = "PosteriorData/SampleUniverse_"+str(investigated_characteristic)+"_"+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
@@ -151,13 +154,30 @@ for i in range(len(investigated_values)):
                 if is_unique(df[column]):
                     print('Gotcha')
                     continue
-                pdf_single = df[column]/(inc * df[column].sum())
-                ax1.plot(df.index, pdf_single, c = c)
 
-ax2.hist(meanss[1], bins=b, histtype='step', edgecolor='#e16462', lw=3.5, density=1, hatch='//')
+                x_data, y_data = df.index, pdf_single
+                pdf_single = df[column]/(inc * df[column].sum())
+
+                interp_func = interp1d(x_data, y_data, kind='cubic')
+
+                # Create a dense range of x values for plotting the interpolated curve
+                x_dense = np.linspace(min(x_data), max(x_data), num=500)
+
+                # Use the interpolation function to compute the y values
+                y_dense = interp_func(x_dense)
+
+                ax1.plot(x_dense, y_dense, c = c)
+
+ax2.hist(meanss[1], bins=b, histtype='step', edgecolor='#00e28d', lw=3.5, density=1, hatch='//')
 ax2.vlines(x=bias_1+70, ymin=0, ymax=0.49,ls='dashed', lw=3, label='$\hat H_0-H_0={:.2f}\pm{:.2f}$'.format(bias_1, bias_err_1), color=  'r')
 ax2.vlines(x=70, ymin=0, ymax=0.49, color='k', ls='dashed', lw=3)
 ax1.vlines(x=70, ymin=0, ymax=0.49, color='k', ls='dashed', lw=3)
+
+ax1.tick_params(axis='both', which='major', labelsize=16)
+ax2.tick_params(axis='both', which='major', labelsize=16)
+ax3.tick_params(axis='both', which='major', labelsize=16)
+
+ax3.hist(stdss[1], bins=b, histtype='step', edgecolor='#00e28d', lw=3.5, density=1, hatch='//')
 
 
 #ax1.grid(axis='x', ls='dashed', alpha=0.5)
@@ -168,26 +188,41 @@ ax1.vlines(x=70, ymin=0, ymax=0.49, color='k', ls='dashed', lw=3)
 # ax1.set_ylabel('Not Included', fontsize=35, labelpad=40)
 
 
-ax2.set_xlabel(r'$\hat H_0$ (km s$^{-1}$ Mpc$^{-1}$)',fontsize=35, labelpad=15)
+ax1.set_xlabel(r'$H_0$ (km s$^{-1}$ Mpc$^{-1}$)',fontsize=20, labelpad=0.5)
+ax2.set_xlabel(r'$\hat{H}_0$ (km s$^{-1}$ Mpc$^{-1}$)',fontsize=20, labelpad=0.5)
+ax3.set_xlabel(r'$\sigma_{{H}_0}$ (km s$^{-1}$ Mpc$^{-1}$)',fontsize=20, labelpad=0.5)
+
 
 for axis in ['top','bottom','left','right']:
-    ax1.spines[axis].set_linewidth(3)
-    ax2.spines[axis].set_linewidth(3)
+    ax1.spines[axis].set_linewidth(2)
+    ax2.spines[axis].set_linewidth(2)
+    ax3.spines[axis].set_linewidth(2)
 
 
-ax1.set_ylabel( r'$P(H_{0}|\text{sample})$', fontsize=35)
-ax2.set_ylabel( r'$P(\hat{H}_{0}|\text{sample})$', fontsize=35)
+ax1.set_ylabel( r'$P(H_{0}|\text{sample})$', fontsize=20)
+ax2.set_ylabel( r'$P(\hat{H}_{0}|\text{sample})$', fontsize=20)
+ax3.set_ylabel( r'$P(\sigma_{H_{0}}|\text{sample})$', fontsize=20)
 
 # ax1.legend(fontsize=22)
-ax2.legend(fontsize=22)
-ax1.set_xticklabels([])
+# ax2.legend(fontsize=22)
+# ax1.set_xticklabels(fontsize = )
 
-ax1.set_title('Selection effects', fontsize=40, pad=30)
+# ax1.set_title('Selection effects', fontsize=40, pad=30)
 #plt.tight_layout()
-image_format = 'svg' # e.g .png, .svg, etc.
-image_name = 'Plots//Mortlock_Double.svg'
 
+fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.5, hspace=None)
 
+#
+image_format = 'png' # e.g .png, .svg, etc.
+
+image_name = 'Plots//HighRes//Mortlock_Plot.'+image_format
 plt.savefig(image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=1200)
+
+
+image_format = 'png' # e.g .png, .svg, etc.
+
+image_name = 'Plots//LowRes//Mortlock_Plot.'+image_format
+plt.savefig(image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=200)
+
 
 plt.show()
