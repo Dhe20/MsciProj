@@ -49,6 +49,30 @@ max_numbers = ["0" for i in range(len(investigated_values))]
 
 #%%
 
+investigated_characteristic = 'redshift_uncertainty_incorrect_3'
+investigated_characteristic = 'redshift_uncertainty_incorrect_4'
+investigated_characteristic = 'redshift_uncertainty_incorrect_5'
+investigated_characteristic = 'redshift_uncertainty_incorrect_6'
+investigated_values = [0.005]
+max_numbers = ["0" for i in range(len(investigated_values))]
+
+
+#%%
+
+investigated_characteristic = 'redshift_uncertainty_standard_incorrect'
+investigated_values = [0.005]
+investigated_characteristic = 'redshift_uncertainty_standard_incorrect_2'
+investigated_values = [0.01]
+investigated_characteristic = 'redshift_uncertainty_standard_incorrect_3'
+investigated_values = [0.005]
+investigated_characteristic = 'redshift_uncertainty_standard_incorrect_4'
+investigated_values = [0.005]
+
+max_numbers = ["0" for i in range(len(investigated_values))]
+
+
+#%%
+
 investigated_characteristic_2 = 'corrected_redshift_multiprocessing'
 filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\WriteUpSamples\RedshiftUncertainty\Z_Samples\SampleUniverse_"+str(investigated_characteristic_2)+'0'+"_"+str(investigated_values[0])+"_"+max_numbers[0]+".csv"
 DF = pd.read_csv(filename, index_col = 0)
@@ -93,6 +117,8 @@ c_i_s = []
 for i in range(len(investigated_values)):
     #print(i)
     filename = "c:\\Users\manco\OneDrive\Ambiente de Trabalho\Masters_Project\MsciProj\Sampling\PosteriorData\SampleUniverse_"+str(investigated_characteristic)+"_"+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
+    filename = "SampleUniverse_"+str(investigated_characteristic)+"_"+str(investigated_values[i])+"_"+max_numbers[i]+".csv"
+    
     df1 = pd.read_csv(filename, index_col = 0)
     #df = pd.concat([df1, DF], axis=1)
     df = df1 
