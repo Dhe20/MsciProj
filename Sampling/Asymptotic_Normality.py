@@ -162,14 +162,14 @@ ax1.set_ylabel(r'$H_0$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=20, labelpad=1)
 
 image_format = 'png' # e.g .png, .svg, etc.
 
-image_name = 'Plots//HighRes//Asymptotic_Normality.'+image_format
-plt.savefig(image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=1200)
-
-
-image_format = 'png' # e.g .png, .svg, etc.
-
-image_name = 'Plots//LowRes//Asymptotic_Normality.'+image_format
-plt.savefig(image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=200)
+# image_name = 'Plots//HighRes//Asymptotic_Normality.'+image_format
+# plt.savefig(image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=1200)
+#
+#
+# image_format = 'png' # e.g .png, .svg, etc.
+#
+# image_name = 'Plots//LowRes//Asymptotic_Normality.'+image_format
+# plt.savefig(image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=200)
 
 
 plt.show()
