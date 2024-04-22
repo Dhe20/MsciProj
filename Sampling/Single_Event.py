@@ -4,7 +4,9 @@ from matplotlib.pyplot import cm
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import matplotlib as mpl
 from scipy.optimize import curve_fit
+mpl.rcParams.update(mpl.rcParamsDefault)
 
 title = 'Posterior Asymptotic Normality & Constraining Power'
 
@@ -69,7 +71,7 @@ for i in range(len(df.columns)):
         mid_c = c
 ax.plot([],[], c = mid_c, alpha=0.5, label='Single Event Posteriors')
 ax.plot(dfp.index, dfp.values, c='k', lw=5, label='Full posterior')
-ax.vlines(x=70, ymin=0, ymax=ymax, color='r', lw=3, ls='dashed', label='True value')
+ax.vlines(x=70, ymin=0, ymax=ymax, color='r', lw=3, ls='dashed', label=r'$H_0 = 70$ km s$^{-1}$ Mpc$^{-1}$')
 
 
 ax.set_xlim(50,100)
@@ -77,16 +79,23 @@ ax.set_ylim(0,ymax)
 #ax.grid(axis='both', ls='dashed', alpha=0.5)
 ax.tick_params(axis='both', which='major', direction='in', labelsize=30, size=8, width=3, pad = 9)
 ax.legend(fontsize = 24, framealpha=.5, loc = 'upper right')
-ax.set_ylabel(r'$P\,(\,H_0\, |\, d_{GW}^i\,)$', fontsize=35, labelpad=15)
+ax.set_ylabel(r'$P\,(\,H_0\, \mid, \hat{{d}}_{GW},  \hat{{d}}_{G} \,)$', fontsize=35, labelpad=15)
 ax.set_xlabel(r'$H_0$ (km s$^{-1}$ Mpc$^{-1}$)', fontsize=35, labelpad=15)
 #ax.set_title('Individual and combined posteriors', fontsize=40, pad=30)
 
 for axis in ['top','bottom','left','right']:
     ax.spines[axis].set_linewidth(3)
 
-image_format = 'svg' # e.g .png, .svg, etc.
-image_name = 'Plots//single_event.svg'
+image_format = 'png' # e.g .png, .svg, etc.
 
+image_name = 'Plots//HighRes//single_event.'+image_format
 plt.savefig(image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=1200)
+
+
+image_format = 'png' # e.g .png, .svg, etc.
+
+image_name = 'Plots//LowRes//single_event.'+image_format
+plt.savefig(image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=200)
+
 
 plt.show()

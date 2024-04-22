@@ -1091,7 +1091,7 @@ max_numbers = ['0']
 #%%
 
 investigated_characteristic = 'trial_survey_completeness_0'
-#investigated_values = [25,75,95]
+# investigated_values = [25,75,95]
 investigated_values = np.array([1.0]) #,0.5])
 investigated_values /= (4*np.pi*(0.4*625)**2)
 investigated_values = [1.2732395447351628e-06]
@@ -1448,6 +1448,9 @@ print(hat_h)
 
 
 # %%
+
+import numpy as np
+import pandas as pd
 
 title = 'Posterior Asymptotic Normality & Constraining Power'
 
