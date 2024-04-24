@@ -1,5 +1,4 @@
-##
-
+#%%
 
 import powerbox as pbox
 import matplotlib.pyplot as plt
@@ -8,7 +7,11 @@ import numpy as np
 import powerbox as pb
 import matplotlib
 cluster_coeff=0.05
-plt.style.use("default")
+
+plt.style.use('default')
+matplotlib.rcParams['mathtext.fontset'] = 'cm'
+matplotlib.rcParams['font.family'] = 'Arial'
+matplotlib.rcParams['figure.constrained_layout.use'] = True
 
 import time
 
@@ -51,7 +54,7 @@ for i, coeff in enumerate([0.0001, 0.0005, 0.001, 0.005 ,0.01,0.05, 0.1,0.5,1]):
     ax[i // 3, i % 3].set_yticklabels([])
 
 cbar = fig.colorbar(cax1, ax=ax, orientation='horizontal', shrink=0.8, aspect=40)
-cbar.set_label(label = r'$\delta(x)$',size=15,weight='bold')
+cbar.set_label(label = r'$\delta(x)$',size=35,weight='bold')
 cbar.ax.tick_params(labelsize=20)
 
 # image_format = 'pdf' # e.g .png, .svg, etc.
@@ -62,3 +65,5 @@ cbar.ax.tick_params(labelsize=20)
 # plt.show()
 
 
+
+# %%

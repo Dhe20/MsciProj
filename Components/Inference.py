@@ -519,7 +519,7 @@ class Inference(SurveyAndEventData):
             P_det_total = np.sum(p_det_vec, axis=1)
             self.P_det_total = P_det_total
             self.H_0_pdf_single_event = self.H_0_pdf_single_event / P_det_total
-
+        '''
         f = np.vectorize(math.frexp)
         split = f(self.H_0_pdf_single_event)
         flo = split[0]
@@ -530,6 +530,12 @@ class Inference(SurveyAndEventData):
         scaled_flo = p_ex / p_flo[np.argmax(p_ex)]
         self.H_0_pdf = scaled_flo * (0.5 ** (-1 * scaled_ex))
         self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+        '''
+        self.log_H_0_pdf = np.sum(np.log(self.H_0_pdf_single_event), axis=0)
+        self.H_0_pdf = np.exp(self.log_H_0_pdf - np.min(self.log_H_0_pdf[np.isfinite(self.log_H_0_pdf)]))
+        self.H_0_pdf /= np.sum(self.H_0_pdf) * (self.H_0_increment)
+        
+
         return self.H_0_pdf
 
     def H_0_inference_3d_perfect_survey_vectorised_gaussian(self):

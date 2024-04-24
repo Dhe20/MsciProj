@@ -134,6 +134,23 @@ max_numbers = ["0" for i in range(len(investigated_values))]
 print(rel)
 print(investigated_values)
 
+#%%
+
+investigated_characteristic = 'sel_eff_sigma_D_standard_unaccounted_0.3'
+investigated_values = [6.382, 8.827, 13.804, 28.878, 49.033] + [7.423, 10.81, 18.817]
+investigated_values.sort(reverse=True)
+#selection_accounted = [True, False]
+rel = [7.5, 12.5, 17.5] + [3, 5, 10, 15, 20]
+rel.sort()
+max_numbers = ["0" for i in range(len(investigated_values))]
+selection_accounted = [False]
+r_or_w = ['']
+
+investigated_values = [8.827, 13.804, 28.878, 49.033] + [10.81, 18.817] + [9.533]
+investigated_values.sort(reverse=True)
+#selection_accounted = [True, False]
+rel = [7.5, 12.5] + [3, 5, 10, 15] + [14]
+rel.sort()
 
 #%%
 
@@ -342,11 +359,11 @@ def func(x,a):
     return a*x**2 #+ b*x
 
 #def func(x,a):
-#    return 70*a*(1/(1+2*x))*x**3 #+ b*x
+#    return 70*a*(1/(1+2*x))*x**2 #+ b*x
 
 from scipy.optimize import curve_fit
 
-popt, pcov = curve_fit(func, np.array(rel)[:-2]/100, np.array(biases_s[j][:-2])-70, p0=[10])
+popt, pcov = curve_fit(func, np.array(rel)[:]/100, np.array(biases_s[j][:])-70, p0=[10])
 ax.plot(x, func(x, *popt), ls='dashed', dashes=(5,5), lw=3, c='r', label=r'bias$\,\propto (\sigma_D/D)^2$ fit')
 
 

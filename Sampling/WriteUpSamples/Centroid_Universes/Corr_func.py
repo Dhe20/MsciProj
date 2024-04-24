@@ -33,8 +33,8 @@ def corr_func(D, R, C, dR, S, m=1):
     #y = (DD*RR)/(np.linalg.norm(DR)**2) - 1
     return bins, y
 
-def xi(r, gamma, r_0, e):
-    return e*(r/r_0)**(-gamma)
+def xi(r, gamma, r_0):
+    return (r/r_0)**(-gamma)
 
 # %%
 
@@ -42,7 +42,7 @@ def xi(r, gamma, r_0, e):
 
 #UD = Universe(dimension=2, total_luminosity=5000, characteristic_luminosity=1, lower_lim=0.1, coord_gen_type='Centroids', size=625, centroid_n=10, centroid_sigma=0.1)
 
-UD = Universe(dimension=2, total_luminosity=5000, characteristic_luminosity=1, lower_lim=0.1, coord_gen_type='Clustered', cluster_coeff=1, size=625, centroid_n=10, centroid_sigma=0.1)
+UD = Universe(dimension=2, total_luminosity=5000, characteristic_luminosity=1, lower_lim=0.1, coord_gen_type='Clustered', cluster_coeff=0.0005, size=625, centroid_n=10, centroid_sigma=0.1)
 
 UR = Universe(dimension=2, total_luminosity=5000, characteristic_luminosity=1, lower_lim=0.1, coord_gen_type='Random', size=625)
 
@@ -79,9 +79,9 @@ ax.set_ylabel(r'$\xi(r)$', fontsize=40, labelpad=15)
 ax.set_xlabel(r'$r$ (Mpc)', fontsize=40, labelpad=15)
 #ax.legend(fontsize=27)
 ax.set_xlim(-10,400)
-ax.set_ylim(-0.5,6.5)
+#ax.set_ylim(-0.5,6.5)
 
-ax.set_ylim(-0.5,15.5)
+#ax.set_ylim(-0.5,15.5)
 
 plt.show()
 
