@@ -151,7 +151,7 @@ for seed in [40]:
                         ec="none",
                         connectionstyle="arc3,rad=0.1"), size = 16)
 
-    inset_ax.annotate(r'$\boldsymbol{1, 2, 3 \,\sigma \, Contours}$' "\n" r'$\boldsymbol{of \; True \; Host \; Location}$',xy=(20, -185), xycoords='data',xytext=(-100,0),
+    inset_ax.annotate(r'$\boldsymbol{1, 2, 3 \,\sigma \, Contours}$' "\n" r'$\boldsymbol{of \; Host \; Location}$',xy=(20, -185), xycoords='data',xytext=(-100,0),
                         arrowprops=dict(arrowstyle="wedge,tail_width=0.7",
                         fc="red",
                         ec="none",

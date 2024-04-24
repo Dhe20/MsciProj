@@ -137,11 +137,11 @@ ax[1,2].legend(fontsize = 20)
 
 
 
-image_format = 'jpeg' # e.g .png, .svg, etc.
-image_name = 'Clustering_LocVol' + "." +image_format
-
-plt.savefig("HighRes/"+image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=1200)
-plt.savefig("LowRes/"+image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=120)
+# image_format = 'jpeg' # e.g .png, .svg, etc.
+# image_name = 'Clustering_LocVol' + "." +image_format
+#
+# plt.savefig("HighRes/"+image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=1200)
+# plt.savefig("LowRes/"+image_name, format=image_format,  bbox_inches='tight', pad_inches=0.5, dpi=120)
 
 plt.show()
 # %%
